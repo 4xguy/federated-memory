@@ -1,7 +1,7 @@
 FROM node:20-alpine AS builder
 
 # Install dependencies for building native modules
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make g++ postgresql-client
 
 # Create app directory
 WORKDIR /app
@@ -26,8 +26,8 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine
 
-# Install dependencies for runtime
-RUN apk add --no-cache python3
+# Install runtime dependencies including PostgreSQL client for migrations
+RUN apk add --no-cache python3 postgresql-client
 
 WORKDIR /app
 
@@ -48,8 +48,20 @@ COPY .env.example .env.example
 # Generate Prisma client again for production
 RUN npx prisma generate
 
+# Create logs directory
+RUN mkdir -p /app/logs
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nodejs -u 1001
+
+# Change ownership
+RUN chown -R nodejs:nodejs /app
+
+USER nodejs
+
 # Expose port
 EXPOSE 3000
 
-# Start the server
-CMD ["npm", "run", "start"]
+# Use the Railway-specific start command
+CMD ["npm", "run", "start:railway"]

@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node -r module-alias/register dist/index.js",
+    "start:prod": "NODE_ENV=production node -r module-alias/register dist/index.js",
+    "start:railway": "npx prisma migrate deploy || npx prisma db push && node -r module-alias/register dist/scripts/init-db.js || true && npm run start:prod",
     "test": "jest",
     "test:unit": "jest --testPathPattern=unit",
     "test:integration": "jest --testPathPattern=integration",

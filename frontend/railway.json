@@ -2,18 +2,17 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "DOCKER",
-    "buildCommand": "npm install && npm run build && npm run db:generate",
     "watchPatterns": [
-      "src/**",
+      "app/**",
+      "components/**",
       "package.json",
-      "tsconfig.json",
-      "prisma/schema.prisma"
+      "next.config.js"
     ]
   },
   "deploy": {
-    "startCommand": "npm run start:railway",
-    "healthcheckPath": "/api/health",
-    "healthcheckTimeout": 60,
+    "startCommand": "npm run start",
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 30,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3,
     "numReplicas": 1,
