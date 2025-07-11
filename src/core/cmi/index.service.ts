@@ -470,6 +470,255 @@ export class CMIService {
   }
 
   /**
+   * Store a new memory through CMI
+   */
+  async store(
+    userId: string,
+    content: string,
+    metadata?: Record<string, any>,
+    moduleId?: string
+  ): Promise<string> {
+    try {
+      // Determine module based on content if not specified
+      const targetModule = moduleId || await this.determineModule(content, metadata);
+      
+      // Get the module instance
+      const module = await this.moduleRegistry.getModule(targetModule);
+      if (!module) {
+        throw new Error(`Module ${targetModule} not found`);
+      }
+
+      // Store in the module
+      const memoryId = await module.store(userId, content, metadata);
+      
+      this.logger.info('Memory stored through CMI', { userId, moduleId: targetModule, memoryId });
+      
+      return memoryId;
+    } catch (error) {
+      this.logger.error('Failed to store memory through CMI', { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Search memories through CMI
+   */
+  async search(
+    userId: string,
+    query: string,
+    options?: {
+      moduleId?: string;
+      limit?: number;
+      minScore?: number;
+    }
+  ): Promise<any[]> {
+    try {
+      // If specific module requested, search directly in that module
+      if (options?.moduleId) {
+        const module = await this.moduleRegistry.getModule(options.moduleId);
+        if (!module) {
+          throw new Error(`Module ${options.moduleId} not found`);
+        }
+        return await module.search(userId, query, options);
+      }
+
+      // Otherwise use CMI routing
+      const limit = options?.limit || 10;
+      const results = await this.searchMemories(userId, query, undefined, limit);
+      
+      // Fetch full memories from modules
+      const fullMemories = await Promise.all(
+        results.map(async (result) => {
+          const module = await this.moduleRegistry.getModule(result.moduleId);
+          if (module) {
+            const memory = await module.get(userId, result.remoteMemoryId);
+            return memory ? { ...memory, moduleId: result.moduleId, score: result.importanceScore } : null;
+          }
+          return null;
+        })
+      );
+
+      return fullMemories.filter(m => m !== null);
+    } catch (error) {
+      this.logger.error('Failed to search memories through CMI', { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get a specific memory through CMI
+   */
+  async get(userId: string, memoryId: string): Promise<any | null> {
+    try {
+      // First check if it's in the index
+      const indexEntry = await this.prisma.memoryIndex.findFirst({
+        where: {
+          userId,
+          remoteMemoryId: memoryId
+        }
+      });
+
+      if (!indexEntry) {
+        // Try each module
+        const modules = await this.moduleRegistry.listModules();
+        for (const moduleInfo of modules) {
+          const module = await this.moduleRegistry.getModule(moduleInfo.id);
+          if (module) {
+            const memory = await module.get(userId, memoryId);
+            if (memory) {
+              return { ...memory, moduleId: moduleInfo.id };
+            }
+          }
+        }
+        return null;
+      }
+
+      // Get from specific module
+      const module = await this.moduleRegistry.getModule(indexEntry.moduleId);
+      if (!module) {
+        return null;
+      }
+
+      const memory = await module.get(userId, indexEntry.remoteMemoryId);
+      return memory ? { ...memory, moduleId: indexEntry.moduleId } : null;
+    } catch (error) {
+      this.logger.error('Failed to get memory through CMI', { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Update a memory through CMI
+   */
+  async update(
+    userId: string,
+    memoryId: string,
+    updates: { content?: string; metadata?: Record<string, any> }
+  ): Promise<boolean> {
+    try {
+      // Find which module has this memory
+      const indexEntry = await this.prisma.memoryIndex.findFirst({
+        where: {
+          userId,
+          remoteMemoryId: memoryId
+        }
+      });
+
+      if (!indexEntry) {
+        // Try each module
+        const modules = await this.moduleRegistry.listModules();
+        for (const moduleInfo of modules) {
+          const module = await this.moduleRegistry.getModule(moduleInfo.id);
+          if (module) {
+            const success = await module.update(userId, memoryId, updates);
+            if (success) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      // Update in specific module
+      const module = await this.moduleRegistry.getModule(indexEntry.moduleId);
+      if (!module) {
+        return false;
+      }
+
+      return await module.update(userId, indexEntry.remoteMemoryId, updates);
+    } catch (error) {
+      this.logger.error('Failed to update memory through CMI', { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a memory through CMI
+   */
+  async delete(userId: string, memoryId: string): Promise<boolean> {
+    try {
+      // Find which module has this memory
+      const indexEntry = await this.prisma.memoryIndex.findFirst({
+        where: {
+          userId,
+          remoteMemoryId: memoryId
+        }
+      });
+
+      if (!indexEntry) {
+        // Try each module
+        const modules = await this.moduleRegistry.listModules();
+        for (const moduleInfo of modules) {
+          const module = await this.moduleRegistry.getModule(moduleInfo.id);
+          if (module) {
+            const success = await module.delete(userId, memoryId);
+            if (success) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      // Delete from specific module
+      const module = await this.moduleRegistry.getModule(indexEntry.moduleId);
+      if (!module) {
+        return false;
+      }
+
+      return await module.delete(userId, indexEntry.remoteMemoryId);
+    } catch (error) {
+      this.logger.error('Failed to delete memory through CMI', { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Determine which module should handle a memory based on content
+   */
+  private async determineModule(content: string, metadata?: Record<string, any>): Promise<string> {
+    // Simple heuristic for now - can be enhanced with AI classification
+    const lowerContent = content.toLowerCase();
+    
+    if (metadata?.moduleId) {
+      return metadata.moduleId;
+    }
+
+    // Check for code patterns
+    if (lowerContent.includes('function') || lowerContent.includes('class') || 
+        lowerContent.includes('import') || lowerContent.includes('const ')) {
+      return 'technical';
+    }
+
+    // Check for work patterns
+    if (lowerContent.includes('meeting') || lowerContent.includes('project') || 
+        lowerContent.includes('deadline') || lowerContent.includes('task')) {
+      return 'work';
+    }
+
+    // Check for learning patterns
+    if (lowerContent.includes('learn') || lowerContent.includes('study') || 
+        lowerContent.includes('understand') || lowerContent.includes('course')) {
+      return 'learning';
+    }
+
+    // Check for communication patterns
+    if (lowerContent.includes('email') || lowerContent.includes('message') || 
+        lowerContent.includes('call') || lowerContent.includes('chat')) {
+      return 'communication';
+    }
+
+    // Check for creative patterns
+    if (lowerContent.includes('idea') || lowerContent.includes('design') || 
+        lowerContent.includes('create') || lowerContent.includes('art')) {
+      return 'creative';
+    }
+
+    // Default to personal
+    return 'personal';
+  }
+
+  /**
    * Cleanup resources
    */
   async cleanup(): Promise<void> {

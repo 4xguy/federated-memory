@@ -10,6 +10,8 @@ import { ModuleLoader } from './core/modules/loader.service';
 import { ModuleRegistry } from './core/modules/registry.service';
 import { getCMIService } from './core/cmi/index.service';
 import { Redis } from './utils/redis';
+import restApiRoutes from './api/rest';
+import { createMcpApp } from './api/mcp';
 
 // Initialize Prisma
 export const prisma = new PrismaClient({
@@ -48,23 +50,12 @@ async function main() {
     app.use(cors());
     app.use(express.json({ limit: '10mb' }));
 
-    // Health check
-    app.get('/health', async (req, res) => {
-      const health = await moduleRegistry.getAllModuleHealth();
-      res.json({
-        status: 'ok',
-        modules: health,
-        timestamp: new Date().toISOString(),
-      });
-    });
+    // REST API routes
+    app.use('/api', restApiRoutes);
 
-    // Placeholder for REST API
-    app.use('/api', (req, res, next) => {
-      // TODO: Implement authentication middleware
-      next();
-    }, (req, res) => {
-      res.json({ message: 'API endpoints not yet implemented' });
-    });
+    // MCP Streamable HTTP server
+    const mcpApp = createMcpApp();
+    app.use(mcpApp);
 
     // Error handling
     app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -72,23 +63,12 @@ async function main() {
       res.status(500).json({ error: 'Internal server error' });
     });
 
-    // Placeholder for WebSocket server for MCP
-    const wss = new WebSocketServer({ server, path: '/mcp' });
-    wss.on('connection', (ws) => {
-      logger.info('New MCP WebSocket connection');
-      ws.on('message', (message) => {
-        logger.debug('MCP message received:', message.toString());
-        // TODO: Implement MCP protocol
-        ws.send(JSON.stringify({ error: 'MCP protocol not yet implemented' }));
-      });
-    });
-
     // Start server
     const port = process.env.PORT || 3000;
     server.listen(port, () => {
       logger.info(`Federated Memory System running on port ${port}`);
       logger.info(`REST API: http://localhost:${port}/api`);
-      logger.info(`MCP WebSocket: ws://localhost:${port}/mcp`);
+      logger.info(`MCP Streamable HTTP: http://localhost:${port}/mcp`);
     });
 
     // Graceful shutdown

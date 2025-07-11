@@ -2,6 +2,7 @@ import { Logger } from '@/utils/logger';
 import { BaseModule } from './base.module';
 import { ModuleRegistry } from './registry.service';
 import { ModuleConfig } from './interfaces';
+import { ModuleFactory } from './module-factory';
 import path from 'path';
 import fs from 'fs/promises';
 
@@ -44,11 +45,11 @@ export class ModuleLoader {
    * Initialize module dependencies
    */
   private initializeDependencies(): void {
-    // Define module dependencies
+    // Define module dependencies (simplified to avoid circular dependencies)
     this.dependencies.set('technical', {
       moduleId: 'technical',
       requiredModules: [],
-      optionalModules: ['learning']
+      optionalModules: []
     });
 
     this.dependencies.set('personal', {
@@ -60,25 +61,25 @@ export class ModuleLoader {
     this.dependencies.set('work', {
       moduleId: 'work',
       requiredModules: [],
-      optionalModules: ['technical', 'communication']
+      optionalModules: []
     });
 
     this.dependencies.set('learning', {
       moduleId: 'learning',
       requiredModules: [],
-      optionalModules: ['technical']
+      optionalModules: []
     });
 
     this.dependencies.set('communication', {
       moduleId: 'communication',
       requiredModules: [],
-      optionalModules: ['work']
+      optionalModules: []
     });
 
     this.dependencies.set('creative', {
       moduleId: 'creative',
       requiredModules: [],
-      optionalModules: ['learning']
+      optionalModules: []
     });
   }
 
@@ -123,7 +124,7 @@ export class ModuleLoader {
       return {
         moduleId,
         success: true,
-        instance: this.registry.getModule(moduleId)
+        instance: await this.registry.getModule(moduleId)
       };
     }
 
@@ -155,24 +156,12 @@ export class ModuleLoader {
         }
       }
 
-      // Load module file
-      const modulePath = path.join(this.moduleDirectory, moduleId, 'index.ts');
-      const moduleExists = await this.fileExists(modulePath);
+      // Create module instance using factory
+      const instance = await ModuleFactory.createModule(moduleId);
 
-      if (!moduleExists) {
-        throw new Error(`Module file not found: ${modulePath}`);
+      if (!instance) {
+        throw new Error(`Failed to create module instance for ${moduleId}`);
       }
-
-      // Dynamic import
-      const moduleExports = await import(modulePath);
-      const ModuleClass = moduleExports.default || moduleExports[Object.keys(moduleExports)[0]];
-
-      if (!ModuleClass) {
-        throw new Error(`No module class exported from ${modulePath}`);
-      }
-
-      // Create instance
-      const instance = new ModuleClass() as BaseModule;
 
       // Validate module
       if (!this.isValidModule(instance)) {
@@ -196,11 +185,12 @@ export class ModuleLoader {
         instance
       };
     } catch (error) {
-      this.logger.error(`Failed to load module: ${moduleId}`, { error });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to load module: ${moduleId}`, { error: errorMessage, stack: error instanceof Error ? error.stack : undefined });
       return {
         moduleId,
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: errorMessage
       };
     }
   }
@@ -223,7 +213,7 @@ export class ModuleLoader {
       }
 
       // Get module instance
-      const instance = this.registry.getModule(moduleId);
+      const instance = await this.registry.getModule(moduleId);
       if (instance && instance.cleanup) {
         await instance.cleanup();
       }
@@ -260,33 +250,6 @@ export class ModuleLoader {
     return this.loadModule(moduleId, config);
   }
 
-  /**
-   * Get available module directories
-   */
-  private async getModuleDirectories(): Promise<string[]> {
-    try {
-      const dirs = await fs.readdir(this.moduleDirectory);
-      const moduleDirs: string[] = [];
-
-      for (const dir of dirs) {
-        const dirPath = path.join(this.moduleDirectory, dir);
-        const stat = await fs.stat(dirPath);
-        
-        if (stat.isDirectory() && dir !== 'base') {
-          // Check if index.ts exists
-          const indexPath = path.join(dirPath, 'index.ts');
-          if (await this.fileExists(indexPath)) {
-            moduleDirs.push(dir);
-          }
-        }
-      }
-
-      return moduleDirs;
-    } catch (error) {
-      this.logger.error('Failed to get module directories', { error });
-      return [];
-    }
-  }
 
   /**
    * Sort modules by dependencies
@@ -350,8 +313,11 @@ export class ModuleLoader {
     return (
       instance &&
       typeof instance.initialize === 'function' &&
-      typeof instance.storeMemory === 'function' &&
-      typeof instance.searchMemories === 'function' &&
+      typeof instance.store === 'function' &&
+      typeof instance.search === 'function' &&
+      typeof instance.get === 'function' &&
+      typeof instance.update === 'function' &&
+      typeof instance.delete === 'function' &&
       typeof instance.getModuleInfo === 'function' &&
       typeof instance.healthCheck === 'function'
     );
@@ -367,6 +333,13 @@ export class ModuleLoader {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Get available module directories
+   */
+  private async getModuleDirectories(): Promise<string[]> {
+    return ModuleFactory.getAvailableModules();
   }
 
   /**
@@ -394,8 +367,8 @@ export class ModuleLoader {
    * Enable inter-module communication
    */
   async enableCommunication(sourceModule: string, targetModule: string): Promise<void> {
-    const source = this.registry.getModule(sourceModule);
-    const target = this.registry.getModule(targetModule);
+    const source = await this.registry.getModule(sourceModule);
+    const target = await this.registry.getModule(targetModule);
 
     if (!source || !target) {
       throw new Error('Both modules must be loaded to enable communication');

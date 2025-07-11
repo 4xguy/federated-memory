@@ -169,7 +169,7 @@ export class ModuleRegistry {
   /**
    * Get module instance
    */
-  getModule(moduleId: string): BaseModule | undefined {
+  async getModule(moduleId: string): Promise<BaseModule | undefined> {
     return this.moduleInstances.get(moduleId);
   }
 
@@ -187,6 +187,19 @@ export class ModuleRegistry {
     return Array.from(this.modules.values()).filter(
       m => m.moduleType === type && m.isActive
     );
+  }
+
+  /**
+   * List all modules (alias for getActiveModules for compatibility)
+   */
+  async listModules(): Promise<Array<{ id: string; name: string; description: string; type: ModuleType }>> {
+    const activeModules = this.getActiveModules();
+    return activeModules.map(m => ({
+      id: m.moduleId,
+      name: m.moduleName,
+      description: m.description,
+      type: m.moduleType
+    }));
   }
 
   /**
