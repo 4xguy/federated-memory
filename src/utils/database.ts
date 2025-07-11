@@ -21,21 +21,16 @@ export const vectorDb = {
   ) {
     const id = randomUUID();
     const now = new Date();
-    const result = await prisma.$queryRaw`
-      INSERT INTO ${Prisma.sql([table])} (
+    const result = await prisma.$queryRawUnsafe(`
+      INSERT INTO "${table}" (
         id, "userId", content, embedding, metadata, "updatedAt"
       ) VALUES (
-        ${id},
-        ${data.userId},
-        ${data.content},
-        ${data.embedding}::vector,
-        ${data.metadata}::jsonb,
-        ${now}
+        $1, $2, $3, $4::vector, $5::jsonb, $6
       )
       RETURNING id, "userId", content, metadata,
         "accessCount", "lastAccessed",
         "createdAt", "updatedAt"
-    `;
+    `, id, data.userId, data.content, data.embedding, data.metadata, now);
     return (result as any[])[0];
   },
 
@@ -121,7 +116,7 @@ export const vectorDb = {
 
     const whereClause = filterClauses.join(' AND ');
 
-    return await prisma.$queryRaw`
+    const query = `
       SELECT 
         id,
         "userId",
@@ -131,22 +126,24 @@ export const vectorDb = {
         "lastAccessed",
         "createdAt",
         "updatedAt",
-        1 - (embedding <=> ${embedding}::vector) as score
-      FROM ${Prisma.sql([table])}
-      WHERE ${Prisma.raw(whereClause)}
-        AND 1 - (embedding <=> ${embedding}::vector) >= ${minScore}
+        1 - (embedding <=> $1::vector) as score
+      FROM "${table}"
+      WHERE ${whereClause}
+        AND 1 - (embedding <=> $1::vector) >= $2
       ORDER BY 
-        1 - (embedding <=> ${embedding}::vector) DESC,
+        1 - (embedding <=> $1::vector) DESC,
         "accessCount" DESC
-      LIMIT ${limit}
+      LIMIT $3
     `;
+    
+    return await prisma.$queryRawUnsafe(query, embedding, minScore, limit);
   },
 
   /**
    * Get memory with embedding
    */
   async getWithEmbedding(table: string, id: string, userId: string) {
-    const result = await prisma.$queryRaw`
+    const result = await prisma.$queryRawUnsafe(`
       SELECT 
         id,
         "userId",
@@ -156,9 +153,9 @@ export const vectorDb = {
         "lastAccessed",
         "createdAt",
         "updatedAt"
-      FROM ${Prisma.sql([table])}
-      WHERE id = ${id} AND "userId" = ${userId}
-    `;
+      FROM "${table}"
+      WHERE id = $1 AND "userId" = $2
+    `, id, userId);
 
     return (result as any[])[0] || null;
   },
