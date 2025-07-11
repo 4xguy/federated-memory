@@ -1,0 +1,100 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+Federated Memory System - A distributed, modular memory architecture for LLMs with intelligent routing via a Central Memory Index (CMI). The system uses specialized memory modules for different domains (Technical, Personal, Work, Learning, Communication, Creative).
+
+## Key Architecture Concepts
+
+1. **Central Memory Index (CMI)**: Routes queries to appropriate modules using 512-dimensional embeddings
+2. **Memory Modules**: Domain-specific storage with 1536-dimensional embeddings for semantic search
+3. **Dual Embedding Strategy**: Compressed embeddings for routing, full embeddings for search
+4. **Module Isolation**: Each module has its own database table and can evolve independently
+
+## Development Commands
+
+```bash
+# Development
+npm run dev              # Start server (port 3000)
+npm run build            # Compile TypeScript
+npm run test            # Run Jest tests
+npm run test:watch      # Run tests in watch mode
+
+# Database
+npm run db:migrate      # Apply Prisma migrations
+npm run db:studio       # Open Prisma Studio UI
+npm run db:generate     # Generate Prisma client
+
+# Code Quality
+npm run lint            # ESLint check
+npm run format          # Prettier formatting
+npm run typecheck       # TypeScript type checking
+
+# Module Generation
+npm run generate:module [name]  # Create new module from template
+```
+
+## Database Setup
+
+PostgreSQL 16+ with pgvector extension required:
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+## Project Structure
+
+```
+src/
+├── modules/           # Memory module implementations
+│   ├── base/         # BaseModule abstract class
+│   └── [module]/     # Each module (technical, personal, etc.)
+├── services/         # Core services (CMI, federation)
+├── api/             # REST/WebSocket endpoints
+├── utils/           # Shared utilities
+└── types/           # TypeScript interfaces
+```
+
+## Module Development
+
+When creating/modifying modules:
+1. Extend `BaseModule` abstract class
+2. Implement required methods: `processMetadata()`, `formatSearchResult()`
+3. Add module-specific metadata interfaces
+4. Register in CMI routing table
+5. Add database migration for module table
+
+## Testing
+
+- Test files adjacent to source: `module.ts` → `module.test.ts`
+- Mock external services (OpenAI, Redis)
+- Test module isolation and integration
+- Performance benchmarks for routing (<50ms) and search (<100ms)
+
+## Environment Variables
+
+Required in `.env`:
+```
+DATABASE_URL=postgresql://...
+OPENAI_API_KEY=sk-...
+JWT_SECRET=...
+REDIS_URL=redis://... (optional)
+```
+
+## Performance Considerations
+
+- CMI uses compressed embeddings (512-dim) for fast routing
+- Modules use full embeddings (1536-dim) for accuracy
+- Implement caching for frequently accessed memories
+- Use database indexing on vector columns
+- Batch embedding requests when possible
+
+## Current Implementation Status
+
+- ✅ Core infrastructure (server, base module, interfaces)
+- ⚠️ Memory modules need implementation
+- ⚠️ CMI service needs completion
+- ⚠️ API endpoints need building
+- ⚠️ WebSocket support pending
+- ⚠️ MCP protocol integration pending

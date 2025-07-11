@@ -1,0 +1,268 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+// ============= Core Models =============
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  token           String   @unique
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  memoryIndices   MemoryIndex[]
+  relationships   MemoryRelationship[]
+
+  @@map("users")
+}
+
+// ============= CMI Models =============
+
+model MemoryIndex {
+  id              String   @id @default(uuid())
+  userId          String
+  moduleId        String
+  remoteMemoryId  String
+  
+  // Lightweight embedding for routing
+  embedding       Unsupported("vector(512)")?
+  
+  // Essential metadata
+  title           String?
+  summary         String?
+  keywords        String[]
+  categories      String[]
+  
+  // Scoring and access
+  importanceScore Float    @default(0.5)
+  accessCount     Int      @default(0)
+  lastAccessed    DateTime @default(now())
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([moduleId, remoteMemoryId])
+  @@index([userId, moduleId])
+  @@index([userId, lastAccessed])
+  @@map("memory_index")
+}
+
+model MemoryRelationship {
+  id                String   @id @default(uuid())
+  userId            String
+  sourceModule      String
+  sourceMemoryId    String
+  targetModule      String
+  targetMemoryId    String
+  relationshipType  String
+  strength          Float    @default(0.5)
+  metadata          Json     @default("{}")
+  createdAt         DateTime @default(now())
+  
+  // Relations
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([sourceModule, sourceMemoryId, targetModule, targetMemoryId, relationshipType])
+  @@index([userId, sourceModule, sourceMemoryId])
+  @@index([userId, targetModule, targetMemoryId])
+  @@map("memory_relationships")
+}
+
+model MemoryModule {
+  moduleId      String   @id
+  moduleName    String
+  description   String?
+  moduleType    String   @default("standard")
+  configuration Json     @default("{}")
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  
+  @@map("memory_modules")
+}
+
+// ============= Module Storage Models =============
+// Each module will have its own table following this pattern
+
+model TechnicalMemory {
+  id            String   @id @default(uuid())
+  userId        String
+  
+  // Content and embeddings
+  content       String
+  embedding     Unsupported("vector(1536)")?
+  
+  // Flexible metadata
+  metadata      Json     @default("{}")
+  
+  // Access tracking
+  accessCount   Int      @default(0)
+  lastAccessed  DateTime @default(now())
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([userId])
+  @@map("technical_memories")
+}
+
+model PersonalMemory {
+  id            String   @id @default(uuid())
+  userId        String
+  
+  // Content and embeddings
+  content       String
+  embedding     Unsupported("vector(1536)")?
+  
+  // Flexible metadata
+  metadata      Json     @default("{}")
+  
+  // Access tracking
+  accessCount   Int      @default(0)
+  lastAccessed  DateTime @default(now())
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([userId])
+  @@map("personal_memories")
+}
+
+model WorkMemory {
+  id            String   @id @default(uuid())
+  userId        String
+  
+  // Content and embeddings
+  content       String
+  embedding     Unsupported("vector(1536)")?
+  
+  // Flexible metadata
+  metadata      Json     @default("{}")
+  
+  // Access tracking
+  accessCount   Int      @default(0)
+  lastAccessed  DateTime @default(now())
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([userId])
+  @@map("work_memories")
+}
+
+model LearningMemory {
+  id            String   @id @default(uuid())
+  userId        String
+  
+  // Content and embeddings
+  content       String
+  embedding     Unsupported("vector(1536)")?
+  
+  // Flexible metadata
+  metadata      Json     @default("{}")
+  
+  // Access tracking
+  accessCount   Int      @default(0)
+  lastAccessed  DateTime @default(now())
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([userId])
+  @@map("learning_memories")
+}
+
+model CommunicationMemory {
+  id            String   @id @default(uuid())
+  userId        String
+  
+  // Content and embeddings
+  content       String
+  embedding     Unsupported("vector(1536)")?
+  
+  // Flexible metadata
+  metadata      Json     @default("{}")
+  
+  // Access tracking
+  accessCount   Int      @default(0)
+  lastAccessed  DateTime @default(now())
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([userId])
+  @@map("communication_memories")
+}
+
+model CreativeMemory {
+  id            String   @id @default(uuid())
+  userId        String
+  
+  // Content and embeddings
+  content       String
+  embedding     Unsupported("vector(1536)")?
+  
+  // Flexible metadata
+  metadata      Json     @default("{}")
+  
+  // Access tracking
+  accessCount   Int      @default(0)
+  lastAccessed  DateTime @default(now())
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([userId])
+  @@map("creative_memories")
+}
+
+// ============= Analytics Models =============
+
+model QueryLog {
+  id            String   @id @default(uuid())
+  userId        String
+  query         String
+  modulesSearched String[]
+  resultCount   Int
+  latencyMs     Int
+  createdAt     DateTime @default(now())
+  
+  @@index([userId, createdAt])
+  @@map("query_logs")
+}
+
+model ModuleStats {
+  id            String   @id @default(uuid())
+  moduleId      String
+  date          DateTime @db.Date
+  totalQueries  Int      @default(0)
+  totalStores   Int      @default(0)
+  avgLatencyMs  Float    @default(0)
+  activeUsers   Int      @default(0)
+  
+  @@unique([moduleId, date])
+  @@index([date])
+  @@map("module_stats")
+}
