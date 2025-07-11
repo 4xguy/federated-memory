@@ -25,13 +25,47 @@ export function createMcpServer(userContext?: { userId: string; email: string; n
 export function createMcpApp() {
   const app = express();
 
-  // Enable CORS for browser clients
+  // Enable CORS for browser clients with WebSocket support
   app.use(
     cors({
-      origin: ['http://localhost:*', 'https://claude.ai', 'https://*.claude.ai'],
+      origin: (origin, callback) => {
+        const allowedOrigins = [
+          'http://localhost:*',
+          'https://claude.ai',
+          'https://*.claude.ai',
+          'https://*.anthropic.com',
+          'wss://claude.ai',
+          'wss://*.claude.ai',
+        ];
+        
+        // Allow requests with no origin (like WebSocket upgrades)
+        if (!origin) return callback(null, true);
+        
+        // Check if origin matches any allowed pattern
+        const allowed = allowedOrigins.some(pattern => {
+          if (pattern.includes('*')) {
+            const regex = new RegExp(pattern.replace('*', '.*'));
+            return regex.test(origin);
+          }
+          return pattern === origin;
+        });
+        
+        callback(null, allowed);
+      },
       credentials: true,
-      exposedHeaders: ['Mcp-Session-Id'],
-      allowedHeaders: ['Content-Type', 'Mcp-Session-Id', 'Authorization', 'Last-Event-ID'],
+      exposedHeaders: ['Mcp-Session-Id', 'WWW-Authenticate'],
+      allowedHeaders: [
+        'Content-Type', 
+        'Mcp-Session-Id', 
+        'Authorization', 
+        'Last-Event-ID',
+        'Upgrade',
+        'Connection',
+        'Sec-WebSocket-Key',
+        'Sec-WebSocket-Version',
+        'Sec-WebSocket-Extensions',
+      ],
+      methods: ['GET', 'POST', 'OPTIONS'],
     }),
   );
 
@@ -51,13 +85,21 @@ export function createMcpApp() {
       transport = transports.get(sessionId)!;
     } else if (!sessionId && isInitializeRequest(req.body)) {
       // Create new session
+      const newSessionId = randomUUID();
+      logger.info('Creating new MCP session', { 
+        sessionId: newSessionId,
+        origin: req.headers.origin,
+        userAgent: req.headers['user-agent'],
+        method: req.body?.method 
+      });
+      
       transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomUUID(),
+        sessionIdGenerator: () => newSessionId,
         onsessioninitialized: id => {
           logger.info('MCP session initialized', { sessionId: id });
           transports.set(id, transport);
         },
-        enableDnsRebindingProtection: true,
+        enableDnsRebindingProtection: false, // Disable for Claude.ai compatibility
         allowedHosts: [
           '127.0.0.1',
           'localhost',
@@ -65,6 +107,7 @@ export function createMcpApp() {
           'localhost:3000',
           'claude.ai',
           '*.claude.ai',
+          '*.anthropic.com',
           process.env.BASE_URL?.replace(/^https?:\/\//, '') || '',
         ].filter(Boolean),
       });
@@ -82,9 +125,26 @@ export function createMcpApp() {
 
       // Create MCP server with user context
       mcpServer = createMcpServer(userContext);
-      await mcpServer.connect(transport);
+      
+      try {
+        await mcpServer.connect(transport);
+        logger.info('MCP server connected', { 
+          sessionId: newSessionId,
+          hasAuth: !!userContext,
+          userId: userContext?.userId 
+        });
+      } catch (error) {
+        logger.error('Failed to connect MCP server', { error, sessionId: newSessionId });
+        throw error;
+      }
     } else {
       // Session required but not provided
+      logger.warn('MCP request without session ID', { 
+        hasSessionId: !!sessionId,
+        isInitialize: isInitializeRequest(req.body),
+        method: req.body?.method 
+      });
+      
       res.status(400).json({
         error: {
           code: -32000,
@@ -94,7 +154,16 @@ export function createMcpApp() {
       return;
     }
 
-    await transport.handleRequest(req, res, req.body);
+    try {
+      await transport.handleRequest(req, res, req.body);
+    } catch (error) {
+      logger.error('Error handling MCP request', { 
+        error, 
+        sessionId,
+        method: req.body?.method 
+      });
+      throw error;
+    }
   });
 
   // Handle SSE requests for server-initiated messages
