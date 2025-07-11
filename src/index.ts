@@ -47,9 +47,86 @@ async function main() {
     const server = createServer(app);
 
     // Middleware
-    app.use(helmet());
-    app.use(cors());
+    app.use(
+      helmet({
+        crossOriginEmbedderPolicy: false, // Allow SSE connections
+      }),
+    );
+
+    // CORS configuration for Claude.ai and other clients
+    app.use(
+      cors({
+        origin: (origin, callback) => {
+          const allowedOrigins = [
+            'https://claude.ai',
+            'https://*.claude.ai',
+            'http://localhost:3001', // Local frontend
+            'http://localhost:3000', // Local dev
+          ];
+
+          // Allow requests with no origin (like mobile apps or curl)
+          if (!origin) return callback(null, true);
+
+          // Check if origin matches any allowed pattern
+          const allowed = allowedOrigins.some(pattern => {
+            if (pattern.includes('*')) {
+              const regex = new RegExp(pattern.replace('*', '.*'));
+              return regex.test(origin);
+            }
+            return pattern === origin;
+          });
+
+          if (allowed) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
+        },
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+        exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
+      }),
+    );
+
     app.use(express.json({ limit: '10mb' }));
+
+    // Well-known endpoints (OAuth discovery) - must be at root level
+    app.get('/.well-known/oauth-authorization-server', (req, res) => {
+      const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
+      res.json({
+        issuer: baseUrl,
+        authorization_endpoint: `${baseUrl}/api/oauth/authorize`,
+        token_endpoint: `${baseUrl}/api/oauth/token`,
+        token_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
+        token_endpoint_auth_signing_alg_values_supported: ['RS256'],
+        userinfo_endpoint: `${baseUrl}/api/oauth/userinfo`,
+        jwks_uri: `${baseUrl}/api/oauth/jwks`,
+        registration_endpoint: `${baseUrl}/api/oauth/register`,
+        scopes_supported: ['read', 'write', 'profile', 'openid'],
+        response_types_supported: ['code'],
+        response_modes_supported: ['query'],
+        grant_types_supported: ['authorization_code', 'refresh_token'],
+        code_challenge_methods_supported: ['S256'],
+        revocation_endpoint: `${baseUrl}/api/oauth/revoke`,
+        revocation_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
+        introspection_endpoint: `${baseUrl}/api/oauth/introspect`,
+        introspection_endpoint_auth_methods_supported: ['client_secret_post', 'bearer'],
+        service_documentation: 'https://github.com/yourusername/federated-memory',
+        ui_locales_supported: ['en-US'],
+      });
+    });
+
+    app.get('/.well-known/oauth-protected-resource', (req, res) => {
+      const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
+      res.json({
+        resource_server: baseUrl,
+        authorization_servers: [baseUrl],
+        scopes_supported: ['read', 'write', 'profile'],
+        bearer_methods_supported: ['header', 'query'],
+        resource_documentation: 'https://github.com/yourusername/federated-memory',
+      });
+    });
 
     // REST API routes
     app.use('/api', restApiRoutes);
@@ -78,25 +155,24 @@ async function main() {
       server.close(() => {
         logger.info('HTTP server closed');
       });
-      
+
       await moduleLoader.cleanup();
       await cmiService.cleanup();
       await prisma.$disconnect();
-      
+
       if (redis) {
         await redis.disconnect();
       }
-      
+
       process.exit(0);
     });
-
   } catch (error) {
     logger.error('Failed to start server:', error);
     process.exit(1);
   }
 }
 
-main().catch((error) => {
+main().catch(error => {
   logger.error('Unhandled error:', error);
   process.exit(1);
 });

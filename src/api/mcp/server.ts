@@ -39,11 +39,7 @@ export function createMcpServer(userId?: string) {
     },
     async ({ query, limit, moduleId }) => {
       try {
-        const results = await cmiService.search(
-          userId || 'anonymous',
-          query,
-          { limit, moduleId }
-        );
+        const results = await cmiService.search(userId || 'anonymous', query, { limit, moduleId });
 
         const formattedResults = results.map((r: any) => ({
           id: r.id,
@@ -73,7 +69,7 @@ export function createMcpServer(userId?: string) {
           isError: true,
         };
       }
-    }
+    },
   );
 
   // Register memory storage tool
@@ -85,25 +81,15 @@ export function createMcpServer(userId?: string) {
       inputSchema: {
         content: z.string().describe('Memory content'),
         metadata: z.record(z.any()).optional().describe('Memory metadata'),
-        moduleId: completable(
-          z.string().optional(),
-          async (value) => {
-            const modules = await moduleRegistry.listModules();
-            return modules
-              .map(m => m.id)
-              .filter(id => id.startsWith(value || ''));
-          }
-        ).describe('Target module (auto-routed if not specified)'),
+        moduleId: completable(z.string().optional(), async value => {
+          const modules = await moduleRegistry.listModules();
+          return modules.map(m => m.id).filter(id => id.startsWith(value || ''));
+        }).describe('Target module (auto-routed if not specified)'),
       },
     },
     async ({ content, metadata, moduleId }) => {
       try {
-        const memoryId = await cmiService.store(
-          userId || 'anonymous',
-          content,
-          metadata,
-          moduleId
-        );
+        const memoryId = await cmiService.store(userId || 'anonymous', content, metadata, moduleId);
 
         return {
           content: [
@@ -114,21 +100,21 @@ export function createMcpServer(userId?: string) {
           ],
         };
       } catch (error) {
-        logger.error('MCP store error', { 
+        logger.error('MCP store error', {
           error,
           errorMessage: error instanceof Error ? error.message : String(error),
           errorStack: error instanceof Error ? error.stack : undefined,
           userId: userId || 'anonymous',
           content: content.substring(0, 100),
-          moduleId
+          moduleId,
         });
-        
+
         // Check if it's actually a success that's being reported as error
         if (error instanceof Error && error.message.includes('Memory stored successfully')) {
           // Extract memory ID from error message if possible
           const idMatch = error.message.match(/Memory stored successfully: ([\w-]+)/);
           const memoryId = idMatch ? idMatch[1] : 'unknown';
-          
+
           return {
             content: [
               {
@@ -138,7 +124,7 @@ export function createMcpServer(userId?: string) {
             ],
           };
         }
-        
+
         return {
           content: [
             {
@@ -149,7 +135,7 @@ export function createMcpServer(userId?: string) {
           isError: true,
         };
       }
-    }
+    },
   );
 
   // Register memory retrieval tool
@@ -189,7 +175,7 @@ export function createMcpServer(userId?: string) {
           isError: true,
         };
       }
-    }
+    },
   );
 
   // Register list modules tool
@@ -230,7 +216,7 @@ export function createMcpServer(userId?: string) {
           isError: true,
         };
       }
-    }
+    },
   );
 
   // Register module stats tool
@@ -240,7 +226,11 @@ export function createMcpServer(userId?: string) {
       title: 'Get Module Statistics',
       description: 'Get statistics for a specific module',
       inputSchema: {
-        moduleId: z.string().describe('Module ID (required) - one of: technical, personal, work, learning, communication, creative'),
+        moduleId: z
+          .string()
+          .describe(
+            'Module ID (required) - one of: technical, personal, work, learning, communication, creative',
+          ),
       },
     },
     async ({ moduleId }) => {
@@ -279,7 +269,7 @@ export function createMcpServer(userId?: string) {
           isError: true,
         };
       }
-    }
+    },
   );
 
   // Register memory prompt
@@ -295,11 +285,7 @@ export function createMcpServer(userId?: string) {
     },
     async ({ topic, maxResults }) => {
       const limit = parseInt(maxResults || '5', 10);
-      const results = await cmiService.search(
-        userId || 'anonymous',
-        topic || '',
-        { limit }
-      );
+      const results = await cmiService.search(userId || 'anonymous', topic || '', { limit });
 
       const summaryText = results
         .map((r: any, i: number) => `${i + 1}. [${r.moduleId}] ${r.content.substring(0, 100)}...`)
@@ -316,7 +302,7 @@ export function createMcpServer(userId?: string) {
           },
         ],
       };
-    }
+    },
   );
 
   return server;
@@ -327,12 +313,14 @@ export function createMcpApp() {
   const app = express();
 
   // Enable CORS for browser clients
-  app.use(cors({
-    origin: ['http://localhost:*', 'https://claude.ai', 'https://*.claude.ai'],
-    credentials: true,
-    exposedHeaders: ['Mcp-Session-Id'],
-    allowedHeaders: ['Content-Type', 'Mcp-Session-Id', 'Authorization', 'Last-Event-ID'],
-  }));
+  app.use(
+    cors({
+      origin: ['http://localhost:*', 'https://claude.ai', 'https://*.claude.ai'],
+      credentials: true,
+      exposedHeaders: ['Mcp-Session-Id'],
+      allowedHeaders: ['Content-Type', 'Mcp-Session-Id', 'Authorization', 'Last-Event-ID'],
+    }),
+  );
 
   app.use(express.json());
 
@@ -349,12 +337,20 @@ export function createMcpApp() {
       // Create new session
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
-        onsessioninitialized: (id) => {
+        onsessioninitialized: id => {
           logger.info('MCP session initialized', { sessionId: id });
           transports.set(id, transport);
         },
         enableDnsRebindingProtection: true,
-        allowedHosts: ['127.0.0.1', 'localhost', 'localhost:3001', 'localhost:3000'],
+        allowedHosts: [
+          '127.0.0.1',
+          'localhost',
+          'localhost:3001',
+          'localhost:3000',
+          'claude.ai',
+          '*.claude.ai',
+          process.env.BASE_URL?.replace(/^https?:\/\//, '') || '',
+        ].filter(Boolean),
       });
 
       transport.onclose = () => {
@@ -434,6 +430,33 @@ export function createMcpApp() {
         resources: true,
         prompts: true,
         sampling: false,
+      },
+    });
+  });
+
+  // MCP server info endpoint (required for remote MCP servers)
+  app.get('/sse/info', (_req: Request, res: Response) => {
+    res.json({
+      mcp: {
+        version: '2025-03-26',
+        serverInfo: {
+          name: 'federated-memory',
+          version: '1.0.0',
+          description: 'Distributed memory system for LLMs with intelligent routing',
+        },
+        capabilities: {
+          tools: true,
+          resources: true,
+          prompts: true,
+          sampling: false,
+        },
+      },
+      auth: {
+        type: 'oauth2',
+        authorization_endpoint: `${process.env.BASE_URL || 'http://localhost:3000'}/api/oauth/authorize`,
+        token_endpoint: `${process.env.BASE_URL || 'http://localhost:3000'}/api/oauth/token`,
+        scopes_supported: ['read', 'write', 'profile'],
+        code_challenge_methods_supported: ['S256'],
       },
     });
   });
