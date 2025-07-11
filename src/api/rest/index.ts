@@ -7,12 +7,16 @@ import healthRoutes from './health.routes';
 import oauthRoutes from './oauth.routes';
 import authRoutes from './auth.routes';
 import mcpOauthRoutes from './mcp-oauth.routes';
+import configRoutes from './config.routes';
 import { apiKeysRoutes } from '../routes/api-keys.routes';
 
 const router = Router();
 
 // Health routes (no auth required)
 router.use('/health', healthRoutes);
+
+// Config routes (no auth required - for MCP clients)
+router.use('/config', configRoutes);
 
 // OAuth routes (mixed auth - some endpoints need session auth)
 router.use('/oauth', oauthRoutes);

@@ -92,13 +92,56 @@ async function main() {
 
     app.use(express.json({ limit: '10mb' }));
 
-    // Handle OPTIONS preflight requests for well-known endpoints
-    app.options('/.well-known/*', (req, res) => {
+    // Handle OPTIONS preflight requests
+    app.options(['/.well-known/*', '/config'], (req, res) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
       res.setHeader('Access-Control-Max-Age', '86400');
       res.status(204).send();
+    });
+
+    // Config endpoint for MCP clients (root level)
+    app.get('/config', (req, res) => {
+      try {
+        const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
+        
+        // Set CORS headers
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        
+        res.json({
+          mcp: {
+            version: '1.0.0',
+            serverInfo: {
+              name: 'federated-memory',
+              version: '1.0.0',
+              description: 'Distributed memory system for LLMs with intelligent routing',
+            },
+            capabilities: {
+              tools: true,
+              resources: false,
+              prompts: true,
+              sampling: false,
+            },
+            transport: {
+              type: 'streamable-http',
+              endpoint: `${baseUrl}/mcp`,
+            },
+            auth: {
+              type: 'oauth2',
+              authorization_endpoint: `${baseUrl}/api/oauth/authorize`,
+              token_endpoint: `${baseUrl}/api/oauth/token`,
+              scopes_supported: ['read', 'write', 'profile'],
+              code_challenge_methods_supported: ['S256'],
+            },
+          },
+        });
+      } catch (error) {
+        logger.error('Error serving config endpoint', { error });
+        res.status(500).json({ error: 'Internal server error' });
+      }
     });
 
     // Well-known endpoints (OAuth discovery) - must be at root level
