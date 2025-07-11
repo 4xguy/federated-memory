@@ -1,0 +1,297 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "description": "Reference map documenting all cross-references between GLOBAL_DESIGN.json and VIEW files",
+    "generated": "2025-01-24",
+    "totalReferences": 87
+  },
+  "globalComponents": {
+    "navigation.primary": {
+      "description": "Main navigation bar component",
+      "usedIn": [
+        "VIEW_HOMEPAGE.json#/layout/navigation",
+        "VIEW_RESEARCH.json#/layout/navigation",
+        "VIEW_BIGMEMORY_PRODUCT.json#/layout/navigation"
+      ],
+      "subComponents": ["logo", "links", "cta"]
+    },
+    "buttons": {
+      "primary": {
+        "description": "Primary action button style",
+        "usedIn": [
+          "VIEW_HOMEPAGE.json#/layout/hero/content/left/elements/[2]/items/[0]/cta/style",
+          "VIEW_LOGIN.json#/layout/container/content/form/elements/[4]/style",
+          "VIEW_RESEARCH.json#/layout/ctaSection/content/buttons/items/[0]/style",
+          "VIEW_BIGMEMORY_PRODUCT.json#/layout/hero/content/left/elements/[3]/style",
+          "VIEW_BIGMEMORY_PRODUCT.json#/layout/usageSection/content/usageGrid/items/[1]/demoButton/style",
+          "VIEW_BIGMEMORY_PRODUCT.json#/layout/ctaSection/content/cta/style"
+        ]
+      },
+      "secondary": {
+        "description": "Secondary action button style",
+        "usedIn": [
+          "VIEW_HOMEPAGE.json#/layout/hero/content/left/elements/[2]/items/[1]/cta/style",
+          "VIEW_LOGIN.json#/layout/container/content/form/elements/[0]/style",
+          "VIEW_RESEARCH.json#/layout/ctaSection/content/buttons/items/[1]/style"
+        ]
+      },
+      "ghost": {
+        "description": "Ghost button style",
+        "usedIn": [
+          "VIEW_HOMEPAGE.json#/layout/modelComparison/content/cta/style"
+        ]
+      }
+    },
+    "cards": {
+      "base": {
+        "description": "Base card component",
+        "extendedBy": [
+          "cards.interactive",
+          "cards.feature",
+          "VIEW_HOMEPAGE.json#/components/heroCard"
+        ]
+      },
+      "interactive": {
+        "description": "Interactive card with hover effects",
+        "usedIn": [
+          "VIEW_HOMEPAGE.json#/layout/modelComparison/content/modelCards/items"
+        ]
+      },
+      "feature": {
+        "description": "Feature showcase card",
+        "extendedBy": [
+          "VIEW_RESEARCH.json#/components/featureCard"
+        ]
+      }
+    },
+    "typography": {
+      "heading1": {
+        "description": "Primary heading style",
+        "usedIn": [
+          "VIEW_HOMEPAGE.json#/layout/hero/content/left/elements/[0]/style",
+          "VIEW_HOMEPAGE.json#/layout/hero/content/left/elements/[1]/style",
+          "VIEW_HOMEPAGE.json#/layout/videoSection/content/overlay/content/title/style",
+          "VIEW_RESEARCH.json#/layout/hero/content/heading/style"
+        ]
+      },
+      "heading2": {
+        "description": "Secondary heading style",
+        "usedIn": [
+          "VIEW_HOMEPAGE.json#/layout/modelComparison/content/heading/style",
+          "VIEW_LOGIN.json#/layout/container/content/heading/style",
+          "VIEW_RESEARCH.json#/layout/publicationsSection/content/heading/style",
+          "VIEW_RESEARCH.json#/layout/ctaSection/content/heading/style"
+        ]
+      },
+      "heading3": {
+        "description": "Tertiary heading style",
+        "usedIn": [
+          "VIEW_RESEARCH.json#/components/featureCard/title"
+        ]
+      },
+      "body": {
+        "description": "Body text style",
+        "usedIn": [
+          "VIEW_HOMEPAGE.json#/layout/modelComparison/content/description/style",
+          "VIEW_HOMEPAGE.json#/layout/videoSection/content/overlay/content/quote/style",
+          "VIEW_LOGIN.json#/layout/container/content/tagline/style",
+          "VIEW_RESEARCH.json#/layout/hero/content/description/style",
+          "VIEW_RESEARCH.json#/components/publicationRow/title"
+        ]
+      },
+      "caption": {
+        "description": "Caption text style",
+        "usedIn": [
+          "VIEW_HOMEPAGE.json#/layout/videoSection/content/overlay/content/attribution/style",
+          "VIEW_LOGIN.json#/layout/container/content/footer/content/[0]/style",
+          "VIEW_LOGIN.json#/components/divider/text",
+          "VIEW_RESEARCH.json#/components/publicationRow/category",
+          "VIEW_RESEARCH.json#/components/publicationRow/date"
+        ]
+      }
+    },
+    "forms": {
+      "input": {
+        "description": "Form input field style",
+        "usedIn": [
+          "VIEW_LOGIN.json#/layout/container/content/form/elements/[2]/style"
+        ]
+      }
+    },
+    "footer": {
+      "description": "Global footer component",
+      "usedIn": [
+        "VIEW_HOMEPAGE.json#/layout/footer",
+        "VIEW_RESEARCH.json#/layout/footer",
+        "VIEW_BIGMEMORY_PRODUCT.json#/layout/footer"
+      ],
+      "subComponents": ["container", "wrapper", "column", "heading", "link", "copyright"]
+    },
+    "icons": {
+      "play": {
+        "description": "Play button icon style",
+        "usedIn": [
+          "VIEW_HOMEPAGE.json#/layout/videoSection/content/video/playButton"
+        ]
+      }
+    },
+    "patterns": {
+      "featureGrid": {
+        "description": "Feature grid layout pattern",
+        "usedIn": [
+          "VIEW_RESEARCH.json#/layout/featuresGrid/content"
+        ]
+      }
+    }
+  },
+  "tokenReferences": {
+    "colors": {
+      "totalReferences": 142,
+      "mostUsed": [
+        "colors.background.primary",
+        "colors.text.primary",
+        "colors.neutral.black",
+        "colors.neutral.white",
+        "colors.border.light"
+      ]
+    },
+    "typography": {
+      "totalReferences": 68,
+      "mostUsed": [
+        "typography.fontSizes.base",
+        "typography.fontWeights.semibold",
+        "typography.lineHeights.relaxed"
+      ]
+    },
+    "spacing": {
+      "totalReferences": 93,
+      "mostUsed": [
+        "spacing.4",
+        "spacing.6",
+        "spacing.8",
+        "spacing.12",
+        "spacing.16"
+      ]
+    },
+    "borderRadius": {
+      "totalReferences": 24,
+      "mostUsed": [
+        "borderRadius.lg",
+        "borderRadius.2xl",
+        "borderRadius.3xl"
+      ]
+    },
+    "shadows": {
+      "totalReferences": 8,
+      "mostUsed": [
+        "shadows.md",
+        "shadows.lg"
+      ]
+    },
+    "transitions": {
+      "totalReferences": 15,
+      "mostUsed": [
+        "transitions.base",
+        "transitions.fast"
+      ]
+    }
+  },
+  "viewSpecificComponents": {
+    "VIEW_HOMEPAGE": {
+      "heroCard": {
+        "extends": "GLOBAL_DESIGN.json#/components/cards/base",
+        "description": "Homepage hero section card variant"
+      }
+    },
+    "VIEW_RESEARCH": {
+      "featureCard": {
+        "extends": "GLOBAL_DESIGN.json#/components/cards/feature",
+        "description": "Research page feature card variant"
+      },
+      "publicationRow": {
+        "description": "Publication list row component"
+      }
+    },
+    "VIEW_LOGIN": {
+      "divider": {
+        "description": "OR divider component for login form"
+      },
+      "oauthButton": {
+        "extends": "GLOBAL_DESIGN.json#/components/buttons/secondary",
+        "description": "OAuth provider button variant"
+      }
+    },
+    "VIEW_BIGMEMORY_PRODUCT": {
+      "benefitCard": {
+        "description": "Three-column benefit showcase cards"
+      },
+      "usageCard": {
+        "extends": "GLOBAL_DESIGN.json#/components/cards/base",
+        "description": "Usage scenario card with categories"
+      },
+      "projectDemo": {
+        "extends": "GLOBAL_DESIGN.json#/components/cards/base",
+        "description": "Interactive project creation demo"
+      },
+      "releaseRow": {
+        "description": "Release announcement table row"
+      },
+      "testimonialCard": {
+        "description": "User testimonial carousel card"
+      },
+      "articleCard": {
+        "extends": "GLOBAL_DESIGN.json#/components/cards/base",
+        "description": "Blog/article preview card"
+      },
+      "searchBar": {
+        "description": "Interactive search with example suggestions"
+      }
+    }
+  },
+  "responsiveOverrides": {
+    "mobile": {
+      "VIEW_HOMEPAGE": [
+        "hero.content",
+        "modelComparison.modelCards"
+      ],
+      "VIEW_RESEARCH": [
+        "publicationRow",
+        "ctaSection.buttons"
+      ],
+      "VIEW_LOGIN": [
+        "sidebar",
+        "container"
+      ]
+    }
+  },
+  "assumptions": {
+    "colorExtraction": [
+      "Brand colors extracted from visual hierarchy and prominence",
+      "Semantic colors (coral, mint, lavender) derived from feature cards",
+      "Background beige tone approximated as #F5F3F0"
+    ],
+    "spacing": [
+      "Spacing scale follows 4px base unit system",
+      "Larger spacing values extrapolated from visual proportions"
+    ],
+    "typography": [
+      "Font family assumed as Inter based on modern web standards",
+      "Font sizes scaled proportionally from base 16px"
+    ],
+    "interactions": [
+      "Hover states inferred from modern web patterns",
+      "Transition timings standardized for consistency"
+    ],
+    "accessibility": [
+      "WCAG AA compliance assumed for all interactive elements",
+      "Focus states follow standard accessibility patterns"
+    ]
+  },
+  "implementationNotes": {
+    "referenceFormat": "All $ref values use JSON Pointer format (RFC 6901)",
+    "overridePattern": "Component overrides use 'extends' key followed by property modifications",
+    "responsiveStrategy": "Mobile-first with progressive enhancement for larger screens",
+    "stateManagement": "Component states defined separately from base styles",
+    "tokenResolution": "Token references use $ prefix for dynamic value resolution"
+  }
+}

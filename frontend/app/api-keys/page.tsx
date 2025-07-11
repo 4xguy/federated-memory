@@ -26,6 +26,14 @@ export default function ApiKeysPage() {
   const [keyName, setKeyName] = useState('')
   const [creating, setCreating] = useState(false)
 
+  // Debug logging
+  useEffect(() => {
+    console.log('=== Environment Debug ===');
+    console.log('NEXT_PUBLIC_API_URL from env:', process.env.NEXT_PUBLIC_API_URL);
+    console.log('API URL from getApiUrl():', getApiUrl());
+    console.log('All NEXT_PUBLIC vars:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC')));
+  }, [])
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login')

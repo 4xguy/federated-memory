@@ -1,0 +1,255 @@
+{
+  "metadata": {
+    "viewName": "Research",
+    "route": "/research",
+    "title": "Research - BigMemory",
+    "description": "AI memory research and publications that put persistence at the frontier",
+    "globalDesignRef": "GLOBAL_DESIGN.json"
+  },
+  "layout": {
+    "navigation": {
+      "$ref": "GLOBAL_DESIGN.json#/components/navigation/primary"
+    },
+    "hero": {
+      "type": "centered",
+      "background": "$colors.background.primary",
+      "padding": {
+        "top": "$spacing.32",
+        "bottom": "$spacing.16"
+      },
+      "content": {
+        "heading": {
+          "text": "At BigMemory, we build AI memory systems to serve humanity's long-term well-being.",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/heading1",
+            "textAlign": "center",
+            "maxWidth": "800px",
+            "margin": "0 auto"
+          }
+        },
+        "description": {
+          "text": "While no one can foresee every outcome AI will have on society, we do know that designing powerful memory technologies requires both bold steps forward and intentional pauses to consider the effects.\n\nThat's why we focus on building tools with human benefit at their foundation, like BigMemory. Through our daily research, policy work, and product design, we aim to show what responsible AI memory development looks like in practice.",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
+            "textAlign": "left",
+            "maxWidth": "800px",
+            "margin": "0 auto",
+            "marginTop": "$spacing.8"
+          }
+        }
+      }
+    },
+    "featuresGrid": {
+      "type": "grid",
+      "background": "$colors.background.primary",
+      "padding": {
+        "x": "$spacing.6",
+        "y": "$spacing.16"
+      },
+      "content": {
+        "$ref": "GLOBAL_DESIGN.json#/patterns/featureGrid",
+        "items": [
+          {
+            "type": "featureCard",
+            "icon": {
+              "type": "illustration",
+              "name": "safety-core-views"
+            },
+            "title": "Core Views on AI Safety",
+            "background": "$colors.brand.primaryLight",
+            "link": "/research/core-views"
+          },
+          {
+            "type": "featureCard",
+            "icon": {
+              "type": "illustration",
+              "name": "responsible-scaling"
+            },
+            "title": "BigMemory's Responsible Scaling Policy",
+            "background": "$colors.semantic.mint",
+            "link": "/research/rsp"
+          },
+          {
+            "type": "featureCard",
+            "icon": {
+              "type": "illustration",
+              "name": "claude-academy"
+            },
+            "title": "BigMemory Academy: Learn to build with BigMemory",
+            "background": "$colors.semantic.lavender",
+            "link": "/academy"
+          }
+        ]
+      }
+    },
+    "publicationsSection": {
+      "type": "section",
+      "background": "$colors.background.primary",
+      "padding": {
+        "x": "$spacing.6",
+        "y": "$spacing.16"
+      },
+      "content": {
+        "heading": {
+          "text": "Featured",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/heading2",
+            "marginBottom": "$spacing.12"
+          }
+        },
+        "table": {
+          "type": "publicationsList",
+          "items": [
+            {
+              "title": "Tracing the thoughts of a large language model",
+              "category": "Interpretability",
+              "date": "Mar 27, 2025",
+              "link": "/research/tracing-thoughts"
+            },
+            {
+              "title": "BigMemory Economic Index",
+              "category": "Societal impacts",
+              "date": "Mar 27, 2025",
+              "link": "/research/economic-index"
+            },
+            {
+              "title": "BigMemory 3.7 Pro and BigMemory MCP",
+              "category": "Product",
+              "date": "Feb 24, 2025",
+              "link": "/research/claude-3.7"
+            },
+            {
+              "title": "BigMemory's extended retention",
+              "category": "Product",
+              "date": "Feb 24, 2025",
+              "link": "/research/extended-thinking"
+            },
+            {
+              "title": "Alignment faking in large language models",
+              "category": "Alignment science",
+              "date": "Dec 18, 2024",
+              "link": "/research/alignment-faking"
+            },
+            {
+              "title": "Introducing the Model Context Protocol",
+              "category": "Product",
+              "date": "Nov 25, 2024",
+              "link": "/research/mcp"
+            }
+          ]
+        }
+      }
+    },
+    "ctaSection": {
+      "type": "centered",
+      "background": "$colors.background.primary",
+      "padding": {
+        "x": "$spacing.6",
+        "y": "$spacing.24"
+      },
+      "content": {
+        "heading": {
+          "text": "Want to help us build the future of AI memory?",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/heading2",
+            "textAlign": "center"
+          }
+        },
+        "buttons": {
+          "display": "flex",
+          "gap": "$spacing.4",
+          "justifyContent": "center",
+          "marginTop": "$spacing.8",
+          "items": [
+            {
+              "text": "See open roles",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/buttons/primary"
+              }
+            },
+            {
+              "text": "Speak with sales",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/buttons/secondary"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "footer": {
+      "$ref": "GLOBAL_DESIGN.json#/components/footer"
+    }
+  },
+  "components": {
+    "featureCard": {
+      "extends": "GLOBAL_DESIGN.json#/components/cards/feature",
+      "height": "280px",
+      "display": "flex",
+      "flexDirection": "column",
+      "justifyContent": "space-between",
+      "alignItems": "flex-start",
+      "icon": {
+        "marginBottom": "auto"
+      },
+      "title": {
+        "$ref": "GLOBAL_DESIGN.json#/components/typography/heading3",
+        "marginTop": "$spacing.6"
+      }
+    },
+    "publicationRow": {
+      "display": "grid",
+      "gridTemplateColumns": "1fr 200px 120px",
+      "gap": "$spacing.4",
+      "padding": {
+        "y": "$spacing.4"
+      },
+      "borderBottom": "1px solid $colors.border.light",
+      "alignItems": "center",
+      "title": {
+        "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
+        "fontWeight": "$typography.fontWeights.medium",
+        "color": "$colors.text.primary"
+      },
+      "category": {
+        "$ref": "GLOBAL_DESIGN.json#/components/typography/caption",
+        "color": "$colors.text.muted"
+      },
+      "date": {
+        "$ref": "GLOBAL_DESIGN.json#/components/typography/caption",
+        "color": "$colors.text.muted",
+        "textAlign": "right"
+      },
+      "hover": {
+        "background": "$colors.background.hover"
+      }
+    }
+  },
+  "overrides": {
+    "mobile": {
+      "publicationRow": {
+        "gridTemplateColumns": "1fr",
+        "gap": "$spacing.2"
+      },
+      "ctaSection.buttons": {
+        "flexDirection": "column",
+        "width": "100%"
+      }
+    }
+  },
+  "interactions": {
+    "featureCards": {
+      "hover": {
+        "transform": "translateY(-4px)",
+        "boxShadow": "$shadows.lg",
+        "transition": "$transitions.base"
+      }
+    },
+    "publicationRows": {
+      "hover": {
+        "cursor": "pointer",
+        "background": "$colors.background.hover"
+      }
+    }
+  }
+}

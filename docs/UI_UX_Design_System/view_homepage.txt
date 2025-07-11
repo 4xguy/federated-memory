@@ -1,0 +1,258 @@
+{
+  "metadata": {
+    "viewName": "Homepage",
+    "route": "/",
+    "title": "BigMemory - AI Memory Research and Products",
+    "description": "Homepage showcasing BigMemory AI and our memory persistence mission",
+    "globalDesignRef": "GLOBAL_DESIGN.json"
+  },
+  "layout": {
+    "navigation": {
+      "$ref": "GLOBAL_DESIGN.json#/components/navigation/primary"
+    },
+    "hero": {
+      "type": "split",
+      "background": "$colors.background.primary",
+      "padding": {
+        "top": "$spacing.32",
+        "bottom": "$spacing.24"
+      },
+      "content": {
+        "left": {
+          "width": "50%",
+          "padding": "$spacing.8",
+          "elements": [
+            {
+              "type": "heading",
+              "content": "AI memory research and products",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/typography/heading1",
+                "fontSize": "$typography.fontSizes.7xl"
+              }
+            },
+            {
+              "type": "heading",
+              "content": "that put persistence at the frontier",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/typography/heading1",
+                "fontSize": "$typography.fontSizes.5xl",
+                "marginTop": "$spacing.2"
+              }
+            },
+            {
+              "type": "grid",
+              "columns": 2,
+              "gap": "$spacing.6",
+              "marginTop": "$spacing.12",
+              "items": [
+                {
+                  "type": "card",
+                  "label": "BIGMEMORY AI",
+                  "title": "Meet BigMemory Core",
+                  "description": "BigMemory Core, our most advanced memory system, is now available.",
+                  "cta": {
+                    "text": "Try BigMemory",
+                    "style": {
+                      "$ref": "GLOBAL_DESIGN.json#/components/buttons/primary",
+                      "width": "100%"
+                    }
+                  }
+                },
+                {
+                  "type": "card",
+                  "label": "API",
+                  "title": "Build with BigMemory",
+                  "description": "Create AI-powered applications with persistent memory using BigMemory.",
+                  "cta": {
+                    "text": "Learn more",
+                    "style": {
+                      "$ref": "GLOBAL_DESIGN.json#/components/buttons/secondary",
+                      "width": "100%"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "right": {
+          "width": "50%",
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "graphic": {
+            "type": "illustration",
+            "alt": "Neural network visualization with hand interaction",
+            "style": {
+              "maxWidth": "500px",
+              "height": "auto"
+            }
+          }
+        }
+      }
+    },
+    "modelComparison": {
+      "background": "$colors.background.card",
+      "borderRadius": "$borderRadius.3xl",
+      "padding": "$spacing.16",
+      "margin": {
+        "x": "$spacing.6",
+        "y": "$spacing.24"
+      },
+      "content": {
+        "heading": {
+          "text": "BigMemory Core and BigMemory Pro",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/heading2"
+          }
+        },
+        "description": {
+          "text": "Our most powerful memory systems yet, pushing the frontier for AI memory and context retention—enabling BigMemory to maintain context across all your AI interactions.",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
+            "maxWidth": "800px",
+            "margin": "0 auto",
+            "marginTop": "$spacing.4"
+          }
+        },
+        "cta": {
+          "text": "Read announcement",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/buttons/ghost",
+            "marginTop": "$spacing.8"
+          }
+        },
+        "modelCards": {
+          "display": "grid",
+          "gridTemplateColumns": "repeat(2, 1fr)",
+          "gap": "$spacing.6",
+          "marginTop": "$spacing.12",
+          "items": [
+            {
+              "label": "Model details",
+              "title": "BigMemory Core",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/cards/interactive",
+                "background": "$colors.brand.primaryLight"
+              }
+            },
+            {
+              "label": "Model details",
+              "title": "BigMemory Pro",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/cards/interactive",
+                "background": "$colors.semantic.lavender"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "videoSection": {
+      "type": "fullWidth",
+      "background": "$colors.neutral.black",
+      "borderRadius": "$borderRadius.3xl",
+      "margin": {
+        "x": "$spacing.6",
+        "y": "$spacing.0"
+      },
+      "overflow": "hidden",
+      "content": {
+        "video": {
+          "thumbnail": "societal-impacts-thumbnail.jpg",
+          "playButton": {
+            "$ref": "GLOBAL_DESIGN.json#/components/icons/play",
+            "size": "$icons.sizes.xl"
+          }
+        },
+        "overlay": {
+          "position": "absolute",
+          "bottom": "$spacing.12",
+          "left": "$spacing.12",
+          "content": {
+            "title": {
+              "text": "Societal Impacts of AI",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/typography/heading1",
+                "color": "$colors.neutral.white"
+              }
+            },
+            "quote": {
+              "text": "If knowledge is power and we're building machines that have more knowledge than us, what will happen between us and the machines?",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
+                "color": "$colors.neutral.white",
+                "fontSize": "$typography.fontSizes.lg",
+                "maxWidth": "600px",
+                "marginTop": "$spacing.4"
+              }
+            },
+            "attribution": {
+              "text": "Deep Ganguli\nResearch Lead, Societal Impacts",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/typography/caption",
+                "color": "$colors.neutral.gray.400",
+                "marginTop": "$spacing.6"
+              }
+            }
+          }
+        }
+      }
+    },
+    "footer": {
+      "$ref": "GLOBAL_DESIGN.json#/components/footer"
+    }
+  },
+  "components": {
+    "heroCard": {
+      "extends": "GLOBAL_DESIGN.json#/components/cards/base",
+      "background": "$colors.background.secondary",
+      "border": "1px solid $colors.border.light",
+      "label": {
+        "fontSize": "$typography.fontSizes.xs",
+        "fontWeight": "$typography.fontWeights.bold",
+        "color": "$colors.text.muted",
+        "textTransform": "uppercase",
+        "letterSpacing": "$typography.letterSpacing.wider"
+      },
+      "title": {
+        "fontSize": "$typography.fontSizes.xl",
+        "fontWeight": "$typography.fontWeights.bold",
+        "color": "$colors.text.primary",
+        "marginTop": "$spacing.2"
+      },
+      "description": {
+        "fontSize": "$typography.fontSizes.base",
+        "color": "$colors.text.secondary",
+        "marginTop": "$spacing.3",
+        "marginBottom": "$spacing.6"
+      }
+    }
+  },
+  "overrides": {
+    "mobile": {
+      "hero.content": {
+        "flexDirection": "column",
+        "left.width": "100%",
+        "right.display": "none"
+      },
+      "modelComparison.modelCards": {
+        "gridTemplateColumns": "1fr"
+      }
+    }
+  },
+  "interactions": {
+    "heroCards": {
+      "hover": {
+        "transform": "translateY(-2px)",
+        "boxShadow": "$shadows.md"
+      }
+    },
+    "playButton": {
+      "hover": {
+        "transform": "scale(1.1)",
+        "transition": "$transitions.base"
+      }
+    }
+  }
+}

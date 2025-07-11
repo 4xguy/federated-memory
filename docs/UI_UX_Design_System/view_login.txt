@@ -1,0 +1,245 @@
+{
+  "metadata": {
+    "viewName": "BigMemory Login",
+    "route": "/login",
+    "title": "BigMemory - Login",
+    "description": "Sign in to BigMemory",
+    "globalDesignRef": "GLOBAL_DESIGN.json"
+  },
+  "layout": {
+    "type": "centered",
+    "background": "$colors.background.primary",
+    "minHeight": "100vh",
+    "display": "flex",
+    "alignItems": "center",
+    "justifyContent": "center",
+    "container": {
+      "maxWidth": "400px",
+      "width": "100%",
+      "padding": "$spacing.6",
+      "content": {
+        "logo": {
+          "type": "brand",
+          "name": "BigMemory",
+          "size": "48px",
+          "marginBottom": "$spacing.12",
+          "textAlign": "center"
+        },
+        "heading": {
+          "text": "Your memories, persisted",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/heading2",
+            "textAlign": "center",
+            "marginBottom": "$spacing.2"
+          }
+        },
+        "tagline": {
+          "text": "Privacy-first memory system that helps you remember with confidence.",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
+            "textAlign": "center",
+            "marginBottom": "$spacing.8"
+          }
+        },
+        "form": {
+          "type": "loginForm",
+          "elements": [
+            {
+              "type": "button",
+              "variant": "oauth",
+              "provider": "google",
+              "text": "Continue with Google",
+              "icon": "google",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/buttons/secondary",
+                "width": "100%",
+                "marginBottom": "$spacing.4",
+                "justifyContent": "center",
+                "gap": "$spacing.2"
+              }
+            },
+            {
+              "type": "divider",
+              "text": "OR",
+              "style": {
+                "margin": {
+                  "y": "$spacing.6"
+                }
+              }
+            },
+            {
+              "type": "input",
+              "placeholder": "Enter your personal or work email",
+              "inputType": "email",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/forms/input",
+                "width": "100%",
+                "marginBottom": "$spacing.6"
+              }
+            },
+            {
+              "type": "button",
+              "text": "Continue with email",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/buttons/primary",
+                "width": "100%"
+              }
+            }
+          ]
+        },
+        "footer": {
+          "type": "text",
+          "content": [
+            {
+              "text": "By continuing, you agree to BigMemory's ",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/typography/caption",
+                "textAlign": "center"
+              }
+            },
+            {
+              "text": "Consumer Terms",
+              "type": "link",
+              "href": "/terms",
+              "style": {
+                "color": "$colors.text.primary",
+                "textDecoration": "underline"
+              }
+            },
+            {
+              "text": " and acknowledge our ",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/typography/caption"
+              }
+            },
+            {
+              "text": "Privacy Policy",
+              "type": "link",
+              "href": "/privacy",
+              "style": {
+                "color": "$colors.text.primary",
+                "textDecoration": "underline"
+              }
+            },
+            {
+              "text": ".",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/typography/caption"
+              }
+            }
+          ],
+          "marginTop": "$spacing.8"
+        },
+        "cta": {
+          "type": "link",
+          "text": "Learn more →",
+          "href": "/about",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
+            "color": "$colors.text.primary",
+            "textAlign": "center",
+            "display": "block",
+            "marginTop": "$spacing.12",
+            "textDecoration": "none",
+            "hover": {
+              "textDecoration": "underline"
+            }
+          }
+        }
+      }
+    },
+    "sidebar": {
+      "type": "feature",
+      "position": "fixed",
+      "right": "$spacing.8",
+      "top": "50%",
+      "transform": "translateY(-50%)",
+      "content": {
+        "badge": {
+          "text": "Identify code optimizations and performance improvements",
+          "style": {
+            "background": "$colors.brand.primaryLight",
+            "padding": "$spacing.3",
+            "borderRadius": "$borderRadius.lg",
+            "fontSize": "$typography.fontSizes.sm",
+            "maxWidth": "280px"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "divider": {
+      "display": "flex",
+      "alignItems": "center",
+      "gap": "$spacing.4",
+      "line": {
+        "flex": 1,
+        "height": "1px",
+        "background": "$colors.border.light"
+      },
+      "text": {
+        "$ref": "GLOBAL_DESIGN.json#/components/typography/caption",
+        "textTransform": "uppercase",
+        "letterSpacing": "$typography.letterSpacing.wider"
+      }
+    },
+    "oauthButton": {
+      "extends": "GLOBAL_DESIGN.json#/components/buttons/secondary",
+      "display": "flex",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "gap": "$spacing.3",
+      "icon": {
+        "size": "20px"
+      }
+    }
+  },
+  "overrides": {
+    "mobile": {
+      "sidebar": {
+        "display": "none"
+      },
+      "container": {
+        "padding": "$spacing.4"
+      }
+    }
+  },
+  "interactions": {
+    "form": {
+      "validation": {
+        "email": {
+          "required": true,
+          "pattern": "email"
+        }
+      },
+      "submit": {
+        "action": "/api/auth/login",
+        "method": "POST"
+      }
+    },
+    "oauth": {
+      "google": {
+        "endpoint": "/api/auth/google",
+        "scope": ["email", "profile"]
+      }
+    }
+  },
+  "states": {
+    "loading": {
+      "button": {
+        "disabled": true,
+        "text": "Loading..."
+      }
+    },
+    "error": {
+      "message": {
+        "style": {
+          "color": "$colors.semantic.error",
+          "fontSize": "$typography.fontSizes.sm",
+          "marginTop": "$spacing.2"
+        }
+      }
+    }
+  }
+}

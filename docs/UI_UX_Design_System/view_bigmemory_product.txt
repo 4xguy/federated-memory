@@ -1,0 +1,642 @@
+{
+  "metadata": {
+    "viewName": "BigMemory Product",
+    "route": "/bigmemory",
+    "title": "Meet BigMemory - Your Persistent AI Memory | BigMemory",
+    "description": "BigMemory helps you remember, organize, and retrieve information. Experience AI memory that amplifies your potential.",
+    "globalDesignRef": "GLOBAL_DESIGN.json"
+  },
+  "layout": {
+    "navigation": {
+      "$ref": "GLOBAL_DESIGN.json#/components/navigation/primary"
+    },
+    "hero": {
+      "type": "split",
+      "background": "$colors.background.primary",
+      "padding": {
+        "top": "$spacing.24",
+        "bottom": "$spacing.16"
+      },
+      "content": {
+        "left": {
+          "width": "60%",
+          "padding": "$spacing.8",
+          "elements": [
+            {
+              "type": "eyebrow",
+              "text": "Claude for individuals",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/typography/caption",
+                "color": "$colors.text.muted",
+                "marginBottom": "$spacing.4"
+              }
+            },
+            {
+              "type": "heading",
+              "content": {
+                "line1": "Meet Claude, your",
+                "line2": "thinking partner"
+              },
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/typography/heading1",
+                "fontSize": "$typography.fontSizes.6xl",
+                "marginBottom": "$spacing.4"
+              }
+            },
+            {
+              "type": "description",
+              "text": "Claude connects to your world and expands what you can do — whether at work or home.",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
+                "fontSize": "$typography.fontSizes.lg",
+                "marginBottom": "$spacing.8"
+              }
+            },
+            {
+              "type": "cta",
+              "text": "Get Claude for free",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/buttons/primary"
+              }
+            }
+          ]
+        },
+        "right": {
+          "width": "40%",
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "graphic": {
+            "type": "illustration",
+            "alt": "Hand interacting with neural network",
+            "style": {
+              "maxWidth": "400px",
+              "height": "auto"
+            }
+          }
+        }
+      }
+    },
+    "askingSection": {
+      "type": "centered",
+      "background": "$colors.background.card",
+      "padding": "$spacing.16",
+      "borderRadius": "$borderRadius.3xl",
+      "margin": {
+        "x": "$spacing.6",
+        "y": "$spacing.16"
+      },
+      "content": {
+        "heading": {
+          "text": "Built now, people are asking Claude to",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/heading3",
+            "textAlign": "center",
+            "marginBottom": "$spacing.8"
+          }
+        },
+        "searchBar": {
+          "type": "interactive",
+          "examples": [
+            "Outline a blog post",
+            "Personalize",
+            "Workout routine"
+          ],
+          "placeholder": "Try asking Claude...",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/forms/input",
+            "maxWidth": "600px",
+            "margin": "0 auto",
+            "padding": {
+              "x": "$spacing.6",
+              "y": "$spacing.4"
+            },
+            "fontSize": "$typography.fontSizes.lg"
+          }
+        }
+      }
+    },
+    "benefitsSection": {
+      "type": "section",
+      "background": "$colors.background.primary",
+      "padding": {
+        "y": "$spacing.24"
+      },
+      "content": {
+        "heading": {
+          "text": "Why Claude?",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/heading2",
+            "textAlign": "center",
+            "marginBottom": "$spacing.16"
+          }
+        },
+        "benefits": {
+          "type": "grid",
+          "columns": 3,
+          "gap": "$spacing.8",
+          "items": [
+            {
+              "icon": "world",
+              "title": "Connects to your world",
+              "description": "Links together your information, tools, and daily activities for seamless collaboration. Search the web, analyze files, and more using Claude."
+            },
+            {
+              "icon": "challenges",
+              "title": "Solves your toughest challenges",
+              "description": "Tackle complex problems, build working code, and brainstorm even your most ambitious ideas in a way no bog jump."
+            },
+            {
+              "icon": "brain",
+              "title": "Amplifies your creative potential",
+              "description": "Your work aligns best with personal privacy with zero ads, adless tools, profile building or training on your conversations with Claude at work, ever."
+            }
+          ]
+        }
+      }
+    },
+    "modelsSection": {
+      "type": "section",
+      "background": "$colors.background.primary",
+      "padding": {
+        "y": "$spacing.16"
+      },
+      "content": {
+        "heading": {
+          "text": "Claude Opus 4 and Sonnet 4",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/heading2",
+            "marginBottom": "$spacing.4"
+          }
+        },
+        "description": {
+          "text": "Our most powerful models yet, pushing the frontier for coding and AI agents—and enabling Claude to handle hours of work across Claude and Claude Code.",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
+            "marginBottom": "$spacing.8"
+          }
+        },
+        "modelCards": {
+          "type": "grid",
+          "columns": 2,
+          "gap": "$spacing.4",
+          "items": [
+            {
+              "name": "BigMemory Core",
+              "label": "Model details",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/cards/interactive",
+                "background": "$colors.brand.primaryLight"
+              }
+            },
+            {
+              "name": "BigMemory Pro",
+              "label": "Model details",
+              "style": {
+                "$ref": "GLOBAL_DESIGN.json#/components/cards/interactive",
+                "background": "$colors.semantic.lavender"
+              }
+            }
+          ]
+        },
+        "link": {
+          "text": "Read announcement",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/buttons/ghost"
+          }
+        }
+      }
+    },
+    "usageSection": {
+      "type": "section",
+      "background": "$colors.background.primary",
+      "padding": {
+        "y": "$spacing.24"
+      },
+      "content": {
+        "heading": {
+          "text": "How you can use Claude",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/heading2",
+            "marginBottom": "$spacing.16"
+          }
+        },
+        "usageGrid": {
+          "type": "grid",
+          "columns": 2,
+          "gap": "$spacing.12",
+          "items": [
+            {
+              "type": "usageCard",
+              "title": "Learning",
+              "description": "Learn and deepen personal connections. Upload docs or images. \"How can they understand my working style so I can communicate more clearly?\" and \"Can you explain this academic paper to me in plain, simple terms?\" Here's your personal educator.",
+              "categories": ["Coding", "Researching", "Analyzing", "Creating"]
+            },
+            {
+              "type": "projectDemo",
+              "title": "Create a study project",
+              "description": "Start a project for a study group",
+              "interactive": true,
+              "demoButton": {
+                "text": "Create study project",
+                "style": {
+                  "$ref": "GLOBAL_DESIGN.json#/components/buttons/primary",
+                  "background": "$colors.neutral.gray.900"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "releasesSection": {
+      "type": "section",
+      "background": "$colors.background.primary",
+      "padding": {
+        "y": "$spacing.24"
+      },
+      "content": {
+        "heading": {
+          "text": "Explore the latest releases",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/heading2",
+            "marginBottom": "$spacing.16"
+          }
+        },
+        "releaseTable": {
+          "type": "table",
+          "columns": ["Release", "Date"],
+          "rows": [
+            {
+              "release": "Claude can now connect to your world",
+              "date": "Yesterday"
+            },
+            {
+              "release": "Introducing Claude Code, your coder team collaborator",
+              "date": "3 days ago"
+            },
+            {
+              "release": "Claude helps respond to text styles",
+              "date": "January 20"
+            },
+            {
+              "release": "Claude can now search the web",
+              "date": "Dec 18 2024"
+            }
+          ]
+        }
+      }
+    },
+    "peopleSection": {
+      "type": "section",
+      "background": "$colors.background.primary",
+      "padding": {
+        "y": "$spacing.24"
+      },
+      "content": {
+        "heading": {
+          "text": "What people say about Claude",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/heading2",
+            "marginBottom": "$spacing.4"
+          }
+        },
+        "subheading": {
+          "text": "Thousands of individuals thinking big with Claude. What roles have learned so far? Let them share their use of the AI collaborator.",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
+            "marginBottom": "$spacing.16"
+          }
+        },
+        "testimonialCarousel": {
+          "type": "carousel",
+          "items": [
+            {
+              "image": "testimonial-1.jpg",
+              "category": "Software"
+            },
+            {
+              "image": "testimonial-2.jpg", 
+              "category": "Design"
+            },
+            {
+              "image": "testimonial-3.jpg",
+              "category": "Business"
+            },
+            {
+              "image": "testimonial-4.jpg",
+              "category": "Day-to-day tasks"
+            }
+          ]
+        }
+      }
+    },
+    "articlesSection": {
+      "type": "section",
+      "background": "$colors.background.primary",
+      "padding": {
+        "y": "$spacing.24"
+      },
+      "content": {
+        "heading": {
+          "text": "Give Claude a try",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/heading2",
+            "textAlign": "center",
+            "marginBottom": "$spacing.16"
+          }
+        },
+        "articleGrid": {
+          "type": "grid",
+          "columns": 3,
+          "gap": "$spacing.8",
+          "items": [
+            {
+              "type": "articleCard",
+              "label": "Blog",
+              "title": "After 15 years of real work, here did I write without the fear of the \"hostile culture clone?\"",
+              "cta": "Get BigMemory"
+            },
+            {
+              "type": "articleCard",
+              "label": "Blog",
+              "title": "Can I link my savings on a social impact investment while wrecking my future?",
+              "cta": "Get BigMemory"
+            },
+            {
+              "type": "articleCard",
+              "label": "Article",
+              "title": "What approach will improve productivity beyond the typical 'potion mix'?",
+              "cta": "Get BigMemory"
+            }
+          ]
+        }
+      }
+    },
+    "ctaSection": {
+      "type": "centered",
+      "background": "$colors.neutral.black",
+      "color": "$colors.neutral.white",
+      "padding": {
+        "y": "$spacing.24"
+      },
+      "content": {
+        "heading": {
+          "text": "Claude goes where you go.",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/heading2",
+            "color": "$colors.neutral.white",
+            "marginBottom": "$spacing.4"
+          }
+        },
+        "description": {
+          "text": "Use Claude apps on all your devices. Available everywhere on iOS, Android, and in any web browser.",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
+            "color": "$colors.neutral.gray.300",
+            "marginBottom": "$spacing.8"
+          }
+        },
+        "cta": {
+          "text": "Try Claude for free",
+          "style": {
+            "$ref": "GLOBAL_DESIGN.json#/components/buttons/primary",
+            "background": "$colors.neutral.white",
+            "color": "$colors.neutral.black"
+          }
+        },
+        "platforms": {
+          "type": "platformGrid",
+          "marginTop": "$spacing.16",
+          "items": ["Desktop app", "iOS app", "Android app", "Web browser"]
+        }
+      }
+    },
+    "footer": {
+      "$ref": "GLOBAL_DESIGN.json#/components/footer"
+    }
+  },
+  "components": {
+    "benefitCard": {
+      "display": "flex",
+      "flexDirection": "column",
+      "alignItems": "center",
+      "textAlign": "center",
+      "gap": "$spacing.4",
+      "icon": {
+        "size": "64px",
+        "marginBottom": "$spacing.4"
+      },
+      "title": {
+        "$ref": "GLOBAL_DESIGN.json#/components/typography/heading3",
+        "fontSize": "$typography.fontSizes.xl"
+      },
+      "description": {
+        "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
+        "fontSize": "$typography.fontSizes.sm"
+      }
+    },
+    "usageCard": {
+      "extends": "GLOBAL_DESIGN.json#/components/cards/base",
+      "padding": "$spacing.12",
+      "title": {
+        "$ref": "GLOBAL_DESIGN.json#/components/typography/heading3"
+      },
+      "description": {
+        "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
+        "marginTop": "$spacing.4",
+        "marginBottom": "$spacing.6"
+      },
+      "categories": {
+        "display": "flex",
+        "flexDirection": "column",
+        "gap": "$spacing.3",
+        "marginTop": "$spacing.8"
+      },
+      "categoryItem": {
+        "display": "flex",
+        "alignItems": "center",
+        "gap": "$spacing.2",
+        "fontSize": "$typography.fontSizes.sm",
+        "color": "$colors.text.secondary"
+      }
+    },
+    "projectDemo": {
+      "extends": "GLOBAL_DESIGN.json#/components/cards/base",
+      "background": "$colors.background.secondary",
+      "border": "1px solid $colors.border.light",
+      "padding": "$spacing.8",
+      "display": "flex",
+      "flexDirection": "column",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "minHeight": "400px"
+    },
+    "releaseRow": {
+      "display": "flex",
+      "justifyContent": "space-between",
+      "padding": {
+        "y": "$spacing.4"
+      },
+      "borderBottom": "1px solid $colors.border.light",
+      "hover": {
+        "background": "$colors.background.hover",
+        "cursor": "pointer"
+      },
+      "release": {
+        "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
+        "fontWeight": "$typography.fontWeights.medium"
+      },
+      "date": {
+        "$ref": "GLOBAL_DESIGN.json#/components/typography/caption",
+        "color": "$colors.text.muted"
+      }
+    },
+    "testimonialCard": {
+      "borderRadius": "$borderRadius.2xl",
+      "overflow": "hidden",
+      "aspectRatio": "3/4",
+      "position": "relative",
+      "background": "$colors.neutral.black",
+      "category": {
+        "position": "absolute",
+        "bottom": "$spacing.4",
+        "left": "$spacing.4",
+        "background": "$colors.neutral.white",
+        "color": "$colors.neutral.black",
+        "padding": {
+          "x": "$spacing.3",
+          "y": "$spacing.2"
+        },
+        "borderRadius": "$borderRadius.lg",
+        "fontSize": "$typography.fontSizes.sm",
+        "fontWeight": "$typography.fontWeights.semibold"
+      }
+    },
+    "articleCard": {
+      "extends": "GLOBAL_DESIGN.json#/components/cards/base",
+      "display": "flex",
+      "flexDirection": "column",
+      "justifyContent": "space-between",
+      "height": "100%",
+      "label": {
+        "$ref": "GLOBAL_DESIGN.json#/components/typography/caption",
+        "color": "$colors.text.muted",
+        "textTransform": "uppercase",
+        "letterSpacing": "$typography.letterSpacing.wider",
+        "fontSize": "$typography.fontSizes.xs"
+      },
+      "title": {
+        "$ref": "GLOBAL_DESIGN.json#/components/typography/heading3",
+        "fontSize": "$typography.fontSizes.lg",
+        "marginTop": "$spacing.3",
+        "marginBottom": "$spacing.6"
+      },
+      "cta": {
+        "$ref": "GLOBAL_DESIGN.json#/components/buttons/ghost",
+        "alignSelf": "flex-start"
+      }
+    },
+    "searchBar": {
+      "position": "relative",
+      "examples": {
+        "position": "absolute",
+        "top": "50%",
+        "right": "$spacing.4",
+        "transform": "translateY(-50%)",
+        "display": "flex",
+        "gap": "$spacing.2"
+      },
+      "exampleChip": {
+        "padding": {
+          "x": "$spacing.3",
+          "y": "$spacing.2"
+        },
+        "background": "$colors.background.hover",
+        "borderRadius": "$borderRadius.full",
+        "fontSize": "$typography.fontSizes.sm",
+        "color": "$colors.text.secondary",
+        "cursor": "pointer",
+        "hover": {
+          "background": "$colors.brand.primaryLight"
+        }
+      }
+    }
+  },
+  "overrides": {
+    "mobile": {
+      "hero.content": {
+        "flexDirection": "column",
+        "left.width": "100%",
+        "right.display": "none"
+      },
+      "benefitsSection.benefits": {
+        "columns": 1
+      },
+      "modelsSection.modelCards": {
+        "columns": 1
+      },
+      "usageSection.usageGrid": {
+        "columns": 1
+      },
+      "articlesSection.articleGrid": {
+        "columns": 1
+      },
+      "testimonialCarousel": {
+        "scrollBehavior": "touch"
+      }
+    },
+    "tablet": {
+      "benefitsSection.benefits": {
+        "columns": 2
+      },
+      "articlesSection.articleGrid": {
+        "columns": 2
+      }
+    }
+  },
+  "interactions": {
+    "searchBar": {
+      "onFocus": {
+        "showExamples": true
+      },
+      "onExampleClick": {
+        "fillInput": true,
+        "triggerSearch": true
+      }
+    },
+    "modelCards": {
+      "hover": {
+        "transform": "translateY(-2px)",
+        "boxShadow": "$shadows.md"
+      }
+    },
+    "testimonialCarousel": {
+      "autoplay": false,
+      "navigation": "dots",
+      "swipe": true
+    },
+    "releaseTable": {
+      "clickable": true,
+      "action": "navigate"
+    }
+  },
+  "states": {
+    "searchBar": {
+      "active": {
+        "borderColor": "$colors.text.primary",
+        "boxShadow": "0 0 0 2px rgba(0,0,0,0.1)"
+      }
+    },
+    "demoProject": {
+      "loading": {
+        "showSpinner": true,
+        "buttonText": "Creating..."
+      },
+      "created": {
+        "showProject": true,
+        "transition": "$transitions.slow"
+      }
+    }
+  }
+}
