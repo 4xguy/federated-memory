@@ -1,7 +1,6 @@
 import { randomBytes, createHash } from 'crypto';
 import jwt from 'jsonwebtoken';
 import { prisma } from '@/utils/database';
-import { logger } from '@/utils/logger';
 
 interface OAuthCode {
   code: string;
@@ -10,6 +9,8 @@ interface OAuthCode {
   redirectUri: string;
   scope: string;
   expiresAt: Date;
+  codeChallenge?: string;
+  codeChallengeMethod?: string;
 }
 
 interface OAuthToken {
@@ -24,47 +25,46 @@ export class OAuthProviderService {
   private static instance: OAuthProviderService;
   private readonly jwtSecret: string;
   private readonly authCodes = new Map<string, OAuthCode>();
-  
+
   // OAuth client configuration for Claude products
   private readonly clients = {
     'claude-ai': {
       clientSecret: process.env.CLAUDE_AI_CLIENT_SECRET || 'development-secret',
       redirectUris: [
         'https://claude.ai/oauth/callback',
-        'https://*.claude.ai/oauth/callback'
+        'https://*.claude.ai/oauth/callback',
+        'https://claude.ai/mcp/oauth/callback',
+        'https://*.claude.ai/mcp/oauth/callback',
       ],
-      allowedScopes: ['read', 'write', 'profile']
+      allowedScopes: ['read', 'write', 'profile'],
     },
     'claude-desktop': {
       clientSecret: process.env.CLAUDE_DESKTOP_CLIENT_SECRET || 'development-secret',
-      redirectUris: [
-        'http://localhost/oauth/callback',
-        'claude-desktop://oauth/callback'
-      ],
-      allowedScopes: ['read', 'write', 'profile']
+      redirectUris: ['http://localhost/oauth/callback', 'claude-desktop://oauth/callback'],
+      allowedScopes: ['read', 'write', 'profile'],
     },
     'claude-code': {
       clientSecret: process.env.CLAUDE_CODE_CLIENT_SECRET || 'development-secret',
-      redirectUris: [
-        'vscode://claude-code/oauth/callback',
-        'cursor://claude-code/oauth/callback'
-      ],
-      allowedScopes: ['read', 'write', 'profile']
-    }
+      redirectUris: ['vscode://claude-code/oauth/callback', 'cursor://claude-code/oauth/callback'],
+      allowedScopes: ['read', 'write', 'profile'],
+    },
   };
 
   constructor() {
     this.jwtSecret = process.env.JWT_SECRET || 'development-secret-change-in-production';
-    
+
     // Clean up expired auth codes every 5 minutes
-    setInterval(() => {
-      const now = new Date();
-      for (const [code, data] of this.authCodes.entries()) {
-        if (data.expiresAt < now) {
-          this.authCodes.delete(code);
+    setInterval(
+      () => {
+        const now = new Date();
+        for (const [code, data] of this.authCodes.entries()) {
+          if (data.expiresAt < now) {
+            this.authCodes.delete(code);
+          }
         }
-      }
-    }, 5 * 60 * 1000);
+      },
+      5 * 60 * 1000,
+    );
   }
 
   static getInstance(): OAuthProviderService {
@@ -81,8 +81,11 @@ export class OAuthProviderService {
     scope: string;
     state?: string;
     userId: string; // User must be authenticated already via Google/GitHub
+    codeChallenge?: string;
+    codeChallengeMethod?: string;
   }): Promise<{ redirectUrl: string }> {
-    const { clientId, redirectUri, scope, state, userId } = params;
+    const { clientId, redirectUri, scope, state, userId, codeChallenge, codeChallengeMethod } =
+      params;
 
     // Validate client
     const client = this.clients[clientId as keyof typeof this.clients];
@@ -110,6 +113,16 @@ export class OAuthProviderService {
       throw new Error(`Invalid scopes: ${invalidScopes.join(', ')}`);
     }
 
+    // Validate PKCE parameters if provided
+    if (codeChallenge) {
+      if (!codeChallengeMethod || codeChallengeMethod !== 'S256') {
+        throw new Error('code_challenge_method must be S256');
+      }
+      if (codeChallenge.length < 43 || codeChallenge.length > 128) {
+        throw new Error('Invalid code_challenge length');
+      }
+    }
+
     // Generate authorization code
     const code = randomBytes(32).toString('base64url');
     const authCode: OAuthCode = {
@@ -118,7 +131,9 @@ export class OAuthProviderService {
       userId,
       redirectUri,
       scope,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      codeChallenge,
+      codeChallengeMethod,
     };
 
     this.authCodes.set(code, authCode);
@@ -139,14 +154,24 @@ export class OAuthProviderService {
     code?: string;
     refreshToken?: string;
     clientId: string;
-    clientSecret: string;
+    clientSecret?: string;
     redirectUri?: string;
+    codeVerifier?: string;
   }): Promise<OAuthToken> {
-    const { grantType, code, refreshToken, clientId, clientSecret, redirectUri } = params;
+    const { grantType, code, refreshToken, clientId, clientSecret, redirectUri, codeVerifier } =
+      params;
 
-    // Validate client credentials
+    // Validate client
     const client = this.clients[clientId as keyof typeof this.clients];
-    if (!client || client.clientSecret !== clientSecret) {
+    if (!client) {
+      throw new Error('Invalid client_id');
+    }
+
+    // For authorization_code grant with PKCE, client_secret is optional
+    if (grantType === 'authorization_code' && codeVerifier) {
+      // Public client with PKCE - no client secret required
+    } else if (client.clientSecret !== clientSecret) {
+      // Confidential client - client secret required
       throw new Error('Invalid client credentials');
     }
 
@@ -170,6 +195,20 @@ export class OAuthProviderService {
         throw new Error('Authorization code expired');
       }
 
+      // Verify PKCE if used
+      if (authCode.codeChallenge) {
+        if (!codeVerifier) {
+          throw new Error('code_verifier required');
+        }
+
+        // Verify code_verifier against code_challenge
+        const challenge = createHash('sha256').update(codeVerifier).digest('base64url');
+
+        if (challenge !== authCode.codeChallenge) {
+          throw new Error('Invalid code_verifier');
+        }
+      }
+
       // Delete code (one-time use)
       this.authCodes.delete(code);
 
@@ -184,8 +223,8 @@ export class OAuthProviderService {
           userId: authCode.userId,
           clientId,
           scope: authCode.scope,
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
-        }
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        },
       });
 
       return {
@@ -193,7 +232,7 @@ export class OAuthProviderService {
         tokenType: 'Bearer',
         expiresIn: 3600, // 1 hour
         refreshToken: refreshTokenValue,
-        scope: authCode.scope
+        scope: authCode.scope,
       };
     } else if (grantType === 'refresh_token') {
       if (!refreshToken) {
@@ -204,7 +243,7 @@ export class OAuthProviderService {
       const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
       const storedToken = await prisma.refreshToken.findUnique({
         where: { token: tokenHash },
-        include: { user: true }
+        include: { user: true },
       });
 
       if (!storedToken || storedToken.clientId !== clientId) {
@@ -222,7 +261,7 @@ export class OAuthProviderService {
         accessToken,
         tokenType: 'Bearer',
         expiresIn: 3600,
-        scope: storedToken.scope
+        scope: storedToken.scope,
       };
     } else {
       throw new Error('Unsupported grant_type');
@@ -236,18 +275,18 @@ export class OAuthProviderService {
         userId,
         sub: userId,
         scope,
-        type: 'access'
+        type: 'access',
       },
       this.jwtSecret,
       {
         expiresIn: '1h',
-        issuer: 'federated-memory'
-      }
+        issuer: 'federated-memory',
+      },
     );
   }
 
   // Generate refresh token
-  private generateRefreshToken(userId: string, scope: string): string {
+  private generateRefreshToken(_userId: string, _scope: string): string {
     return randomBytes(32).toString('base64url');
   }
 
@@ -255,7 +294,7 @@ export class OAuthProviderService {
   async validateAccessToken(token: string): Promise<{ userId: string; scope: string } | null> {
     try {
       const decoded = jwt.verify(token, this.jwtSecret, {
-        issuer: 'federated-memory'
+        issuer: 'federated-memory',
       }) as any;
 
       if (decoded.type !== 'access') {
@@ -265,7 +304,7 @@ export class OAuthProviderService {
       // Check if user is still active
       const userId = decoded.userId || decoded.sub;
       const user = await prisma.user.findUnique({
-        where: { id: userId }
+        where: { id: userId },
       });
 
       if (!user || !user.isActive) {
@@ -274,7 +313,7 @@ export class OAuthProviderService {
 
       return {
         userId,
-        scope: decoded.scope
+        scope: decoded.scope,
       };
     } catch (error) {
       return null;
@@ -286,7 +325,7 @@ export class OAuthProviderService {
     const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
     await prisma.refreshToken.update({
       where: { token: tokenHash },
-      data: { revokedAt: new Date() }
+      data: { revokedAt: new Date() },
     });
   }
 }

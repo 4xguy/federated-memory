@@ -9,6 +9,46 @@ const router = Router();
 const oauthProvider = OAuthProviderService.getInstance();
 const authService = AuthService.getInstance();
 
+// OAuth 2.0 Authorization Server Metadata (RFC 8414)
+router.get('/.well-known/oauth-authorization-server', (req: Request, res: Response) => {
+  const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
+
+  res.json({
+    issuer: baseUrl,
+    authorization_endpoint: `${baseUrl}/api/oauth/authorize`,
+    token_endpoint: `${baseUrl}/api/oauth/token`,
+    token_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
+    token_endpoint_auth_signing_alg_values_supported: ['RS256'],
+    userinfo_endpoint: `${baseUrl}/api/oauth/userinfo`,
+    jwks_uri: `${baseUrl}/api/oauth/jwks`,
+    registration_endpoint: `${baseUrl}/api/oauth/register`,
+    scopes_supported: ['read', 'write', 'profile', 'openid'],
+    response_types_supported: ['code'],
+    response_modes_supported: ['query'],
+    grant_types_supported: ['authorization_code', 'refresh_token'],
+    code_challenge_methods_supported: ['S256'],
+    revocation_endpoint: `${baseUrl}/api/oauth/revoke`,
+    revocation_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
+    introspection_endpoint: `${baseUrl}/api/oauth/introspect`,
+    introspection_endpoint_auth_methods_supported: ['client_secret_post', 'bearer'],
+    service_documentation: 'https://github.com/yourusername/federated-memory',
+    ui_locales_supported: ['en-US'],
+  });
+});
+
+// OAuth 2.0 Protected Resource Metadata
+router.get('/.well-known/oauth-protected-resource', (req: Request, res: Response) => {
+  const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
+
+  res.json({
+    resource_server: baseUrl,
+    authorization_servers: [baseUrl],
+    scopes_supported: ['read', 'write', 'profile'],
+    bearer_methods_supported: ['header', 'query'],
+    resource_documentation: 'https://github.com/yourusername/federated-memory',
+  });
+});
+
 // OAuth authorization endpoint
 const authorizeSchema = z.object({
   response_type: z.literal('code'),
@@ -16,6 +56,8 @@ const authorizeSchema = z.object({
   redirect_uri: z.string().url(),
   scope: z.string(),
   state: z.string().optional(),
+  code_challenge: z.string().optional(),
+  code_challenge_method: z.literal('S256').optional(),
 });
 
 router.get('/authorize', async (req: AuthRequest, res: Response) => {
@@ -37,7 +79,8 @@ router.get('/authorize', async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const { client_id, redirect_uri, scope, state } = validation.data;
+    const { client_id, redirect_uri, scope, state, code_challenge, code_challenge_method } =
+      validation.data;
 
     // Show consent screen (in production, you'd render a proper consent page)
     if (!req.query.consent) {
@@ -47,6 +90,9 @@ router.get('/authorize', async (req: AuthRequest, res: Response) => {
       consentUrl.searchParams.append('redirect_uri', redirect_uri);
       consentUrl.searchParams.append('scope', scope);
       if (state) consentUrl.searchParams.append('state', state);
+      if (code_challenge) consentUrl.searchParams.append('code_challenge', code_challenge);
+      if (code_challenge_method)
+        consentUrl.searchParams.append('code_challenge_method', code_challenge_method);
       return res.redirect(consentUrl.toString());
     }
 
@@ -57,6 +103,8 @@ router.get('/authorize', async (req: AuthRequest, res: Response) => {
       scope,
       state,
       userId: req.user.id,
+      codeChallenge: code_challenge,
+      codeChallengeMethod: code_challenge_method,
     });
 
     return res.redirect(redirectUrl);
@@ -75,8 +123,9 @@ const tokenSchema = z.object({
   code: z.string().optional(),
   refresh_token: z.string().optional(),
   client_id: z.string(),
-  client_secret: z.string(),
+  client_secret: z.string().optional(), // Optional for PKCE
   redirect_uri: z.string().url().optional(),
+  code_verifier: z.string().optional(), // PKCE verifier
 });
 
 router.post('/token', async (req: Request, res: Response) => {
@@ -96,6 +145,7 @@ router.post('/token', async (req: Request, res: Response) => {
       clientId: validation.data.client_id,
       clientSecret: validation.data.client_secret,
       redirectUri: validation.data.redirect_uri,
+      codeVerifier: validation.data.code_verifier,
     });
 
     return res.json(token);
