@@ -10,6 +10,7 @@ import { getCMIService } from '@/core/cmi/index.service';
 import { ModuleRegistry } from '@/core/modules/registry.service';
 import { completable } from '@modelcontextprotocol/sdk/server/completable.js';
 import { AuthService } from '@/services/auth.service';
+import { AuthenticationRequiredError } from './auth-error';
 
 // Transport storage for session management
 const transports = new Map<string, StreamableHTTPServerTransport>();
@@ -39,15 +40,9 @@ export function createMcpServer(userId?: string) {
     },
     async ({ query, limit, moduleId }) => {
       if (!userId) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'Authentication required. Please authenticate via OAuth to access memories.',
-            },
-          ],
-          isError: true,
-        };
+        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const authUrl = `${baseUrl}/api/oauth/authorize?client_id=mcp-client&response_type=code&redirect_uri=${encodeURIComponent('https://claude.ai/oauth/callback')}&scope=read%20write`;
+        throw new AuthenticationRequiredError(authUrl);
       }
       
       try {
@@ -101,15 +96,9 @@ export function createMcpServer(userId?: string) {
     },
     async ({ content, metadata, moduleId }) => {
       if (!userId) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'Authentication required. Please authenticate via OAuth to store memories.',
-            },
-          ],
-          isError: true,
-        };
+        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const authUrl = `${baseUrl}/api/oauth/authorize?client_id=mcp-client&response_type=code&redirect_uri=${encodeURIComponent('https://claude.ai/oauth/callback')}&scope=read%20write`;
+        throw new AuthenticationRequiredError(authUrl);
       }
       
       try {
@@ -158,15 +147,9 @@ export function createMcpServer(userId?: string) {
     },
     async ({ memoryId }) => {
       if (!userId) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'Authentication required. Please authenticate via OAuth to retrieve memories.',
-            },
-          ],
-          isError: true,
-        };
+        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const authUrl = `${baseUrl}/api/oauth/authorize?client_id=mcp-client&response_type=code&redirect_uri=${encodeURIComponent('https://claude.ai/oauth/callback')}&scope=read%20write`;
+        throw new AuthenticationRequiredError(authUrl);
       }
       
       try {
