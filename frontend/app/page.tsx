@@ -1,4 +1,76 @@
+'use client'
+
+import { useSession, signOut } from 'next-auth/react'
+import { useEffect } from 'react'
+
 export default function Home() {
+  const { data: session, status } = useSession()
+
+  useEffect(() => {
+    console.log('Session status:', status)
+    console.log('Session data:', session)
+  }, [session, status])
+
+  if (status === 'loading') {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-24">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+        </div>
+      </main>
+    )
+  }
+
+  if (session) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-24">
+        <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-4xl font-bold">
+              Federated Memory System
+            </h1>
+            <div className="flex items-center gap-4">
+              <span className="text-sm">
+                Welcome, {session.user?.name || session.user?.email}!
+              </span>
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+          <div className="text-center">
+            <p className="mb-4">
+              You are successfully signed in! Your MCP server is ready for use.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+              <div className="p-6 border rounded-lg">
+                <h2 className="text-xl font-semibold mb-2">API Keys</h2>
+                <p className="text-sm opacity-75 mb-4">
+                  Generate and manage API keys for MCP access
+                </p>
+                <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                  Manage API Keys
+                </button>
+              </div>
+              <div className="p-6 border rounded-lg">
+                <h2 className="text-xl font-semibold mb-2">Profile</h2>
+                <p className="text-sm opacity-75 mb-4">
+                  View and update your profile settings
+                </p>
+                <button className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                  View Profile
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24">
       <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">

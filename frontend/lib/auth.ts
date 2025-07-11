@@ -30,7 +30,8 @@ export const authOptions: NextAuthOptions = {
       return token
     },
     async signIn({ user, account, profile }) {
-      // After successful sign-in, create user in backend
+      // After successful sign-in, try to create user in backend
+      // But don't fail the sign-in if backend is not available
       try {
         const response = await fetch(`${process.env.BACKEND_URL || 'http://localhost:3000'}/api/auth/oauth/callback`, {
           method: 'POST',
@@ -47,15 +48,14 @@ export const authOptions: NextAuthOptions = {
         })
         
         if (!response.ok) {
-          console.error('Failed to create user in backend')
-          return false
+          console.warn('Failed to create user in backend, but continuing with sign-in')
         }
-        
-        return true
       } catch (error) {
-        console.error('Error during sign in:', error)
-        return false
+        console.warn('Error during backend sync, but continuing with sign-in:', error)
       }
+      
+      // Always allow sign-in to succeed for now
+      return true
     },
   },
   pages: {
