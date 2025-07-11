@@ -1,4 +1,4 @@
-#\!/usr/bin/env node
+#!/usr/bin/env node
 
 const readline = require('readline');
 const { Client } = require('@modelcontextprotocol/sdk/client/index.js');

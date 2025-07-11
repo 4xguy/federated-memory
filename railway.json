@@ -1,0 +1,44 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "startCommand": "npm run start",
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 30,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  },
+  "services": [
+    {
+      "name": "mcp-server",
+      "source": {
+        "repo": ".",
+        "branch": "main"
+      },
+      "build": {
+        "buildCommand": "npm run build && npm run db:migrate"
+      },
+      "deploy": {
+        "startCommand": "npm run start",
+        "healthcheckPath": "/api/health"
+      }
+    },
+    {
+      "name": "frontend",
+      "source": {
+        "repo": "./frontend",
+        "branch": "main"
+      },
+      "build": {
+        "buildCommand": "npm run build"
+      },
+      "deploy": {
+        "startCommand": "npm run start",
+        "healthcheckPath": "/api/auth/providers"
+      }
+    }
+  ]
+}
