@@ -309,11 +309,17 @@ export function createMcpServer(userId?: string) {
           messages: [
             {
               role: 'user',
-              content: `Search for memories about: ${topic}`,
+              content: {
+                type: 'text',
+                text: `Search for memories about: ${topic}`,
+              },
             },
             {
               role: 'assistant',
-              content: 'Authentication required. Please authenticate via OAuth to access memories.',
+              content: {
+                type: 'text',
+                text: 'Authentication required. Please authenticate via OAuth to access memories.',
+              },
             },
           ],
         };
