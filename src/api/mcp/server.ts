@@ -15,7 +15,11 @@ import { AuthService } from '@/services/auth.service';
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
 // Create MCP Server instance
-export function createMcpServer(userId?: string) {
+export function createMcpServer(userId: string) {
+  if (!userId) {
+    throw new Error('Authentication required - userId must be provided');
+  }
+  
   const server = new McpServer({
     name: 'federated-memory',
     version: '1.0.0',
@@ -39,7 +43,7 @@ export function createMcpServer(userId?: string) {
     },
     async ({ query, limit, moduleId }) => {
       try {
-        const results = await cmiService.search(userId || 'anonymous', query, { limit, moduleId });
+        const results = await cmiService.search(userId, query, { limit, moduleId });
 
         const formattedResults = results.map((r: any) => ({
           id: r.id,
@@ -89,7 +93,7 @@ export function createMcpServer(userId?: string) {
     },
     async ({ content, metadata, moduleId }) => {
       try {
-        const memoryId = await cmiService.store(userId || 'anonymous', content, metadata, moduleId);
+        const memoryId = await cmiService.store(userId, content, metadata, moduleId);
 
         return {
           content: [
@@ -104,7 +108,7 @@ export function createMcpServer(userId?: string) {
           error,
           errorMessage: error instanceof Error ? error.message : String(error),
           errorStack: error instanceof Error ? error.stack : undefined,
-          userId: userId || 'anonymous',
+          userId: userId,
           content: content.substring(0, 100),
           moduleId,
         });
@@ -134,7 +138,7 @@ export function createMcpServer(userId?: string) {
     },
     async ({ memoryId }) => {
       try {
-        const memory = await cmiService.get(userId || 'anonymous', memoryId);
+        const memory = await cmiService.get(userId, memoryId);
         if (!memory) {
           throw new Error('Memory not found');
         }
@@ -269,7 +273,7 @@ export function createMcpServer(userId?: string) {
     },
     async ({ topic, maxResults }) => {
       const limit = parseInt(maxResults || '5', 10);
-      const results = await cmiService.search(userId || 'anonymous', topic || '', { limit });
+      const results = await cmiService.search(userId, topic || '', { limit });
 
       const summaryText = results
         .map((r: any, i: number) => `${i + 1}. [${r.moduleId}] ${r.content.substring(0, 100)}...`)
@@ -347,6 +351,16 @@ export function createMcpApp() {
       // Extract userId from auth header if available
       const authHeader = req.headers.authorization;
       const userId = await extractUserIdFromAuth(authHeader);
+
+      if (!userId) {
+        res.status(401).json({
+          error: {
+            code: -32001,
+            message: 'Authentication required. Please authenticate via OAuth.',
+          },
+        });
+        return;
+      }
 
       mcpServer = createMcpServer(userId);
       await mcpServer.connect(transport);

@@ -1,0 +1,15 @@
+Backup Information
+==================
+Date: Fri Jul 11 11:26:06 PDT 2025
+Source DB: railway
+Target DB: railway
+Purpose: Pre-migration backup
+
+Restore Instructions
+===================
+To restore a backup:
+1. Decompress: gunzip backup_file.sql.gz
+2. Restore: psql -h host -p port -U user -d database < backup_file.sql
+
+Or in one command:
+gunzip -c backup_file.sql.gz | psql -h host -p port -U user -d database

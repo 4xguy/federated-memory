@@ -33,7 +33,11 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
-    "generate:module": "tsx scripts/generate-module.ts"
+    "generate:module": "tsx scripts/generate-module.ts",
+    "migrate:bigmemory": "tsx scripts/migrate-bigmemory-sql.ts",
+    "migrate:test": "./scripts/test-migration-local.sh",
+    "migrate:backup": "./scripts/backup-databases.sh",
+    "migrate:check": "tsx scripts/check-bigmemory-db.ts"
   },
   "keywords": [
     "memory",
