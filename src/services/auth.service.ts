@@ -18,8 +18,8 @@ export interface ApiKeyInfo {
   name: string;
   prefix: string;
   createdAt: Date;
-  expiresAt?: Date;
-  lastUsed?: Date;
+  expiresAt?: Date | null;
+  lastUsed?: Date | null;
 }
 
 export class AuthService {

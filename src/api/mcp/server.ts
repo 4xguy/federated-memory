@@ -290,14 +290,15 @@ export function createMcpServer(userId?: string) {
       description: 'Search memories and provide a summary',
       argsSchema: {
         topic: z.string().describe('Topic to search for'),
-        maxResults: z.number().optional().default(5).describe('Maximum results'),
+        maxResults: z.string().optional().describe('Maximum results (default: 5)'),
       },
     },
     async ({ topic, maxResults }) => {
+      const limit = parseInt(maxResults || '5', 10);
       const results = await cmiService.search(
         userId || 'anonymous',
-        topic,
-        { limit: maxResults || 5 }
+        topic || '',
+        { limit }
       );
 
       const summaryText = results
@@ -307,16 +308,9 @@ export function createMcpServer(userId?: string) {
       return {
         messages: [
           {
-            role: 'system',
+            role: 'user' as const,
             content: {
-              type: 'text',
-              text: 'You are a helpful assistant that summarizes memory search results.',
-            },
-          },
-          {
-            role: 'user',
-            content: {
-              type: 'text',
+              type: 'text' as const,
               text: `Please summarize these search results for "${topic}":\n\n${summaryText}`,
             },
           },
