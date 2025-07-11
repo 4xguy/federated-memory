@@ -10,6 +10,8 @@ A scalable, modular memory system for LLMs featuring a Central Memory Index (CMI
 - **pgvector Integration**: Semantic search using PostgreSQL's vector extension
 - **Flexible Metadata**: JSONB storage for module-specific data structures
 - **REST API**: Complete RESTful API with JWT authentication
+- **MCP Protocol**: Full support for Model Context Protocol with OAuth 2.0
+- **Claude.ai Integration**: Connect from Claude.ai web with OAuth 2.0 + PKCE
 - **High Performance**: Sub-200ms federated search latency
 - **Redis Caching**: Optional caching layer for improved performance
 
@@ -20,6 +22,8 @@ A scalable, modular memory system for LLMs featuring a Central Memory Index (CMI
 - All 6 memory modules fully functional
 - REST API with authentication
 - MCP server with Streamable HTTP protocol
+- OAuth 2.0 with PKCE support for Claude.ai
+- OAuth discovery endpoints (.well-known)
 - Database schema and migrations
 - Module statistics and analysis
 - User management system

@@ -2,6 +2,10 @@
 
 The Federated Memory System provides a Model Context Protocol (MCP) server with Streamable HTTP transport, allowing LLMs like Claude.ai to interact with the memory system through a standardized protocol.
 
+## 🚀 Claude.ai Web Integration
+
+The MCP server now supports OAuth 2.0 authentication with PKCE, enabling secure connections from Claude.ai web interface. See [Claude.ai Integration Guide](./CLAUDE_AI_INTEGRATION.md) for detailed setup instructions.
+
 ## Current Status
 
 ### Working Features ✅
@@ -25,11 +29,27 @@ The MCP server exposes the memory system's functionality as tools and prompts th
 - **Session Management**: Stateful connections with session persistence
 - **Streamable HTTP**: Support for both request-response and server-sent events
 
-## Endpoint
+## Endpoints
 
-The MCP server is available at:
+### Local Development
 ```
-http://localhost:3001/mcp
+http://localhost:3000/mcp
+```
+
+### Production (for Claude.ai)
+```
+https://your-domain.railway.app/sse
+```
+
+### OAuth Discovery
+```
+https://your-domain.railway.app/.well-known/oauth-authorization-server
+https://your-domain.railway.app/.well-known/oauth-protected-resource
+```
+
+### MCP Server Info
+```
+https://your-domain.railway.app/sse/info
 ```
 
 ## Available Tools
