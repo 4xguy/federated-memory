@@ -161,22 +161,23 @@ export default function ApiKeysPage() {
         )}
 
         {showNewKey && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-            <p className="font-bold mb-2">Your new API key (copy it now, it won't be shown again!):</p>
-            <div className="flex items-center gap-2">
-              <code className="bg-gray-100 p-2 rounded flex-1 break-all">{showNewKey}</code>
+          <div className="bg-green-100 border-2 border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            <p className="font-bold mb-2 text-lg">⚠️ IMPORTANT: Save your API key now!</p>
+            <p className="text-sm mb-3">This is the only time you'll see the full key. It cannot be retrieved later.</p>
+            <div className="flex items-center gap-2 bg-white p-2 rounded">
+              <code className="font-mono text-sm flex-1 break-all text-gray-800">{showNewKey}</code>
               <button
                 onClick={() => copyToClipboard(showNewKey)}
-                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold"
               >
-                Copy
+                Copy Key
               </button>
             </div>
             <button
               onClick={() => setShowNewKey(null)}
-              className="mt-2 text-sm underline"
+              className="mt-3 text-sm underline hover:text-green-800"
             >
-              Close
+              I've saved my key
             </button>
           </div>
         )}
@@ -204,6 +205,9 @@ export default function ApiKeysPage() {
 
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Your API Keys</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Note: Full API keys are only shown once when created. Store them securely.
+          </p>
           {apiKeys.length === 0 ? (
             <p className="text-gray-500">No API keys yet. Create one above to get started.</p>
           ) : (
