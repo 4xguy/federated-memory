@@ -1,5 +1,5 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import express, { Request, Response } from 'express';
@@ -8,7 +8,7 @@ import { logger } from '@/utils/logger';
 import { prisma } from '@/utils/database';
 import { getCMIService } from '@/core/cmi/index.service';
 import { ModuleRegistry } from '@/core/modules/registry.service';
-import { completable } from '@modelcontextprotocol/sdk/server/completable';
+import { completable } from '@modelcontextprotocol/sdk/server/completable.js';
 import { AuthService } from '@/services/auth.service';
 
 // Transport storage for session management

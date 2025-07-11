@@ -85,5 +85,14 @@
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "_moduleAliases": {
+    "@": "dist",
+    "@core": "dist/core",
+    "@modules": "dist/modules",
+    "@api": "dist/api",
+    "@services": "dist/services",
+    "@utils": "dist/utils",
+    "@config": "dist/config"
   }
 }

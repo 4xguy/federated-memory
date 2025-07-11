@@ -42,6 +42,9 @@ RUN npm ci --only=production
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
+# Copy additional files needed at runtime
+COPY .env.example .env.example
+
 # Generate Prisma client again for production
 RUN npx prisma generate
 
