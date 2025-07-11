@@ -45,6 +45,7 @@ async function main() {
     // Initialize Express app
     const app = express();
     const server = createServer(app);
+    const port = process.env.PORT || 3000;
 
     // Middleware
     app.use(
@@ -91,41 +92,72 @@ async function main() {
 
     app.use(express.json({ limit: '10mb' }));
 
+    // Handle OPTIONS preflight requests for well-known endpoints
+    app.options('/.well-known/*', (req, res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Access-Control-Max-Age', '86400');
+      res.status(204).send();
+    });
+
     // Well-known endpoints (OAuth discovery) - must be at root level
     app.get('/.well-known/oauth-authorization-server', (req, res) => {
-      const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
-      res.json({
-        issuer: baseUrl,
-        authorization_endpoint: `${baseUrl}/api/oauth/authorize`,
-        token_endpoint: `${baseUrl}/api/oauth/token`,
-        token_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
-        token_endpoint_auth_signing_alg_values_supported: ['RS256'],
-        userinfo_endpoint: `${baseUrl}/api/oauth/userinfo`,
-        jwks_uri: `${baseUrl}/api/oauth/jwks`,
-        registration_endpoint: `${baseUrl}/api/oauth/register`,
-        scopes_supported: ['read', 'write', 'profile', 'openid'],
-        response_types_supported: ['code'],
-        response_modes_supported: ['query'],
-        grant_types_supported: ['authorization_code', 'refresh_token'],
-        code_challenge_methods_supported: ['S256'],
-        revocation_endpoint: `${baseUrl}/api/oauth/revoke`,
-        revocation_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
-        introspection_endpoint: `${baseUrl}/api/oauth/introspect`,
-        introspection_endpoint_auth_methods_supported: ['client_secret_post', 'bearer'],
-        service_documentation: 'https://github.com/yourusername/federated-memory',
-        ui_locales_supported: ['en-US'],
-      });
+      try {
+        const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
+        
+        // Set CORS headers explicitly for well-known endpoints
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        
+        res.json({
+          issuer: baseUrl,
+          authorization_endpoint: `${baseUrl}/api/oauth/authorize`,
+          token_endpoint: `${baseUrl}/api/oauth/token`,
+          token_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
+          token_endpoint_auth_signing_alg_values_supported: ['RS256'],
+          userinfo_endpoint: `${baseUrl}/api/oauth/userinfo`,
+          jwks_uri: `${baseUrl}/api/oauth/jwks`,
+          registration_endpoint: `${baseUrl}/api/oauth/register`,
+          scopes_supported: ['read', 'write', 'profile', 'openid'],
+          response_types_supported: ['code'],
+          response_modes_supported: ['query'],
+          grant_types_supported: ['authorization_code', 'refresh_token'],
+          code_challenge_methods_supported: ['S256'],
+          revocation_endpoint: `${baseUrl}/api/oauth/revoke`,
+          revocation_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
+          introspection_endpoint: `${baseUrl}/api/oauth/introspect`,
+          introspection_endpoint_auth_methods_supported: ['client_secret_post', 'bearer'],
+          service_documentation: 'https://github.com/yourusername/federated-memory',
+          ui_locales_supported: ['en-US'],
+        });
+      } catch (error) {
+        logger.error('Error serving oauth-authorization-server', { error });
+        res.status(500).json({ error: 'Internal server error' });
+      }
     });
 
     app.get('/.well-known/oauth-protected-resource', (req, res) => {
-      const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
-      res.json({
-        resource_server: baseUrl,
-        authorization_servers: [baseUrl],
-        scopes_supported: ['read', 'write', 'profile'],
-        bearer_methods_supported: ['header', 'query'],
-        resource_documentation: 'https://github.com/yourusername/federated-memory',
-      });
+      try {
+        const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
+        
+        // Set CORS headers explicitly for well-known endpoints
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        
+        res.json({
+          resource_server: baseUrl,
+          authorization_servers: [baseUrl],
+          scopes_supported: ['read', 'write', 'profile'],
+          bearer_methods_supported: ['header', 'query'],
+          resource_documentation: 'https://github.com/yourusername/federated-memory',
+        });
+      } catch (error) {
+        logger.error('Error serving oauth-protected-resource', { error });
+        res.status(500).json({ error: 'Internal server error' });
+      }
     });
 
     // REST API routes
@@ -142,7 +174,6 @@ async function main() {
     });
 
     // Start server
-    const port = process.env.PORT || 3000;
     server.listen(port, () => {
       logger.info(`Federated Memory System running on port ${port}`);
       logger.info(`REST API: http://localhost:${port}/api`);
