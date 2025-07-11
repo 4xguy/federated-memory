@@ -17,7 +17,8 @@ RUN npm ci
 # Copy source code
 COPY src ./src
 
-# Generate Prisma client
+# Generate Prisma client with correct binary target
+ENV PRISMA_BINARIES_MIRROR=https://prisma-builds.s3.eu-west-1.amazonaws.com
 RUN npx prisma generate
 
 # Build TypeScript
@@ -26,8 +27,8 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine
 
-# Install runtime dependencies including PostgreSQL client for migrations
-RUN apk add --no-cache python3 postgresql-client
+# Install runtime dependencies including PostgreSQL client for migrations and OpenSSL
+RUN apk add --no-cache python3 postgresql-client openssl openssl-dev libc6-compat
 
 WORKDIR /app
 
@@ -45,7 +46,8 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 # Copy additional files needed at runtime
 COPY .env.example .env.example
 
-# Generate Prisma client again for production
+# Generate Prisma client again for production with correct binary target
+ENV PRISMA_BINARIES_MIRROR=https://prisma-builds.s3.eu-west-1.amazonaws.com
 RUN npx prisma generate
 
 # Create logs directory
