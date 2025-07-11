@@ -15,11 +15,7 @@ import { AuthService } from '@/services/auth.service';
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
 // Create MCP Server instance
-export function createMcpServer(userId: string) {
-  if (!userId) {
-    throw new Error('Authentication required - userId must be provided');
-  }
-  
+export function createMcpServer(userId?: string) {
   const server = new McpServer({
     name: 'federated-memory',
     version: '1.0.0',
@@ -42,6 +38,18 @@ export function createMcpServer(userId: string) {
       },
     },
     async ({ query, limit, moduleId }) => {
+      if (!userId) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Authentication required. Please authenticate via OAuth to access memories.',
+            },
+          ],
+          isError: true,
+        };
+      }
+      
       try {
         const results = await cmiService.search(userId, query, { limit, moduleId });
 
@@ -92,6 +100,18 @@ export function createMcpServer(userId: string) {
       },
     },
     async ({ content, metadata, moduleId }) => {
+      if (!userId) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Authentication required. Please authenticate via OAuth to store memories.',
+            },
+          ],
+          isError: true,
+        };
+      }
+      
       try {
         const memoryId = await cmiService.store(userId, content, metadata, moduleId);
 
@@ -137,6 +157,18 @@ export function createMcpServer(userId: string) {
       },
     },
     async ({ memoryId }) => {
+      if (!userId) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Authentication required. Please authenticate via OAuth to retrieve memories.',
+            },
+          ],
+          isError: true,
+        };
+      }
+      
       try {
         const memory = await cmiService.get(userId, memoryId);
         if (!memory) {
@@ -272,6 +304,21 @@ export function createMcpServer(userId: string) {
       },
     },
     async ({ topic, maxResults }) => {
+      if (!userId) {
+        return {
+          messages: [
+            {
+              role: 'user',
+              content: `Search for memories about: ${topic}`,
+            },
+            {
+              role: 'assistant',
+              content: 'Authentication required. Please authenticate via OAuth to access memories.',
+            },
+          ],
+        };
+      }
+      
       const limit = parseInt(maxResults || '5', 10);
       const results = await cmiService.search(userId, topic || '', { limit });
 
@@ -352,16 +399,7 @@ export function createMcpApp() {
       const authHeader = req.headers.authorization;
       const userId = await extractUserIdFromAuth(authHeader);
 
-      if (!userId) {
-        res.status(401).json({
-          error: {
-            code: -32001,
-            message: 'Authentication required. Please authenticate via OAuth.',
-          },
-        });
-        return;
-      }
-
+      // Create MCP server - it will handle auth checks at the tool level
       mcpServer = createMcpServer(userId);
       await mcpServer.connect(transport);
     } else {
