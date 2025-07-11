@@ -9,6 +9,7 @@ import { prisma } from '@/utils/database';
 import { getCMIService } from '@/core/cmi/index.service';
 import { ModuleRegistry } from '@/core/modules/registry.service';
 import { completable } from '@modelcontextprotocol/sdk/server/completable';
+import { AuthService } from '@/services/auth.service';
 
 // Transport storage for session management
 const transports = new Map<string, StreamableHTTPServerTransport>();
@@ -371,7 +372,7 @@ export function createMcpApp() {
 
       // Extract userId from auth header if available
       const authHeader = req.headers.authorization;
-      const userId = extractUserIdFromAuth(authHeader);
+      const userId = await extractUserIdFromAuth(authHeader);
 
       mcpServer = createMcpServer(userId);
       await mcpServer.connect(transport);
@@ -451,17 +452,13 @@ function isInitializeRequest(body: any): boolean {
   return body?.method === 'initialize';
 }
 
-function extractUserIdFromAuth(authHeader?: string): string | undefined {
+async function extractUserIdFromAuth(authHeader?: string): Promise<string | undefined> {
   if (!authHeader) return undefined;
 
   try {
-    // Try to extract from JWT token or API key
-    const [type, token] = authHeader.split(' ');
-    if (type === 'Bearer' && token) {
-      // TODO: Verify JWT and extract userId
-      // For now, return undefined
-      return undefined;
-    }
+    const authService = AuthService.getInstance();
+    const userId = await authService.extractUserId(authHeader);
+    return userId || undefined;
   } catch (error) {
     logger.error('Failed to extract userId from auth', { error });
   }
