@@ -1,10 +1,10 @@
 import { BaseModule, ModuleInfo } from '@/core/modules/base.module';
-import { 
-  Memory, 
+import {
+  Memory,
   SearchOptions,
   ModuleStats,
   ModuleConfig,
-  ModuleType
+  ModuleType,
 } from '@/core/modules/interfaces';
 import { PrismaClient } from '@prisma/client';
 import { getCMIService } from '@/core/cmi/index.service';
@@ -31,20 +31,21 @@ export class WorkModule extends BaseModule {
     const config: ModuleConfig = {
       id: 'work',
       name: 'Work Memory',
-      description: 'Manages work-related information including projects, tasks, meetings, and professional activities',
+      description:
+        'Manages work-related information including projects, tasks, meetings, and professional activities',
       tableName: 'work_memories',
       maxMemorySize: 10000,
       retentionDays: 365,
       features: {
-        timeBasedRetrieval: true
+        timeBasedRetrieval: true,
       },
       metadata: {
         searchableFields: ['category', 'project_name', 'status', 'priority', 'tags'],
         requiredFields: [],
-        indexedFields: ['category', 'status', 'priority', 'project_name']
-      }
+        indexedFields: ['category', 'status', 'priority', 'project_name'],
+      },
     };
-    
+
     super(config, prisma, cmi);
   }
 
@@ -52,14 +53,17 @@ export class WorkModule extends BaseModule {
     return {
       name: this.config.name,
       description: this.config.description,
-      type: 'standard' as ModuleType
+      type: 'standard' as ModuleType,
     };
   }
 
-  async processMetadata(content: string, metadata: Record<string, any>): Promise<Record<string, any>> {
+  async processMetadata(
+    content: string,
+    metadata: Record<string, any>,
+  ): Promise<Record<string, any>> {
     const workMetadata: WorkMetadata = {
       ...metadata,
-      status: metadata.status || 'active'
+      status: metadata.status || 'active',
     };
 
     // Auto-categorize if not provided
@@ -99,7 +103,7 @@ export class WorkModule extends BaseModule {
 
     // Set importance score based on priority and deadline
     workMetadata.importanceScore = this.calculateImportanceScore(workMetadata);
-    
+
     // Set categories for CMI
     workMetadata.categories = [workMetadata.category || 'work'];
     if (workMetadata.project_name) {
@@ -111,46 +115,48 @@ export class WorkModule extends BaseModule {
 
   formatSearchResult(memory: Memory): Memory {
     const metadata = memory.metadata as WorkMetadata;
-    
+
     const enrichedMetadata: any = {
       ...metadata,
-      contextSummary: []
+      contextSummary: [],
     };
-    
+
     if (metadata.category) {
       enrichedMetadata.contextSummary.push(`Type: ${metadata.category}`);
     }
-    
+
     if (metadata.priority) {
       enrichedMetadata.contextSummary.push(`Priority: ${metadata.priority}`);
     }
-    
+
     if (metadata.status) {
       enrichedMetadata.contextSummary.push(`Status: ${metadata.status}`);
     }
-    
+
     if (metadata.project_name) {
       enrichedMetadata.contextSummary.push(`Project: ${metadata.project_name}`);
     }
-    
+
     if (metadata.deadline) {
       enrichedMetadata.contextSummary.push(`Due: ${metadata.deadline}`);
     }
-    
+
     if (metadata.team_members && metadata.team_members.length > 0) {
-      enrichedMetadata.contextSummary.push(`Team: ${metadata.team_members.slice(0, 3).join(', ')}${metadata.team_members.length > 3 ? '...' : ''}`);
+      enrichedMetadata.contextSummary.push(
+        `Team: ${metadata.team_members.slice(0, 3).join(', ')}${metadata.team_members.length > 3 ? '...' : ''}`,
+      );
     }
-    
+
     return {
       ...memory,
-      metadata: enrichedMetadata
+      metadata: enrichedMetadata,
     };
   }
 
   async searchByEmbedding(
-    userId: string, 
-    embedding: number[], 
-    options?: SearchOptions
+    userId: string,
+    embedding: number[],
+    options?: SearchOptions,
   ): Promise<Memory[]> {
     const limit = options?.limit || 10;
     const minScore = options?.minScore || 0.5;
@@ -178,7 +184,7 @@ export class WorkModule extends BaseModule {
       userId,
       `[${embedding.join(',')}]`,
       minScore,
-      limit
+      limit,
     );
 
     return result.map(row => ({
@@ -189,7 +195,7 @@ export class WorkModule extends BaseModule {
       accessCount: row.accessCount,
       lastAccessed: row.lastAccessed,
       createdAt: row.createdAt,
-      updatedAt: row.updatedAt
+      updatedAt: row.updatedAt,
     }));
   }
 
@@ -197,7 +203,7 @@ export class WorkModule extends BaseModule {
     userId: string,
     content: string,
     embedding: number[],
-    metadata: Record<string, any>
+    metadata: Record<string, any>,
   ): Promise<Memory> {
     const id = await this.prisma.$queryRaw<{ id: string }[]>`
       INSERT INTO work_memories (id, "userId", content, embedding, metadata, "createdAt", "updatedAt", "accessCount", "lastAccessed")
@@ -216,7 +222,7 @@ export class WorkModule extends BaseModule {
     `;
 
     const result = await this.prisma.workMemory.findUniqueOrThrow({
-      where: { id: id[0].id }
+      where: { id: id[0].id },
     });
 
     return {
@@ -227,7 +233,7 @@ export class WorkModule extends BaseModule {
       accessCount: result.accessCount,
       lastAccessed: result.lastAccessed,
       createdAt: result.createdAt,
-      updatedAt: result.updatedAt
+      updatedAt: result.updatedAt,
     };
   }
 
@@ -235,8 +241,8 @@ export class WorkModule extends BaseModule {
     const result = await this.prisma.workMemory.findFirst({
       where: {
         id: memoryId,
-        userId
-      }
+        userId,
+      },
     });
 
     if (!result) return null;
@@ -249,27 +255,27 @@ export class WorkModule extends BaseModule {
       accessCount: result.accessCount,
       lastAccessed: result.lastAccessed,
       createdAt: result.createdAt,
-      updatedAt: result.updatedAt
+      updatedAt: result.updatedAt,
     };
   }
 
   protected async updateInModule(
     userId: string,
     memoryId: string,
-    updates: Partial<Memory>
+    updates: Partial<Memory>,
   ): Promise<boolean> {
     try {
       const updateData: any = {};
       if (updates.content !== undefined) updateData.content = updates.content;
       if (updates.metadata !== undefined) updateData.metadata = updates.metadata;
-      
+
       await this.prisma.workMemory.update({
         where: {
-          id: memoryId
+          id: memoryId,
         },
-        data: updateData
+        data: updateData,
       });
-      
+
       return true;
     } catch {
       return false;
@@ -280,8 +286,8 @@ export class WorkModule extends BaseModule {
     try {
       await this.prisma.workMemory.delete({
         where: {
-          id: memoryId
-        }
+          id: memoryId,
+        },
       });
       return true;
     } catch {
@@ -291,7 +297,7 @@ export class WorkModule extends BaseModule {
 
   protected async calculateStats(userId: string): Promise<ModuleStats> {
     const memories = await this.prisma.workMemory.findMany({
-      where: { userId }
+      where: { userId },
     });
 
     const categories: Record<string, number> = {};
@@ -313,35 +319,42 @@ export class WorkModule extends BaseModule {
     return {
       totalMemories: memories.length,
       totalSize: memories.reduce((sum, m) => sum + m.content.length, 0),
-      lastAccessed: memories.length > 0 
-        ? memories.reduce((latest, m) => 
-            m.lastAccessed > latest ? m.lastAccessed : latest, 
-            memories[0].lastAccessed
-          )
-        : undefined,
+      lastAccessed:
+        memories.length > 0
+          ? memories.reduce(
+              (latest, m) => (m.lastAccessed > latest ? m.lastAccessed : latest),
+              memories[0].lastAccessed,
+            )
+          : undefined,
       mostFrequentCategories: sortedCategories,
-      averageAccessCount: memories.length > 0 
-        ? totalAccessCount / memories.length 
-        : 0
+      averageAccessCount: memories.length > 0 ? totalAccessCount / memories.length : 0,
     };
   }
 
   // Helper methods
   private categorizeWorkContent(content: string): WorkMetadata['category'] {
     const lowerContent = content.toLowerCase();
-    
+
     const categoryKeywords = {
       project: ['project', 'initiative', 'program', 'milestone', 'deliverable', 'scope'],
       meeting: ['meeting', 'standup', 'review', 'discussion', 'agenda', 'minutes', 'attendees'],
       task: ['task', 'todo', 'action item', 'assigned', 'complete', 'finish', 'due'],
-      documentation: ['document', 'spec', 'requirements', 'design', 'architecture', 'guide', 'manual'],
+      documentation: [
+        'document',
+        'spec',
+        'requirements',
+        'design',
+        'architecture',
+        'guide',
+        'manual',
+      ],
       communication: ['email', 'slack', 'message', 'announcement', 'update', 'feedback'],
-      planning: ['plan', 'strategy', 'roadmap', 'timeline', 'schedule', 'sprint']
+      planning: ['plan', 'strategy', 'roadmap', 'timeline', 'schedule', 'sprint'],
     };
-    
+
     let maxScore = 0;
     let bestCategory: WorkMetadata['category'] = 'task';
-    
+
     for (const [category, keywords] of Object.entries(categoryKeywords)) {
       const score = keywords.filter(keyword => lowerContent.includes(keyword)).length;
       if (score > maxScore) {
@@ -349,7 +362,7 @@ export class WorkModule extends BaseModule {
         bestCategory = category as WorkMetadata['category'];
       }
     }
-    
+
     return bestCategory;
   }
 
@@ -359,29 +372,29 @@ export class WorkModule extends BaseModule {
       /(?:project|initiative|program)\s+["']?([A-Z][A-Za-z0-9\s-]+)["']?/i,
       /["']([A-Z][A-Za-z0-9\s-]+)["']?\s+(?:project|initiative|program)/i,
       /working on\s+["']?([A-Z][A-Za-z0-9\s-]+)["']?/i,
-      /\b([A-Z]{2,}(?:-\d+)?)\b/ // Acronyms like "CRM-123"
+      /\b([A-Z]{2,}(?:-\d+)?)\b/, // Acronyms like "CRM-123"
     ];
-    
+
     for (const pattern of projectPatterns) {
       const match = content.match(pattern);
       if (match && match[1]) {
         return match[1].trim();
       }
     }
-    
+
     return undefined;
   }
 
   private extractTeamMembers(content: string): string[] {
     const members: string[] = [];
-    
+
     // Patterns for team members
     const memberPatterns = [
       /@([a-zA-Z]+(?:\.[a-zA-Z]+)?)/g, // @mentions
       /(?:with|from|by|assigned to)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/g,
-      /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:will|should|needs to|is responsible)/g
+      /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:will|should|needs to|is responsible)/g,
     ];
-    
+
     for (const pattern of memberPatterns) {
       const matches = content.matchAll(pattern);
       for (const match of matches) {
@@ -391,50 +404,50 @@ export class WorkModule extends BaseModule {
         }
       }
     }
-    
+
     return members.slice(0, 10); // Limit to 10 members
   }
 
   private extractDeadline(content: string): string | undefined {
     const lowerContent = content.toLowerCase();
-    
+
     // Date patterns
     const datePatterns = [
       /(?:due|deadline|by|before|until)\s+(?:on\s+)?(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i,
       /(?:due|deadline|by|before|until)\s+(?:on\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i,
       /(?:due|deadline|by|before|until)\s+(?:on\s+)?(tomorrow|today|next\s+week|this\s+week|end\s+of\s+(?:week|month))/i,
       /(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\s+(?:deadline|due date)/i,
-      /(?:complete|finish|deliver)\s+by\s+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i
+      /(?:complete|finish|deliver)\s+by\s+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/i,
     ];
-    
+
     for (const pattern of datePatterns) {
       const match = content.match(pattern);
       if (match && match[1]) {
         return match[1];
       }
     }
-    
+
     return undefined;
   }
 
   private assessPriority(content: string, metadata: WorkMetadata): WorkMetadata['priority'] {
     const lowerContent = content.toLowerCase();
-    
+
     // Urgent keywords
     if (/urgent|asap|immediately|critical|emergency|blocker/.test(lowerContent)) {
       return 'urgent';
     }
-    
+
     // High priority keywords
     if (/important|high priority|priority|key|crucial|essential/.test(lowerContent)) {
       return 'high';
     }
-    
+
     // Low priority keywords
     if (/low priority|whenever|nice to have|optional|backlog/.test(lowerContent)) {
       return 'low';
     }
-    
+
     // Check deadline proximity
     if (metadata.deadline) {
       const deadlineWords = metadata.deadline.toLowerCase();
@@ -445,21 +458,21 @@ export class WorkModule extends BaseModule {
         return 'high';
       }
     }
-    
+
     return 'medium';
   }
 
   private extractActionItems(content: string): string[] {
     const actionItems: string[] = [];
-    
+
     // Patterns for action items
     const actionPatterns = [
       /(?:action item|todo|task):\s*(.+?)(?:\n|$)/gi,
       /[-*]\s+(?:TODO:|ACTION:)?\s*(.+?)(?:\n|$)/gi,
       /\d+\.\s+(?:TODO:|ACTION:)?\s*(.+?)(?:\n|$)/gi,
-      /(?:will|should|needs? to|must)\s+(.+?)(?:\.|;|\n|$)/gi
+      /(?:will|should|needs? to|must)\s+(.+?)(?:\.|;|\n|$)/gi,
     ];
-    
+
     for (const pattern of actionPatterns) {
       const matches = content.matchAll(pattern);
       for (const match of matches) {
@@ -469,46 +482,47 @@ export class WorkModule extends BaseModule {
         }
       }
     }
-    
+
     return actionItems.slice(0, 10); // Limit to 10 items
   }
 
   private extractTags(content: string): string[] {
     const tags: string[] = [];
-    
+
     // Look for hashtags
     const hashtagMatches = content.match(/#[a-zA-Z0-9_]+/g) || [];
     tags.push(...hashtagMatches.map(tag => tag.substring(1)));
-    
+
     // Look for technical terms
     const technicalTerms = content.match(/\b(?:API|UI|UX|MVP|POC|KPI|ROI|SLA|CI\/CD|QA)\b/g) || [];
     tags.push(...technicalTerms);
-    
+
     // Department indicators
-    const departments = content.match(/\b(?:engineering|sales|marketing|hr|finance|operations|product)\b/gi) || [];
+    const departments =
+      content.match(/\b(?:engineering|sales|marketing|hr|finance|operations|product)\b/gi) || [];
     tags.push(...departments.map(d => d.toLowerCase()));
-    
+
     // Remove duplicates and limit
     return [...new Set(tags)].slice(0, 10);
   }
 
   private calculateImportanceScore(metadata: WorkMetadata): number {
     let score = 0.5; // baseline
-    
+
     // Priority contribution
     const priorityScores = {
       urgent: 0.3,
       high: 0.2,
       medium: 0.1,
-      low: 0
+      low: 0,
     };
     score += priorityScores[metadata.priority || 'medium'];
-    
+
     // Status contribution
     if (metadata.status === 'blocked') {
       score += 0.1;
     }
-    
+
     // Deadline proximity (simplified)
     if (metadata.deadline) {
       const deadlineText = metadata.deadline.toLowerCase();
@@ -518,46 +532,49 @@ export class WorkModule extends BaseModule {
         score += 0.1;
       }
     }
-    
+
     // Team size indicator
     if (metadata.team_members && metadata.team_members.length > 3) {
       score += 0.05;
     }
-    
+
     return Math.min(1, score);
   }
 
   // Additional public methods
-  async analyze(userId: string, options?: { 
-    timeRange?: string; 
-    category?: string;
-    project?: string;
-    status?: string;
-  }): Promise<any> {
+  async analyze(
+    userId: string,
+    options?: {
+      timeRange?: string;
+      category?: string;
+      project?: string;
+      status?: string;
+    },
+  ): Promise<any> {
     try {
       const memories = await this.prisma.workMemory.findMany({
-        where: { userId }
+        where: { userId },
       });
-      
+
       let filteredMemories = memories;
-      
+
       // Apply filters
       if (options?.category) {
-        filteredMemories = filteredMemories.filter(m => 
-          (m.metadata as WorkMetadata).category === options.category
+        filteredMemories = filteredMemories.filter(
+          m => (m.metadata as WorkMetadata).category === options.category,
         );
       }
       if (options?.project) {
-        filteredMemories = filteredMemories.filter(m => 
-          (m.metadata as WorkMetadata).project_name === options.project
+        filteredMemories = filteredMemories.filter(
+          m => (m.metadata as WorkMetadata).project_name === options.project,
         );
       }
       if (options?.status) {
-        filteredMemories = filteredMemories.filter(m => 
-          (m.metadata as WorkMetadata).status === options.status
+        filteredMemories = filteredMemories.filter(
+          m => (m.metadata as WorkMetadata).status === options.status,
         );
       }
-      
+
       const analysis = {
         total_memories: filteredMemories.length,
         categories: this.analyzeCategoryDistribution(filteredMemories),
@@ -567,9 +584,9 @@ export class WorkModule extends BaseModule {
         team_collaboration: this.analyzeTeamCollaboration(filteredMemories),
         upcoming_deadlines: this.analyzeUpcomingDeadlines(filteredMemories),
         blocked_items: this.getBlockedItems(filteredMemories),
-        tag_cloud: this.generateTagCloud(filteredMemories)
+        tag_cloud: this.generateTagCloud(filteredMemories),
       };
-      
+
       return analysis;
     } catch (error) {
       this.logger.error('Error analyzing work memories', { error });
@@ -579,12 +596,12 @@ export class WorkModule extends BaseModule {
 
   private analyzeCategoryDistribution(memories: any[]): Record<string, number> {
     const distribution: Record<string, number> = {};
-    
+
     for (const memory of memories) {
       const category = (memory.metadata as WorkMetadata).category || 'uncategorized';
       distribution[category] = (distribution[category] || 0) + 1;
     }
-    
+
     return distribution;
   }
 
@@ -593,25 +610,25 @@ export class WorkModule extends BaseModule {
       urgent: 0,
       high: 0,
       medium: 0,
-      low: 0
+      low: 0,
     };
-    
+
     for (const memory of memories) {
       const priority = (memory.metadata as WorkMetadata).priority || 'medium';
       distribution[priority]++;
     }
-    
+
     return distribution;
   }
 
   private analyzeStatusDistribution(memories: any[]): Record<string, number> {
     const distribution: Record<string, number> = {};
-    
+
     for (const memory of memories) {
       const status = (memory.metadata as WorkMetadata).status || 'active';
       distribution[status] = (distribution[status] || 0) + 1;
     }
-    
+
     return distribution;
   }
 
@@ -622,56 +639,56 @@ export class WorkModule extends BaseModule {
     priorities: Record<string, number>;
   }> {
     const projectMap: Record<string, any> = {};
-    
+
     for (const memory of memories) {
       const metadata = memory.metadata as WorkMetadata;
       const projectName = metadata.project_name;
-      
+
       if (projectName && metadata.status !== 'completed' && metadata.status !== 'archived') {
         if (!projectMap[projectName]) {
           projectMap[projectName] = {
             name: projectName,
             taskCount: 0,
             teamMembers: new Set<string>(),
-            priorities: { urgent: 0, high: 0, medium: 0, low: 0 }
+            priorities: { urgent: 0, high: 0, medium: 0, low: 0 },
           };
         }
-        
+
         projectMap[projectName].taskCount++;
-        
+
         if (metadata.team_members) {
-          metadata.team_members.forEach(member => 
-            projectMap[projectName].teamMembers.add(member)
-          );
+          metadata.team_members.forEach(member => projectMap[projectName].teamMembers.add(member));
         }
-        
+
         const priority = metadata.priority || 'medium';
         projectMap[projectName].priorities[priority]++;
       }
     }
-    
-    return Object.values(projectMap).map(project => ({
-      name: project.name,
-      taskCount: project.taskCount,
-      teamSize: project.teamMembers.size,
-      priorities: project.priorities
-    })).sort((a, b) => b.taskCount - a.taskCount);
+
+    return Object.values(projectMap)
+      .map(project => ({
+        name: project.name,
+        taskCount: project.taskCount,
+        teamSize: project.teamMembers.size,
+        priorities: project.priorities,
+      }))
+      .sort((a, b) => b.taskCount - a.taskCount);
   }
 
   private analyzeTeamCollaboration(memories: any[]): Record<string, number> {
     const collaboration: Record<string, number> = {};
-    
+
     for (const memory of memories) {
       const teamMembers = (memory.metadata as WorkMetadata).team_members || [];
       for (const member of teamMembers) {
         collaboration[member] = (collaboration[member] || 0) + 1;
       }
     }
-    
+
     return Object.fromEntries(
       Object.entries(collaboration)
         .sort(([, a], [, b]) => b - a)
-        .slice(0, 10)
+        .slice(0, 10),
     );
   }
 
@@ -684,15 +701,15 @@ export class WorkModule extends BaseModule {
     return memories
       .filter(m => {
         const metadata = m.metadata as WorkMetadata;
-        return metadata.deadline && 
-               metadata.status !== 'completed' && 
-               metadata.status !== 'archived';
+        return (
+          metadata.deadline && metadata.status !== 'completed' && metadata.status !== 'archived'
+        );
       })
       .map(m => ({
         content: m.content.substring(0, 100) + '...',
         deadline: (m.metadata as WorkMetadata).deadline!,
         priority: (m.metadata as WorkMetadata).priority || 'medium',
-        project: (m.metadata as WorkMetadata).project_name
+        project: (m.metadata as WorkMetadata).project_name,
       }))
       .slice(0, 10);
   }
@@ -707,25 +724,25 @@ export class WorkModule extends BaseModule {
       .map(m => ({
         content: m.content.substring(0, 100) + '...',
         project: (m.metadata as WorkMetadata).project_name,
-        blockedSince: m.updatedAt
+        blockedSince: m.updatedAt,
       }))
       .slice(0, 10);
   }
 
   private generateTagCloud(memories: any[]): Record<string, number> {
     const tagCount: Record<string, number> = {};
-    
+
     for (const memory of memories) {
       const tags = (memory.metadata as WorkMetadata).tags || [];
       for (const tag of tags) {
         tagCount[tag] = (tagCount[tag] || 0) + 1;
       }
     }
-    
+
     return Object.fromEntries(
       Object.entries(tagCount)
         .sort(([, a], [, b]) => b - a)
-        .slice(0, 20)
+        .slice(0, 20),
     );
   }
 }

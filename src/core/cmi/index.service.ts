@@ -78,12 +78,12 @@ export class CMIService {
       keywords?: string[];
       categories?: string[];
       importanceScore?: number;
-    }
+    },
   ): Promise<MemoryIndexEntry> {
     try {
       // Generate compressed embedding for routing
       const embedding = await this.embeddingService.generateCompressedEmbedding(
-        `${metadata.title} ${metadata.summary} ${content}`
+        `${metadata.title} ${metadata.summary} ${content}`,
       );
 
       // Create or update index entry using raw SQL
@@ -142,16 +142,16 @@ export class CMIService {
         userId,
         moduleId,
         remoteMemoryId,
-        title: metadata.title
+        title: metadata.title,
       });
 
-      return Array.isArray(entry) ? entry[0] : entry as any;
+      return Array.isArray(entry) ? entry[0] : (entry as any);
     } catch (error) {
       this.logger.error('Failed to index memory', {
         error,
         userId,
         moduleId,
-        remoteMemoryId
+        remoteMemoryId,
       });
       throw new Error(`Memory indexing failed: ${error}`);
     }
@@ -160,13 +160,9 @@ export class CMIService {
   /**
    * Route a query to appropriate modules
    */
-  async routeQuery(
-    userId: string,
-    query: string,
-    limit: number = 3
-  ): Promise<ModuleRouting[]> {
+  async routeQuery(userId: string, query: string, limit: number = 3): Promise<ModuleRouting[]> {
     const cacheKey = `routing:${userId}:${query}`;
-    
+
     // Check cache
     if (this.redis) {
       const cached = await this.redis.get(cacheKey);
@@ -180,11 +176,13 @@ export class CMIService {
       const queryEmbedding = await this.embeddingService.generateCompressedEmbedding(query);
 
       // Search for similar memories across all modules
-      const results = await this.prisma.$queryRaw<Array<{
-        moduleId: string;
-        avg_similarity: number;
-        matched_keywords: string[];
-      }>>`
+      const results = await this.prisma.$queryRaw<
+        Array<{
+          moduleId: string;
+          avg_similarity: number;
+          matched_keywords: string[];
+        }>
+      >`
         SELECT 
           "moduleId",
           AVG(1 - (embedding <=> ${queryEmbedding}::vector)) as avg_similarity,
@@ -205,7 +203,7 @@ export class CMIService {
       const routings: ModuleRouting[] = results.map(r => ({
         moduleId: r.moduleId,
         confidence: r.avg_similarity,
-        keywords: r.matched_keywords || []
+        keywords: r.matched_keywords || [],
       }));
 
       // Cache results
@@ -227,15 +225,16 @@ export class CMIService {
     userId: string,
     query: string,
     moduleIds?: string[],
-    limit: number = 10
+    limit: number = 10,
   ): Promise<QueryResult[]> {
     try {
       const queryEmbedding = await this.embeddingService.generateCompressedEmbedding(query);
 
       // Build module filter
-      const moduleFilter = moduleIds && moduleIds.length > 0
-        ? Prisma.sql`AND "moduleId" = ANY(${moduleIds})`
-        : Prisma.empty;
+      const moduleFilter =
+        moduleIds && moduleIds.length > 0
+          ? Prisma.sql`AND "moduleId" = ANY(${moduleIds})`
+          : Prisma.empty;
 
       // Search with similarity
       const results = await this.prisma.$queryRaw<QueryResult[]>`
@@ -259,7 +258,7 @@ export class CMIService {
       if (results.length > 0) {
         const memoryIds = results.map(r => ({
           moduleId: r.moduleId,
-          remoteMemoryId: r.remoteMemoryId
+          remoteMemoryId: r.remoteMemoryId,
         }));
 
         await this.updateAccessCounts(memoryIds);
@@ -281,7 +280,7 @@ export class CMIService {
     target: { moduleId: string; memoryId: string },
     relationshipType: string,
     strength: number = 0.5,
-    metadata?: any
+    metadata?: any,
   ): Promise<MemoryRelationship> {
     try {
       const relationship = await this.prisma.memoryRelationship.create({
@@ -293,15 +292,15 @@ export class CMIService {
           targetMemoryId: target.memoryId,
           relationshipType,
           strength,
-          metadata: metadata || {}
-        }
+          metadata: metadata || {},
+        },
       });
 
       this.logger.info('Memory relationship created', {
         userId,
         source,
         target,
-        relationshipType
+        relationshipType,
       });
 
       return relationship;
@@ -310,7 +309,7 @@ export class CMIService {
         error,
         userId,
         source,
-        target
+        target,
       });
       throw new Error(`Relationship creation failed: ${error}`);
     }
@@ -324,14 +323,17 @@ export class CMIService {
     moduleId: string,
     memoryId: string,
     relationshipTypes?: string[],
-    limit: number = 5
+    limit: number = 5,
   ): Promise<Array<MemoryRelationship & { memory: QueryResult }>> {
     try {
-      const typeFilter = relationshipTypes && relationshipTypes.length > 0
-        ? Prisma.sql`AND "relationshipType" = ANY(${relationshipTypes})`
-        : Prisma.empty;
+      const typeFilter =
+        relationshipTypes && relationshipTypes.length > 0
+          ? Prisma.sql`AND "relationshipType" = ANY(${relationshipTypes})`
+          : Prisma.empty;
 
-      const relationships = await this.prisma.$queryRaw<Array<MemoryRelationship & { memory: QueryResult }>>`
+      const relationships = await this.prisma.$queryRaw<
+        Array<MemoryRelationship & { memory: QueryResult }>
+      >`
         WITH related AS (
           SELECT 
             r.*,
@@ -376,7 +378,7 @@ export class CMIService {
         error,
         userId,
         moduleId,
-        memoryId
+        memoryId,
       });
       throw new Error(`Related memories query failed: ${error}`);
     }
@@ -386,7 +388,7 @@ export class CMIService {
    * Update access statistics
    */
   private async updateAccessCounts(
-    memories: Array<{ moduleId: string; remoteMemoryId: string }>
+    memories: Array<{ moduleId: string; remoteMemoryId: string }>,
   ): Promise<void> {
     try {
       for (const memory of memories) {
@@ -407,26 +409,28 @@ export class CMIService {
   /**
    * Get module statistics
    */
-  async getModuleStats(userId: string): Promise<Array<{
-    moduleId: string;
-    memoryCount: number;
-    avgImportance: number;
-    totalAccess: number;
-  }>> {
+  async getModuleStats(userId: string): Promise<
+    Array<{
+      moduleId: string;
+      memoryCount: number;
+      avgImportance: number;
+      totalAccess: number;
+    }>
+  > {
     try {
       const stats = await this.prisma.memoryIndex.groupBy({
         by: ['moduleId'],
         where: { userId },
         _count: { id: true },
         _avg: { importanceScore: true },
-        _sum: { accessCount: true }
+        _sum: { accessCount: true },
       });
 
       return stats.map(s => ({
         moduleId: s.moduleId,
         memoryCount: s._count.id,
         avgImportance: s._avg.importanceScore || 0,
-        totalAccess: s._sum.accessCount || 0
+        totalAccess: s._sum.accessCount || 0,
       }));
     } catch (error) {
       this.logger.error('Failed to get module stats', { error, userId });
@@ -437,19 +441,16 @@ export class CMIService {
   /**
    * Delete memory from index
    */
-  async deleteMemory(
-    moduleId: string,
-    remoteMemoryId: string
-  ): Promise<void> {
+  async deleteMemory(moduleId: string, remoteMemoryId: string): Promise<void> {
     try {
       // Delete relationships
       await this.prisma.memoryRelationship.deleteMany({
         where: {
           OR: [
             { sourceModule: moduleId, sourceMemoryId: remoteMemoryId },
-            { targetModule: moduleId, targetMemoryId: remoteMemoryId }
-          ]
-        }
+            { targetModule: moduleId, targetMemoryId: remoteMemoryId },
+          ],
+        },
       });
 
       // Delete index entry
@@ -457,9 +458,9 @@ export class CMIService {
         where: {
           moduleId_remoteMemoryId: {
             moduleId,
-            remoteMemoryId
-          }
-        }
+            remoteMemoryId,
+          },
+        },
       });
 
       this.logger.info('Memory deleted from index', { moduleId, remoteMemoryId });
@@ -476,12 +477,12 @@ export class CMIService {
     userId: string,
     content: string,
     metadata?: Record<string, any>,
-    moduleId?: string
+    moduleId?: string,
   ): Promise<string> {
     try {
       // Determine module based on content if not specified
-      const targetModule = moduleId || await this.determineModule(content, metadata);
-      
+      const targetModule = moduleId || (await this.determineModule(content, metadata));
+
       // Get the module instance
       const module = await this.moduleRegistry.getModule(targetModule);
       if (!module) {
@@ -490,9 +491,9 @@ export class CMIService {
 
       // Store in the module
       const memoryId = await module.store(userId, content, metadata);
-      
+
       this.logger.info('Memory stored through CMI', { userId, moduleId: targetModule, memoryId });
-      
+
       return memoryId;
     } catch (error) {
       this.logger.error('Failed to store memory through CMI', { error });
@@ -510,7 +511,7 @@ export class CMIService {
       moduleId?: string;
       limit?: number;
       minScore?: number;
-    }
+    },
   ): Promise<any[]> {
     try {
       // If specific module requested, search directly in that module
@@ -525,17 +526,19 @@ export class CMIService {
       // Otherwise use CMI routing
       const limit = options?.limit || 10;
       const results = await this.searchMemories(userId, query, undefined, limit);
-      
+
       // Fetch full memories from modules
       const fullMemories = await Promise.all(
-        results.map(async (result) => {
+        results.map(async result => {
           const module = await this.moduleRegistry.getModule(result.moduleId);
           if (module) {
             const memory = await module.get(userId, result.remoteMemoryId);
-            return memory ? { ...memory, moduleId: result.moduleId, score: result.importanceScore } : null;
+            return memory
+              ? { ...memory, moduleId: result.moduleId, score: result.importanceScore }
+              : null;
           }
           return null;
-        })
+        }),
       );
 
       return fullMemories.filter(m => m !== null);
@@ -554,8 +557,8 @@ export class CMIService {
       const indexEntry = await this.prisma.memoryIndex.findFirst({
         where: {
           userId,
-          remoteMemoryId: memoryId
-        }
+          remoteMemoryId: memoryId,
+        },
       });
 
       if (!indexEntry) {
@@ -593,15 +596,15 @@ export class CMIService {
   async update(
     userId: string,
     memoryId: string,
-    updates: { content?: string; metadata?: Record<string, any> }
+    updates: { content?: string; metadata?: Record<string, any> },
   ): Promise<boolean> {
     try {
       // Find which module has this memory
       const indexEntry = await this.prisma.memoryIndex.findFirst({
         where: {
           userId,
-          remoteMemoryId: memoryId
-        }
+          remoteMemoryId: memoryId,
+        },
       });
 
       if (!indexEntry) {
@@ -641,8 +644,8 @@ export class CMIService {
       const indexEntry = await this.prisma.memoryIndex.findFirst({
         where: {
           userId,
-          remoteMemoryId: memoryId
-        }
+          remoteMemoryId: memoryId,
+        },
       });
 
       if (!indexEntry) {
@@ -679,38 +682,58 @@ export class CMIService {
   private async determineModule(content: string, metadata?: Record<string, any>): Promise<string> {
     // Simple heuristic for now - can be enhanced with AI classification
     const lowerContent = content.toLowerCase();
-    
+
     if (metadata?.moduleId) {
       return metadata.moduleId;
     }
 
     // Check for code patterns
-    if (lowerContent.includes('function') || lowerContent.includes('class') || 
-        lowerContent.includes('import') || lowerContent.includes('const ')) {
+    if (
+      lowerContent.includes('function') ||
+      lowerContent.includes('class') ||
+      lowerContent.includes('import') ||
+      lowerContent.includes('const ')
+    ) {
       return 'technical';
     }
 
     // Check for work patterns
-    if (lowerContent.includes('meeting') || lowerContent.includes('project') || 
-        lowerContent.includes('deadline') || lowerContent.includes('task')) {
+    if (
+      lowerContent.includes('meeting') ||
+      lowerContent.includes('project') ||
+      lowerContent.includes('deadline') ||
+      lowerContent.includes('task')
+    ) {
       return 'work';
     }
 
     // Check for learning patterns
-    if (lowerContent.includes('learn') || lowerContent.includes('study') || 
-        lowerContent.includes('understand') || lowerContent.includes('course')) {
+    if (
+      lowerContent.includes('learn') ||
+      lowerContent.includes('study') ||
+      lowerContent.includes('understand') ||
+      lowerContent.includes('course')
+    ) {
       return 'learning';
     }
 
     // Check for communication patterns
-    if (lowerContent.includes('email') || lowerContent.includes('message') || 
-        lowerContent.includes('call') || lowerContent.includes('chat')) {
+    if (
+      lowerContent.includes('email') ||
+      lowerContent.includes('message') ||
+      lowerContent.includes('call') ||
+      lowerContent.includes('chat')
+    ) {
       return 'communication';
     }
 
     // Check for creative patterns
-    if (lowerContent.includes('idea') || lowerContent.includes('design') || 
-        lowerContent.includes('create') || lowerContent.includes('art')) {
+    if (
+      lowerContent.includes('idea') ||
+      lowerContent.includes('design') ||
+      lowerContent.includes('create') ||
+      lowerContent.includes('art')
+    ) {
       return 'creative';
     }
 

@@ -9,7 +9,7 @@ const logger = Logger.getInstance();
 
 // Validation schemas
 const analyzeModuleSchema = z.object({
-  options: z.record(z.any()).optional()
+  options: z.record(z.any()).optional(),
 });
 
 // GET /api/modules - List all available modules
@@ -23,14 +23,14 @@ router.get('/', async (req: AuthRequest, res: Response) => {
         id: module.id,
         name: module.name,
         description: module.description,
-        type: module.type
-      }))
+        type: module.type,
+      })),
     });
   } catch (error) {
     logger.error('Failed to list modules', { error });
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Failed to list modules',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -40,11 +40,11 @@ router.get('/:moduleId/stats', async (req: AuthRequest, res: Response) => {
   try {
     const { moduleId } = req.params;
     const registry = ModuleRegistry.getInstance();
-    
+
     const module = await registry.getModule(moduleId);
     if (!module) {
-      return res.status(404).json({ 
-        error: 'Module not found' 
+      return res.status(404).json({
+        error: 'Module not found',
       });
     }
 
@@ -52,13 +52,13 @@ router.get('/:moduleId/stats', async (req: AuthRequest, res: Response) => {
 
     return res.json({
       moduleId,
-      stats
+      stats,
     });
   } catch (error) {
     logger.error('Failed to get module stats', { error });
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Failed to get module statistics',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -68,28 +68,28 @@ router.post('/:moduleId/analyze', async (req: AuthRequest, res: Response) => {
   try {
     const { moduleId } = req.params;
     const validation = analyzeModuleSchema.safeParse(req.body);
-    
+
     if (!validation.success) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Invalid request body',
-        details: validation.error.errors 
+        details: validation.error.errors,
       });
     }
 
     const { options } = validation.data;
     const registry = ModuleRegistry.getInstance();
-    
+
     const module = await registry.getModule(moduleId);
     if (!module) {
-      return res.status(404).json({ 
-        error: 'Module not found' 
+      return res.status(404).json({
+        error: 'Module not found',
       });
     }
 
     // Check if module has analyze method
     if (!('analyze' in module) || typeof (module as any).analyze !== 'function') {
-      return res.status(400).json({ 
-        error: 'Module does not support analysis' 
+      return res.status(400).json({
+        error: 'Module does not support analysis',
       });
     }
 
@@ -97,18 +97,18 @@ router.post('/:moduleId/analyze', async (req: AuthRequest, res: Response) => {
 
     logger.info('Module analysis via REST API', {
       userId: req.user!.id,
-      moduleId
+      moduleId,
     });
 
     return res.json({
       moduleId,
-      analysis
+      analysis,
     });
   } catch (error) {
     logger.error('Failed to analyze module data', { error });
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Failed to analyze module data',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -118,13 +118,13 @@ router.get('/:moduleId/memories', async (req: AuthRequest, res: Response) => {
   try {
     const { moduleId } = req.params;
     const { limit = 20, offset = 0 } = req.query;
-    
+
     const registry = ModuleRegistry.getInstance();
     const module = await registry.getModule(moduleId);
-    
+
     if (!module) {
-      return res.status(404).json({ 
-        error: 'Module not found' 
+      return res.status(404).json({
+        error: 'Module not found',
       });
     }
 
@@ -132,19 +132,19 @@ router.get('/:moduleId/memories', async (req: AuthRequest, res: Response) => {
     // For now, we'll use search with empty query
     const results = await module.search(req.user!.id, '', {
       limit: Number(limit),
-      minScore: 0 // Return all
+      minScore: 0, // Return all
     });
 
     return res.json({
       moduleId,
       memories: results,
-      count: results.length
+      count: results.length,
     });
   } catch (error) {
     logger.error('Failed to get module memories', { error });
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Failed to get module memories',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });

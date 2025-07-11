@@ -49,37 +49,37 @@ export class ModuleLoader {
     this.dependencies.set('technical', {
       moduleId: 'technical',
       requiredModules: [],
-      optionalModules: []
+      optionalModules: [],
     });
 
     this.dependencies.set('personal', {
       moduleId: 'personal',
       requiredModules: [],
-      optionalModules: []
+      optionalModules: [],
     });
 
     this.dependencies.set('work', {
       moduleId: 'work',
       requiredModules: [],
-      optionalModules: []
+      optionalModules: [],
     });
 
     this.dependencies.set('learning', {
       moduleId: 'learning',
       requiredModules: [],
-      optionalModules: []
+      optionalModules: [],
     });
 
     this.dependencies.set('communication', {
       moduleId: 'communication',
       requiredModules: [],
-      optionalModules: []
+      optionalModules: [],
     });
 
     this.dependencies.set('creative', {
       moduleId: 'creative',
       requiredModules: [],
-      optionalModules: []
+      optionalModules: [],
     });
   }
 
@@ -106,7 +106,7 @@ export class ModuleLoader {
       this.logger.info('Module loading completed', {
         total: results.length,
         successful: results.filter(r => r.success).length,
-        failed: results.filter(r => !r.success).length
+        failed: results.filter(r => !r.success).length,
       });
 
       return results;
@@ -124,7 +124,7 @@ export class ModuleLoader {
       return {
         moduleId,
         success: true,
-        instance: await this.registry.getModule(moduleId)
+        instance: await this.registry.getModule(moduleId),
       };
     }
 
@@ -182,15 +182,18 @@ export class ModuleLoader {
       return {
         moduleId,
         success: true,
-        instance
+        instance,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Failed to load module: ${moduleId}`, { error: errorMessage, stack: error instanceof Error ? error.stack : undefined });
+      this.logger.error(`Failed to load module: ${moduleId}`, {
+        error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       return {
         moduleId,
         success: false,
-        error: errorMessage
+        error: errorMessage,
       };
     }
   }
@@ -207,9 +210,7 @@ export class ModuleLoader {
       // Check if other modules depend on this one
       const dependents = this.getModuleDependents(moduleId);
       if (dependents.length > 0) {
-        throw new Error(
-          `Cannot unload module ${moduleId}. Required by: ${dependents.join(', ')}`
-        );
+        throw new Error(`Cannot unload module ${moduleId}. Required by: ${dependents.join(', ')}`);
       }
 
       // Get module instance
@@ -249,7 +250,6 @@ export class ModuleLoader {
     // Load module again
     return this.loadModule(moduleId, config);
   }
-
 
   /**
    * Sort modules by dependencies
@@ -385,7 +385,7 @@ export class ModuleLoader {
 
     this.logger.info('Inter-module communication enabled', {
       source: sourceModule,
-      target: targetModule
+      target: targetModule,
     });
   }
 
@@ -403,7 +403,7 @@ export class ModuleLoader {
           this.logger.error('Module event handler failed', {
             moduleId: module.moduleId,
             event,
-            error
+            error,
           });
         }
       }

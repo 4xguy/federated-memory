@@ -43,10 +43,10 @@ router.post('/keys', authMiddleware, async (req: AuthRequest, res) => {
 
     const { name, expiresInDays } = validation.data;
     const key = await authService.generateApiKey(userId, name, expiresInDays);
-    
-    res.json({ 
+
+    res.json({
       key,
-      message: 'API key created successfully. Store it securely as it will not be shown again.' 
+      message: 'API key created successfully. Store it securely as it will not be shown again.',
     });
   } catch (error) {
     console.error('Error creating API key:', error);

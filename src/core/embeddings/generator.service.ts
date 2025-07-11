@@ -20,10 +20,7 @@ export class EmbeddingService {
   private batchSize = 100;
   private cacheEnabled = true;
 
-  constructor(
-    apiKey: string,
-    options?: EmbeddingOptions
-  ) {
+  constructor(apiKey: string, options?: EmbeddingOptions) {
     this.openai = new OpenAI({ apiKey });
     this.logger = Logger.getInstance();
     this.redis = Redis.getInstance();
@@ -37,12 +34,9 @@ export class EmbeddingService {
   /**
    * Generate embeddings for a single text
    */
-  async generateEmbedding(
-    text: string,
-    dimensions?: number
-  ): Promise<number[]> {
+  async generateEmbedding(text: string, dimensions?: number): Promise<number[]> {
     const cacheKey = this.getCacheKey(text, dimensions);
-    
+
     // Check cache first
     if (this.cacheEnabled && this.redis) {
       const cached = await this.redis.get(cacheKey);
@@ -55,7 +49,7 @@ export class EmbeddingService {
     try {
       const response = await this.openai.embeddings.create({
         model: this.defaultModel,
-        input: text
+        input: text,
       });
 
       const embedding = response.data[0].embedding;
@@ -65,7 +59,7 @@ export class EmbeddingService {
         await this.redis.set(
           cacheKey,
           JSON.stringify(embedding),
-          3600 * 24 // 24 hour TTL
+          3600 * 24, // 24 hour TTL
         );
       }
 
@@ -79,10 +73,7 @@ export class EmbeddingService {
   /**
    * Generate embeddings for multiple texts in batches
    */
-  async generateBatchEmbeddings(
-    texts: string[],
-    dimensions?: number
-  ): Promise<number[][]> {
+  async generateBatchEmbeddings(texts: string[], dimensions?: number): Promise<number[][]> {
     const results: number[][] = [];
     const uncachedTexts: string[] = [];
     const uncachedIndices: number[] = [];
@@ -107,11 +98,11 @@ export class EmbeddingService {
     // Process uncached texts in batches
     for (let i = 0; i < uncachedTexts.length; i += this.batchSize) {
       const batch = uncachedTexts.slice(i, i + this.batchSize);
-      
+
       try {
         const response = await this.openai.embeddings.create({
           model: this.defaultModel,
-          input: batch
+          input: batch,
         });
 
         // Store results and cache them
@@ -119,14 +110,14 @@ export class EmbeddingService {
           const embedding = response.data[j].embedding;
           const originalIndex = uncachedIndices[i + j];
           const cacheKey = this.getCacheKey(texts[originalIndex], dimensions);
-          
+
           results[originalIndex] = embedding;
 
           if (this.cacheEnabled && this.redis) {
             await this.redis.set(
               cacheKey,
               JSON.stringify(embedding),
-              3600 * 24 // 24 hour TTL
+              3600 * 24, // 24 hour TTL
             );
           }
         }
@@ -142,9 +133,7 @@ export class EmbeddingService {
   /**
    * Generate compressed embeddings for CMI (512 dimensions)
    */
-  async generateCompressedEmbedding(
-    text: string
-  ): Promise<number[]> {
+  async generateCompressedEmbedding(text: string): Promise<number[]> {
     const fullEmbedding = await this.generateEmbedding(text);
     return this.reduceDimensions(fullEmbedding, 512);
   }
@@ -152,9 +141,7 @@ export class EmbeddingService {
   /**
    * Generate full embeddings for module storage (1536 dimensions)
    */
-  async generateFullEmbedding(
-    text: string
-  ): Promise<number[]> {
+  async generateFullEmbedding(text: string): Promise<number[]> {
     return this.generateEmbedding(text);
   }
 
@@ -162,10 +149,7 @@ export class EmbeddingService {
    * Reduce dimensionality of existing embedding using PCA-like approach
    * This is a simplified version - in production, consider using proper PCA
    */
-  reduceDimensions(
-    embedding: number[],
-    targetDimensions: number
-  ): number[] {
+  reduceDimensions(embedding: number[], targetDimensions: number): number[] {
     if (embedding.length <= targetDimensions) {
       return embedding;
     }
@@ -177,12 +161,12 @@ export class EmbeddingService {
     for (let i = 0; i < targetDimensions; i++) {
       const start = Math.floor(i * ratio);
       const end = Math.floor((i + 1) * ratio);
-      
+
       let sum = 0;
       for (let j = start; j < end; j++) {
         sum += embedding[j];
       }
-      
+
       reduced.push(sum / (end - start));
     }
 
@@ -194,10 +178,7 @@ export class EmbeddingService {
   /**
    * Calculate cosine similarity between two embeddings
    */
-  cosineSimilarity(
-    embedding1: number[],
-    embedding2: number[]
-  ): number {
+  cosineSimilarity(embedding1: number[], embedding2: number[]): number {
     if (embedding1.length !== embedding2.length) {
       throw new Error('Embeddings must have the same dimensions');
     }
@@ -228,16 +209,14 @@ export class EmbeddingService {
   findMostSimilar(
     queryEmbedding: number[],
     embeddings: Array<{ id: string; embedding: number[] }>,
-    topK: number = 5
+    topK: number = 5,
   ): Array<{ id: string; similarity: number }> {
     const similarities = embeddings.map(item => ({
       id: item.id,
-      similarity: this.cosineSimilarity(queryEmbedding, item.embedding)
+      similarity: this.cosineSimilarity(queryEmbedding, item.embedding),
     }));
 
-    return similarities
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, topK);
+    return similarities.sort((a, b) => b.similarity - a.similarity).slice(0, topK);
   }
 
   /**
@@ -257,12 +236,8 @@ export class EmbeddingService {
    * Generate cache key for embeddings
    */
   private getCacheKey(text: string, dimensions?: number): string {
-    const hash = crypto
-      .createHash('sha256')
-      .update(text)
-      .digest('hex')
-      .substring(0, 16);
-    
+    const hash = crypto.createHash('sha256').update(text).digest('hex').substring(0, 16);
+
     return `embedding:${this.defaultModel}:${dimensions || 'default'}:${hash}`;
   }
 

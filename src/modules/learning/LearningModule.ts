@@ -1,10 +1,10 @@
 import { BaseModule, ModuleInfo } from '@/core/modules/base.module';
-import { 
-  Memory, 
+import {
+  Memory,
   SearchOptions,
   ModuleStats,
   ModuleConfig,
-  ModuleType
+  ModuleType,
 } from '@/core/modules/interfaces';
 import { PrismaClient } from '@prisma/client';
 import { getCMIService } from '@/core/cmi/index.service';
@@ -16,7 +16,14 @@ interface LearningMetadata {
   difficulty?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
   progress?: 'not_started' | 'in_progress' | 'completed' | 'mastered';
   understanding_level?: number; // 0-1 scale
-  resource_type?: 'article' | 'video' | 'book' | 'course' | 'documentation' | 'example' | 'exercise';
+  resource_type?:
+    | 'article'
+    | 'video'
+    | 'book'
+    | 'course'
+    | 'documentation'
+    | 'example'
+    | 'exercise';
   resource_url?: string;
   prerequisites?: string[];
   related_concepts?: string[];
@@ -40,15 +47,15 @@ export class LearningModule extends BaseModule {
       maxMemorySize: 10000,
       retentionDays: -1, // Never expire learning memories
       features: {
-        timeBasedRetrieval: true
+        timeBasedRetrieval: true,
       },
       metadata: {
         searchableFields: ['category', 'subject', 'topics', 'difficulty', 'progress'],
         requiredFields: [],
-        indexedFields: ['category', 'subject', 'progress', 'difficulty']
-      }
+        indexedFields: ['category', 'subject', 'progress', 'difficulty'],
+      },
     };
-    
+
     super(config, prisma, cmi);
   }
 
@@ -56,14 +63,17 @@ export class LearningModule extends BaseModule {
     return {
       name: this.config.name,
       description: this.config.description,
-      type: 'standard' as ModuleType
+      type: 'standard' as ModuleType,
     };
   }
 
-  async processMetadata(content: string, metadata: Record<string, any>): Promise<Record<string, any>> {
+  async processMetadata(
+    content: string,
+    metadata: Record<string, any>,
+  ): Promise<Record<string, any>> {
     const learningMetadata: LearningMetadata = {
       ...metadata,
-      progress: metadata.progress || 'not_started'
+      progress: metadata.progress || 'not_started',
     };
 
     // Auto-categorize if not provided
@@ -113,7 +123,7 @@ export class LearningModule extends BaseModule {
 
     // Calculate importance score
     learningMetadata.importanceScore = this.calculateImportanceScore(learningMetadata);
-    
+
     // Set categories for CMI
     learningMetadata.categories = ['learning'];
     if (learningMetadata.subject) {
@@ -128,47 +138,47 @@ export class LearningModule extends BaseModule {
 
   formatSearchResult(memory: Memory): Memory {
     const metadata = memory.metadata as LearningMetadata;
-    
+
     const enrichedMetadata: any = {
       ...metadata,
-      contextSummary: []
+      contextSummary: [],
     };
-    
+
     if (metadata.subject) {
       enrichedMetadata.contextSummary.push(`Subject: ${metadata.subject}`);
     }
-    
+
     if (metadata.category) {
       enrichedMetadata.contextSummary.push(`Type: ${metadata.category}`);
     }
-    
+
     if (metadata.difficulty) {
       enrichedMetadata.contextSummary.push(`Level: ${metadata.difficulty}`);
     }
-    
+
     if (metadata.progress) {
       enrichedMetadata.contextSummary.push(`Progress: ${metadata.progress}`);
     }
-    
+
     if (metadata.understanding_level !== undefined) {
       const percentage = Math.round(metadata.understanding_level * 100);
       enrichedMetadata.contextSummary.push(`Understanding: ${percentage}%`);
     }
-    
+
     if (metadata.review_needed) {
       enrichedMetadata.contextSummary.push(`📌 Review needed`);
     }
-    
+
     return {
       ...memory,
-      metadata: enrichedMetadata
+      metadata: enrichedMetadata,
     };
   }
 
   async searchByEmbedding(
-    userId: string, 
-    embedding: number[], 
-    options?: SearchOptions
+    userId: string,
+    embedding: number[],
+    options?: SearchOptions,
   ): Promise<Memory[]> {
     const limit = options?.limit || 10;
     const minScore = options?.minScore || 0.5;
@@ -196,7 +206,7 @@ export class LearningModule extends BaseModule {
       userId,
       `[${embedding.join(',')}]`,
       minScore,
-      limit
+      limit,
     );
 
     return result.map(row => ({
@@ -207,7 +217,7 @@ export class LearningModule extends BaseModule {
       accessCount: row.accessCount,
       lastAccessed: row.lastAccessed,
       createdAt: row.createdAt,
-      updatedAt: row.updatedAt
+      updatedAt: row.updatedAt,
     }));
   }
 
@@ -215,7 +225,7 @@ export class LearningModule extends BaseModule {
     userId: string,
     content: string,
     embedding: number[],
-    metadata: Record<string, any>
+    metadata: Record<string, any>,
   ): Promise<Memory> {
     const id = await this.prisma.$queryRaw<{ id: string }[]>`
       INSERT INTO learning_memories (id, "userId", content, embedding, metadata, "createdAt", "updatedAt", "accessCount", "lastAccessed")
@@ -234,7 +244,7 @@ export class LearningModule extends BaseModule {
     `;
 
     const result = await this.prisma.learningMemory.findUniqueOrThrow({
-      where: { id: id[0].id }
+      where: { id: id[0].id },
     });
 
     return {
@@ -245,7 +255,7 @@ export class LearningModule extends BaseModule {
       accessCount: result.accessCount,
       lastAccessed: result.lastAccessed,
       createdAt: result.createdAt,
-      updatedAt: result.updatedAt
+      updatedAt: result.updatedAt,
     };
   }
 
@@ -253,8 +263,8 @@ export class LearningModule extends BaseModule {
     const result = await this.prisma.learningMemory.findFirst({
       where: {
         id: memoryId,
-        userId
-      }
+        userId,
+      },
     });
 
     if (!result) return null;
@@ -267,27 +277,27 @@ export class LearningModule extends BaseModule {
       accessCount: result.accessCount,
       lastAccessed: result.lastAccessed,
       createdAt: result.createdAt,
-      updatedAt: result.updatedAt
+      updatedAt: result.updatedAt,
     };
   }
 
   protected async updateInModule(
     userId: string,
     memoryId: string,
-    updates: Partial<Memory>
+    updates: Partial<Memory>,
   ): Promise<boolean> {
     try {
       const updateData: any = {};
       if (updates.content !== undefined) updateData.content = updates.content;
       if (updates.metadata !== undefined) updateData.metadata = updates.metadata;
-      
+
       await this.prisma.learningMemory.update({
         where: {
-          id: memoryId
+          id: memoryId,
         },
-        data: updateData
+        data: updateData,
       });
-      
+
       return true;
     } catch {
       return false;
@@ -298,8 +308,8 @@ export class LearningModule extends BaseModule {
     try {
       await this.prisma.learningMemory.delete({
         where: {
-          id: memoryId
-        }
+          id: memoryId,
+        },
       });
       return true;
     } catch {
@@ -309,7 +319,7 @@ export class LearningModule extends BaseModule {
 
   protected async calculateStats(userId: string): Promise<ModuleStats> {
     const memories = await this.prisma.learningMemory.findMany({
-      where: { userId }
+      where: { userId },
     });
 
     const subjects: Record<string, number> = {};
@@ -331,35 +341,34 @@ export class LearningModule extends BaseModule {
     return {
       totalMemories: memories.length,
       totalSize: memories.reduce((sum, m) => sum + m.content.length, 0),
-      lastAccessed: memories.length > 0 
-        ? memories.reduce((latest, m) => 
-            m.lastAccessed > latest ? m.lastAccessed : latest, 
-            memories[0].lastAccessed
-          )
-        : undefined,
+      lastAccessed:
+        memories.length > 0
+          ? memories.reduce(
+              (latest, m) => (m.lastAccessed > latest ? m.lastAccessed : latest),
+              memories[0].lastAccessed,
+            )
+          : undefined,
       mostFrequentCategories: topSubjects,
-      averageAccessCount: memories.length > 0 
-        ? totalAccessCount / memories.length 
-        : 0
+      averageAccessCount: memories.length > 0 ? totalAccessCount / memories.length : 0,
     };
   }
 
   // Helper methods
   private categorizeLearningContent(content: string): LearningMetadata['category'] {
     const lowerContent = content.toLowerCase();
-    
+
     const categoryKeywords = {
       concept: ['concept', 'theory', 'principle', 'fundamental', 'definition', 'explanation'],
       tutorial: ['tutorial', 'how to', 'guide', 'step by step', 'walkthrough', 'example'],
       reference: ['reference', 'documentation', 'api', 'syntax', 'specification', 'manual'],
       practice: ['practice', 'exercise', 'problem', 'challenge', 'implement', 'solve'],
       reflection: ['learned', 'understand', 'realize', 'insight', 'reflection', 'conclusion'],
-      question: ['?', 'why', 'how', 'what', 'when', 'where', 'question', 'wondering']
+      question: ['?', 'why', 'how', 'what', 'when', 'where', 'question', 'wondering'],
     };
-    
+
     let maxScore = 0;
     let bestCategory: LearningMetadata['category'] = 'concept';
-    
+
     for (const [category, keywords] of Object.entries(categoryKeywords)) {
       const score = keywords.filter(keyword => lowerContent.includes(keyword)).length;
       if (score > maxScore) {
@@ -367,7 +376,7 @@ export class LearningModule extends BaseModule {
         bestCategory = category as LearningMetadata['category'];
       }
     }
-    
+
     return bestCategory;
   }
 
@@ -376,88 +385,96 @@ export class LearningModule extends BaseModule {
     const subjectPatterns = [
       /(?:learning|studying|about|regarding)\s+([A-Za-z\s]+?)(?:\.|,|\n|$)/i,
       /^([A-Z][A-Za-z\s]+?)(?:\s*[-:]\s*)/,
-      /(?:subject|topic):\s*([A-Za-z\s]+?)(?:\.|,|\n|$)/i
+      /(?:subject|topic):\s*([A-Za-z\s]+?)(?:\.|,|\n|$)/i,
     ];
-    
+
     for (const pattern of subjectPatterns) {
       const match = content.match(pattern);
       if (match && match[1]) {
         return match[1].trim();
       }
     }
-    
+
     // Extract from technical terms
-    const technicalTerms = content.match(/\b(?:JavaScript|Python|React|Node\.js|TypeScript|SQL|Docker|Kubernetes|AWS|Machine Learning|AI|Data Science|Algorithms|Design Patterns)\b/gi);
+    const technicalTerms = content.match(
+      /\b(?:JavaScript|Python|React|Node\.js|TypeScript|SQL|Docker|Kubernetes|AWS|Machine Learning|AI|Data Science|Algorithms|Design Patterns)\b/gi,
+    );
     if (technicalTerms && technicalTerms.length > 0) {
       return technicalTerms[0];
     }
-    
+
     return undefined;
   }
 
   private extractTopics(content: string): string[] {
     const topics: string[] = [];
-    
+
     // Technical topics
     const techTopics = content.match(/\b(?:[A-Z][a-z]+(?:[A-Z][a-z]+)*|[A-Z]{2,})\b/g) || [];
     topics.push(...techTopics.filter(t => t.length > 2 && t.length < 30));
-    
+
     // Concepts after "about", "regarding", etc.
-    const conceptMatches = content.match(/(?:about|regarding|concerning|including)\s+([a-z]+(?:\s+[a-z]+)?)/gi) || [];
+    const conceptMatches =
+      content.match(/(?:about|regarding|concerning|including)\s+([a-z]+(?:\s+[a-z]+)?)/gi) || [];
     conceptMatches.forEach(match => {
       const concept = match.replace(/^(?:about|regarding|concerning|including)\s+/i, '');
       if (concept && !topics.includes(concept)) {
         topics.push(concept);
       }
     });
-    
+
     // Remove duplicates and common words
     const commonWords = ['The', 'This', 'That', 'These', 'Those', 'And', 'But', 'For'];
-    return [...new Set(topics)]
-      .filter(topic => !commonWords.includes(topic))
-      .slice(0, 10);
+    return [...new Set(topics)].filter(topic => !commonWords.includes(topic)).slice(0, 10);
   }
 
-  private assessDifficulty(content: string, metadata: LearningMetadata): LearningMetadata['difficulty'] {
+  private assessDifficulty(
+    content: string,
+    metadata: LearningMetadata,
+  ): LearningMetadata['difficulty'] {
     const lowerContent = content.toLowerCase();
-    
+
     // Beginner indicators
     if (/beginner|basic|intro|fundamentals|getting started|simple/.test(lowerContent)) {
       return 'beginner';
     }
-    
+
     // Advanced/Expert indicators
-    if (/advanced|expert|complex|sophisticated|optimization|architecture|design patterns/.test(lowerContent)) {
+    if (
+      /advanced|expert|complex|sophisticated|optimization|architecture|design patterns/.test(
+        lowerContent,
+      )
+    ) {
       return metadata.topics && metadata.topics.length > 5 ? 'expert' : 'advanced';
     }
-    
+
     // Intermediate indicators
     if (/intermediate|practical|implementation|building|creating/.test(lowerContent)) {
       return 'intermediate';
     }
-    
+
     // Based on content complexity
     const codeBlocks = (content.match(/```/g) || []).length / 2;
     const technicalTerms = (content.match(/\b[A-Z]{2,}\b/g) || []).length;
-    
+
     if (codeBlocks > 3 || technicalTerms > 10) {
       return 'advanced';
     } else if (codeBlocks > 1 || technicalTerms > 5) {
       return 'intermediate';
     }
-    
+
     return 'beginner';
   }
 
   private extractRelatedConcepts(content: string): string[] {
     const concepts: string[] = [];
-    
+
     // Look for "related to", "similar to", "like", etc.
     const relationPatterns = [
       /(?:related to|similar to|like|such as|including)\s+([A-Za-z\s,]+?)(?:\.|;|\n|$)/gi,
-      /(?:compare|versus|vs\.?)\s+([A-Za-z\s]+?)(?:\.|;|\n|and|$)/gi
+      /(?:compare|versus|vs\.?)\s+([A-Za-z\s]+?)(?:\.|;|\n|and|$)/gi,
     ];
-    
+
     for (const pattern of relationPatterns) {
       const matches = content.matchAll(pattern);
       for (const match of matches) {
@@ -465,69 +482,69 @@ export class LearningModule extends BaseModule {
         concepts.push(...items.filter(item => item.length > 2));
       }
     }
-    
+
     return [...new Set(concepts)].slice(0, 10);
   }
 
   private extractQuestions(content: string): string[] {
     const questions: string[] = [];
-    
+
     // Extract sentences ending with ?
     const questionMatches = content.match(/[^.!?]+\?/g) || [];
     questions.push(...questionMatches.map(q => q.trim()));
-    
+
     // Extract implicit questions
     const implicitPatterns = [
       /(?:wondering|curious|need to know|want to understand)\s+(.+?)(?:\.|;|\n|$)/gi,
-      /(?:how|why|what|when|where)\s+(?:does|do|is|are|can|should)\s+(.+?)(?:\.|;|\n|$)/gi
+      /(?:how|why|what|when|where)\s+(?:does|do|is|are|can|should)\s+(.+?)(?:\.|;|\n|$)/gi,
     ];
-    
+
     for (const pattern of implicitPatterns) {
       const matches = content.matchAll(pattern);
       for (const match of matches) {
         questions.push(match[0].trim());
       }
     }
-    
+
     return [...new Set(questions)].slice(0, 10);
   }
 
   private extractKeyTakeaways(content: string): string[] {
     const takeaways: string[] = [];
-    
+
     // Look for explicit takeaways
     const takeawayPatterns = [
       /(?:key takeaway|important|remember|note):\s*(.+?)(?:\.|;|\n|$)/gi,
       /(?:learned that|discovered that|found that)\s+(.+?)(?:\.|;|\n|$)/gi,
-      /(?:conclusion|summary):\s*(.+?)(?:\.|;|\n|$)/gi
+      /(?:conclusion|summary):\s*(.+?)(?:\.|;|\n|$)/gi,
     ];
-    
+
     for (const pattern of takeawayPatterns) {
       const matches = content.matchAll(pattern);
       for (const match of matches) {
         takeaways.push(match[1].trim());
       }
     }
-    
+
     // Look for bullet points or numbered lists
     const listItems = content.match(/^[\s]*[-*•]\s+(.+?)$/gm) || [];
     takeaways.push(...listItems.map(item => item.replace(/^[\s]*[-*•]\s+/, '').trim()));
-    
+
     return [...new Set(takeaways)].slice(0, 10);
   }
 
   private assessUnderstandingLevel(metadata: LearningMetadata): number {
     let level = 0.3; // baseline
-    
+
     // Progress contribution
     const progressLevels = {
       not_started: 0,
       in_progress: 0.3,
       completed: 0.6,
-      mastered: 0.9
+      mastered: 0.9,
     };
     level = progressLevels[metadata.progress || 'not_started'];
-    
+
     // Category adjustments
     if (metadata.category === 'practice' && metadata.progress === 'completed') {
       level += 0.1;
@@ -535,104 +552,107 @@ export class LearningModule extends BaseModule {
     if (metadata.category === 'reflection') {
       level += 0.1;
     }
-    
+
     // Time spent factor
     if (metadata.time_spent_minutes) {
       if (metadata.time_spent_minutes > 60) level += 0.1;
       if (metadata.time_spent_minutes > 180) level += 0.1;
     }
-    
+
     return Math.min(1, level);
   }
 
   private shouldReview(metadata: LearningMetadata): boolean {
     // Always review if explicitly marked
     if (metadata.review_needed) return true;
-    
+
     // Review questions
     if (metadata.category === 'question' && metadata.progress !== 'completed') {
       return true;
     }
-    
+
     // Review incomplete advanced topics
     if (metadata.difficulty === 'advanced' && metadata.progress === 'in_progress') {
       return true;
     }
-    
+
     // Review if understanding is low
     if (metadata.understanding_level !== undefined && metadata.understanding_level < 0.5) {
       return true;
     }
-    
+
     return false;
   }
 
   private calculateImportanceScore(metadata: LearningMetadata): number {
     let score = 0.5; // baseline
-    
+
     // Difficulty contribution
     const difficultyScores = {
       beginner: 0.1,
       intermediate: 0.2,
       advanced: 0.3,
-      expert: 0.4
+      expert: 0.4,
     };
     score += difficultyScores[metadata.difficulty || 'beginner'];
-    
+
     // Progress weight (incomplete advanced topics are important)
     if (metadata.progress === 'in_progress') {
       score += 0.1;
     }
-    
+
     // Questions are important
     if (metadata.category === 'question') {
       score += 0.1;
     }
-    
+
     // Prerequisites make it foundational
     if (metadata.prerequisites && metadata.prerequisites.length > 0) {
       score += 0.05;
     }
-    
+
     return Math.min(1, score);
   }
 
   // Additional public methods
-  async analyze(userId: string, options?: { 
-    subject?: string;
-    category?: string;
-    difficulty?: string;
-    needsReview?: boolean;
-  }): Promise<any> {
+  async analyze(
+    userId: string,
+    options?: {
+      subject?: string;
+      category?: string;
+      difficulty?: string;
+      needsReview?: boolean;
+    },
+  ): Promise<any> {
     try {
       const memories = await this.prisma.learningMemory.findMany({
-        where: { userId }
+        where: { userId },
       });
-      
+
       let filteredMemories = memories;
-      
+
       // Apply filters
       if (options?.subject) {
-        filteredMemories = filteredMemories.filter(m => 
-          (m.metadata as LearningMetadata).subject === options.subject
+        filteredMemories = filteredMemories.filter(
+          m => (m.metadata as LearningMetadata).subject === options.subject,
         );
       }
       if (options?.category) {
-        filteredMemories = filteredMemories.filter(m => 
-          (m.metadata as LearningMetadata).category === options.category
+        filteredMemories = filteredMemories.filter(
+          m => (m.metadata as LearningMetadata).category === options.category,
         );
       }
       if (options?.difficulty) {
-        filteredMemories = filteredMemories.filter(m => 
-          (m.metadata as LearningMetadata).difficulty === options.difficulty
+        filteredMemories = filteredMemories.filter(
+          m => (m.metadata as LearningMetadata).difficulty === options.difficulty,
         );
       }
       if (options?.needsReview) {
-        filteredMemories = filteredMemories.filter(m => 
-          (m.metadata as LearningMetadata).review_needed === true
+        filteredMemories = filteredMemories.filter(
+          m => (m.metadata as LearningMetadata).review_needed === true,
         );
       }
-      
+
       const analysis = {
         total_memories: filteredMemories.length,
         subjects: this.analyzeSubjects(filteredMemories),
@@ -643,9 +663,9 @@ export class LearningModule extends BaseModule {
         learning_path: this.suggestLearningPath(filteredMemories),
         questions_pending: this.getPendingQuestions(filteredMemories),
         review_items: this.getReviewItems(filteredMemories),
-        time_investment: this.analyzeTimeInvestment(filteredMemories)
+        time_investment: this.analyzeTimeInvestment(filteredMemories),
       };
-      
+
       return analysis;
     } catch (error) {
       this.logger.error('Error analyzing learning memories', { error });
@@ -653,17 +673,20 @@ export class LearningModule extends BaseModule {
     }
   }
 
-  private analyzeSubjects(memories: any[]): Record<string, {
-    count: number;
-    averageUnderstanding: number;
-    progress: Record<string, number>;
-  }> {
+  private analyzeSubjects(memories: any[]): Record<
+    string,
+    {
+      count: number;
+      averageUnderstanding: number;
+      progress: Record<string, number>;
+    }
+  > {
     const subjects: Record<string, any> = {};
-    
+
     for (const memory of memories) {
       const metadata = memory.metadata as LearningMetadata;
       const subject = metadata.subject || 'General';
-      
+
       if (!subjects[subject]) {
         subjects[subject] = {
           count: 0,
@@ -672,26 +695,26 @@ export class LearningModule extends BaseModule {
             not_started: 0,
             in_progress: 0,
             completed: 0,
-            mastered: 0
-          }
+            mastered: 0,
+          },
         };
       }
-      
+
       subjects[subject].count++;
       subjects[subject].totalUnderstanding += metadata.understanding_level || 0;
       subjects[subject].progress[metadata.progress || 'not_started']++;
     }
-    
+
     // Calculate averages
     const result: Record<string, any> = {};
     for (const [subject, data] of Object.entries(subjects)) {
       result[subject] = {
         count: data.count,
         averageUnderstanding: data.count > 0 ? data.totalUnderstanding / data.count : 0,
-        progress: data.progress
+        progress: data.progress,
       };
     }
-    
+
     return result;
   }
 
@@ -700,14 +723,14 @@ export class LearningModule extends BaseModule {
       not_started: 0,
       in_progress: 0,
       completed: 0,
-      mastered: 0
+      mastered: 0,
     };
-    
+
     for (const memory of memories) {
       const status = (memory.metadata as LearningMetadata).progress || 'not_started';
       progress[status]++;
     }
-    
+
     return progress;
   }
 
@@ -716,14 +739,14 @@ export class LearningModule extends BaseModule {
       beginner: 0,
       intermediate: 0,
       advanced: 0,
-      expert: 0
+      expert: 0,
     };
-    
+
     for (const memory of memories) {
       const level = (memory.metadata as LearningMetadata).difficulty || 'beginner';
       difficulty[level]++;
     }
-    
+
     return difficulty;
   }
 
@@ -734,43 +757,43 @@ export class LearningModule extends BaseModule {
     let total = 0;
     let count = 0;
     const distribution: Record<string, number> = {
-      low: 0,      // 0-0.3
-      medium: 0,   // 0.3-0.7
-      high: 0      // 0.7-1.0
+      low: 0, // 0-0.3
+      medium: 0, // 0.3-0.7
+      high: 0, // 0.7-1.0
     };
-    
+
     for (const memory of memories) {
       const level = (memory.metadata as LearningMetadata).understanding_level;
       if (level !== undefined) {
         total += level;
         count++;
-        
+
         if (level < 0.3) distribution.low++;
         else if (level < 0.7) distribution.medium++;
         else distribution.high++;
       }
     }
-    
+
     return {
       average: count > 0 ? total / count : 0,
-      distribution
+      distribution,
     };
   }
 
   private analyzeTopicsNetwork(memories: any[]): Record<string, number> {
     const topicsCount: Record<string, number> = {};
-    
+
     for (const memory of memories) {
       const topics = (memory.metadata as LearningMetadata).topics || [];
       for (const topic of topics) {
         topicsCount[topic] = (topicsCount[topic] || 0) + 1;
       }
     }
-    
+
     return Object.fromEntries(
       Object.entries(topicsCount)
         .sort(([, a], [, b]) => b - a)
-        .slice(0, 20)
+        .slice(0, 20),
     );
   }
 
@@ -780,20 +803,20 @@ export class LearningModule extends BaseModule {
     prerequisites: string[];
   }> {
     const subjectMap: Record<string, any> = {};
-    
+
     for (const memory of memories) {
       const metadata = memory.metadata as LearningMetadata;
       const subject = metadata.subject;
-      
+
       if (subject && metadata.progress === 'in_progress') {
         if (!subjectMap[subject]) {
           subjectMap[subject] = {
             subject: subject,
             concepts: new Set<string>(),
-            prerequisites: new Set<string>()
+            prerequisites: new Set<string>(),
           };
         }
-        
+
         if (metadata.related_concepts) {
           metadata.related_concepts.forEach(c => subjectMap[subject].concepts.add(c));
         }
@@ -802,12 +825,14 @@ export class LearningModule extends BaseModule {
         }
       }
     }
-    
-    return Object.values(subjectMap).map(item => ({
-      subject: item.subject as string,
-      nextSteps: Array.from(item.concepts as Set<string>).slice(0, 5),
-      prerequisites: Array.from(item.prerequisites as Set<string>).slice(0, 5)
-    })).slice(0, 5);
+
+    return Object.values(subjectMap)
+      .map(item => ({
+        subject: item.subject as string,
+        nextSteps: Array.from(item.concepts as Set<string>).slice(0, 5),
+        prerequisites: Array.from(item.prerequisites as Set<string>).slice(0, 5),
+      }))
+      .slice(0, 5);
   }
 
   private getPendingQuestions(memories: any[]): string[] {
@@ -832,7 +857,7 @@ export class LearningModule extends BaseModule {
         content: m.content.substring(0, 100) + '...',
         subject: (m.metadata as LearningMetadata).subject,
         lastReviewed: (m.metadata as LearningMetadata).last_reviewed,
-        understanding: (m.metadata as LearningMetadata).understanding_level || 0
+        understanding: (m.metadata as LearningMetadata).understanding_level || 0,
       }))
       .sort((a, b) => a.understanding - b.understanding)
       .slice(0, 10);
@@ -846,25 +871,25 @@ export class LearningModule extends BaseModule {
     let totalMinutes = 0;
     const bySubject: Record<string, number> = {};
     const byCategory: Record<string, number> = {};
-    
+
     for (const memory of memories) {
       const metadata = memory.metadata as LearningMetadata;
       const time = metadata.time_spent_minutes || 0;
       totalMinutes += time;
-      
+
       if (metadata.subject) {
         bySubject[metadata.subject] = (bySubject[metadata.subject] || 0) + time;
       }
-      
+
       if (metadata.category) {
         byCategory[metadata.category] = (byCategory[metadata.category] || 0) + time;
       }
     }
-    
+
     return {
       totalMinutes,
       bySubject,
-      byCategory
+      byCategory,
     };
   }
 }

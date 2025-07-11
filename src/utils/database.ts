@@ -17,7 +17,7 @@ export const vectorDb = {
       content: string;
       embedding: number[];
       metadata: any;
-    }
+    },
   ) {
     const id = randomUUID();
     const now = new Date();
@@ -50,7 +50,7 @@ export const vectorDb = {
       content?: string;
       embedding?: number[];
       metadata?: any;
-    }
+    },
   ) {
     const setClauses: string[] = [];
     const values: any[] = [];
@@ -98,13 +98,13 @@ export const vectorDb = {
       limit?: number;
       minScore?: number;
       filters?: Record<string, any>;
-    } = {}
+    } = {},
   ) {
     const limit = options.limit || 10;
     const minScore = options.minScore || 0.7;
 
     let filterClauses = [`"userId" = '${userId}'`];
-    
+
     // Add metadata filters
     if (options.filters) {
       for (const [key, value] of Object.entries(options.filters)) {
@@ -145,11 +145,7 @@ export const vectorDb = {
   /**
    * Get memory with embedding
    */
-  async getWithEmbedding(
-    table: string,
-    id: string,
-    userId: string
-  ) {
+  async getWithEmbedding(table: string, id: string, userId: string) {
     const result = await prisma.$queryRaw`
       SELECT 
         id,
@@ -163,7 +159,7 @@ export const vectorDb = {
       FROM ${Prisma.sql([table])}
       WHERE id = ${id} AND "userId" = ${userId}
     `;
-    
+
     return (result as any[])[0] || null;
-  }
+  },
 };

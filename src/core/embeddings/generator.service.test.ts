@@ -40,7 +40,9 @@ describe('EmbeddingService', () => {
 
   describe('generateEmbedding', () => {
     const testText = 'Test text for embedding';
-    const testEmbedding = Array(1536).fill(0).map(() => Math.random());
+    const testEmbedding = Array(1536)
+      .fill(0)
+      .map(() => Math.random());
 
     it('should generate embedding for text', async () => {
       mockOpenAI.embeddings.create.mockResolvedValue({
@@ -79,22 +81,25 @@ describe('EmbeddingService', () => {
       expect(mockRedis.set).toHaveBeenCalledWith(
         expect.stringContaining('embedding:'),
         JSON.stringify(testEmbedding),
-        3600 * 24
+        3600 * 24,
       );
     });
 
     it('should handle OpenAI API errors', async () => {
       mockOpenAI.embeddings.create.mockRejectedValue(new Error('API Error'));
 
-      await expect(embeddingService.generateEmbedding(testText))
-        .rejects.toThrow('Embedding generation failed');
+      await expect(embeddingService.generateEmbedding(testText)).rejects.toThrow(
+        'Embedding generation failed',
+      );
     });
   });
 
   describe('generateBatchEmbeddings', () => {
     const testTexts = ['Text 1', 'Text 2', 'Text 3'];
-    const testEmbeddings = testTexts.map(() => 
-      Array(1536).fill(0).map(() => Math.random())
+    const testEmbeddings = testTexts.map(() =>
+      Array(1536)
+        .fill(0)
+        .map(() => Math.random()),
     );
 
     it('should generate embeddings for multiple texts', async () => {
@@ -121,10 +126,7 @@ describe('EmbeddingService', () => {
         .mockResolvedValueOnce(null);
 
       mockOpenAI.embeddings.create.mockResolvedValue({
-        data: [
-          { embedding: testEmbeddings[1] },
-          { embedding: testEmbeddings[2] },
-        ],
+        data: [{ embedding: testEmbeddings[1] }, { embedding: testEmbeddings[2] }],
       } as any);
 
       const results = await embeddingService.generateBatchEmbeddings(testTexts);
@@ -140,7 +142,9 @@ describe('EmbeddingService', () => {
 
   describe('dimension reduction', () => {
     it('should generate compressed embedding (512d)', async () => {
-      const compressedEmbedding = Array(512).fill(0).map(() => Math.random());
+      const compressedEmbedding = Array(512)
+        .fill(0)
+        .map(() => Math.random());
       mockOpenAI.embeddings.create.mockResolvedValue({
         data: [{ embedding: compressedEmbedding }],
       } as any);
@@ -156,7 +160,9 @@ describe('EmbeddingService', () => {
     });
 
     it('should generate full embedding (1536d)', async () => {
-      const fullEmbedding = Array(1536).fill(0).map(() => Math.random());
+      const fullEmbedding = Array(1536)
+        .fill(0)
+        .map(() => Math.random());
       mockOpenAI.embeddings.create.mockResolvedValue({
         data: [{ embedding: fullEmbedding }],
       } as any);
@@ -172,11 +178,13 @@ describe('EmbeddingService', () => {
     });
 
     it('should reduce dimensions of existing embedding', () => {
-      const originalEmbedding = Array(1536).fill(0).map(() => Math.random());
+      const originalEmbedding = Array(1536)
+        .fill(0)
+        .map(() => Math.random());
       const reduced = embeddingService.reduceDimensions(originalEmbedding, 512);
 
       expect(reduced).toHaveLength(512);
-      
+
       // Check normalization
       const magnitude = Math.sqrt(reduced.reduce((sum, val) => sum + val * val, 0));
       expect(magnitude).toBeCloseTo(1, 5);
@@ -198,10 +206,10 @@ describe('EmbeddingService', () => {
     it('should find most similar embeddings', () => {
       const queryEmbedding = [1, 0, 0];
       const embeddings = [
-        { id: '1', embedding: [1, 0, 0] },      // similarity: 1
-        { id: '2', embedding: [0.8, 0.6, 0] },  // similarity: 0.8
-        { id: '3', embedding: [0, 1, 0] },      // similarity: 0
-        { id: '4', embedding: [-1, 0, 0] },     // similarity: -1
+        { id: '1', embedding: [1, 0, 0] }, // similarity: 1
+        { id: '2', embedding: [0.8, 0.6, 0] }, // similarity: 0.8
+        { id: '3', embedding: [0, 1, 0] }, // similarity: 0
+        { id: '4', embedding: [-1, 0, 0] }, // similarity: -1
       ];
 
       const results = embeddingService.findMostSimilar(queryEmbedding, embeddings, 2);

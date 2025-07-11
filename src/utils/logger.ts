@@ -9,7 +9,7 @@ const logFormat = winston.format.combine(
   winston.format.timestamp(),
   winston.format.errors({ stack: true }),
   winston.format.splat(),
-  winston.format.json()
+  winston.format.json(),
 );
 
 // Console format for development
@@ -22,7 +22,7 @@ const consoleFormat = winston.format.combine(
       msg += ` ${JSON.stringify(metadata)}`;
     }
     return msg;
-  })
+  }),
 );
 
 // Create the logger
@@ -48,7 +48,7 @@ if (process.env.NODE_ENV !== 'production') {
   logger.add(
     new winston.transports.Console({
       format: consoleFormat,
-    })
+    }),
   );
 }
 

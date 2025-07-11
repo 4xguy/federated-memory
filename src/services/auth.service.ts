@@ -67,11 +67,7 @@ export class AuthService {
 
   // Generate JWT for web sessions
   generateJWT(userId: string): string {
-    return jwt.sign(
-      { userId, type: 'session' },
-      this.jwtSecret,
-      { expiresIn: '7d' }
-    );
+    return jwt.sign({ userId, type: 'session' }, this.jwtSecret, { expiresIn: '7d' });
   }
 
   // Verify JWT
@@ -89,12 +85,12 @@ export class AuthService {
     // Generate a secure random key
     const keyBytes = randomBytes(32);
     const fullKey = `${this.apiKeyPrefix}${keyBytes.toString('base64url')}`;
-    
+
     // Store only the hash
     const keyHash = createHash('sha256').update(fullKey).digest('hex');
     const keyPrefix = fullKey.substring(0, 10);
 
-    const expiresAt = expiresInDays 
+    const expiresAt = expiresInDays
       ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
       : undefined;
 

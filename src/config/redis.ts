@@ -5,7 +5,7 @@ const redisUrl = process.env.REDIS_URL;
 
 export const redisClient = redisUrl
   ? new Redis(redisUrl, {
-      retryStrategy: (times) => {
+      retryStrategy: times => {
         const delay = Math.min(times * 50, 2000);
         return delay;
       },
@@ -14,7 +14,7 @@ export const redisClient = redisUrl
   : null;
 
 if (redisClient) {
-  redisClient.on('error', (err) => {
+  redisClient.on('error', err => {
     logger.error('Redis error:', err);
   });
 
@@ -30,7 +30,7 @@ if (redisClient) {
 // Cache helpers
 export async function getCached<T>(key: string): Promise<T | null> {
   if (!redisClient) return null;
-  
+
   try {
     const cached = await redisClient.get(key);
     return cached ? JSON.parse(cached) : null;
@@ -40,13 +40,9 @@ export async function getCached<T>(key: string): Promise<T | null> {
   }
 }
 
-export async function setCached(
-  key: string,
-  value: any,
-  ttlSeconds: number = 3600
-): Promise<void> {
+export async function setCached(key: string, value: any, ttlSeconds: number = 3600): Promise<void> {
   if (!redisClient) return;
-  
+
   try {
     await redisClient.setex(key, ttlSeconds, JSON.stringify(value));
   } catch (error) {
@@ -56,7 +52,7 @@ export async function setCached(
 
 export async function deleteCached(pattern: string): Promise<void> {
   if (!redisClient) return;
-  
+
   try {
     const keys = await redisClient.keys(pattern);
     if (keys.length > 0) {

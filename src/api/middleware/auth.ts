@@ -15,7 +15,7 @@ export interface AuthRequest extends Request {
 export async function authMiddleware(
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     // Check for Authorization header
@@ -26,9 +26,7 @@ export async function authMiddleware(
     }
 
     // Extract token
-    const token = authHeader.startsWith('Bearer ') 
-      ? authHeader.substring(7) 
-      : authHeader;
+    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
 
     if (!token) {
       res.status(401).json({ error: 'Token required' });
@@ -39,10 +37,10 @@ export async function authMiddleware(
     if (process.env.JWT_SECRET) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
-        
+
         // Find user by decoded info
         const user = await prisma.user.findUnique({
-          where: { id: decoded.userId }
+          where: { id: decoded.userId },
         });
 
         if (!user) {
@@ -52,7 +50,7 @@ export async function authMiddleware(
 
         req.user = {
           id: user.id,
-          email: user.email
+          email: user.email,
         };
         next();
         return;
@@ -64,7 +62,7 @@ export async function authMiddleware(
 
     // Fall back to simple token lookup
     const user = await prisma.user.findFirst({
-      where: { token }
+      where: { token },
     });
 
     if (!user) {
@@ -74,7 +72,7 @@ export async function authMiddleware(
 
     req.user = {
       id: user.id,
-      email: user.email
+      email: user.email,
     };
 
     next();

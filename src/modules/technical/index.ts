@@ -22,32 +22,37 @@ export class TechnicalModule extends BaseModule {
     super({
       id: 'technical',
       name: 'Technical Memory',
-      description: 'Stores programming knowledge, debugging information, and technical documentation',
+      description:
+        'Stores programming knowledge, debugging information, and technical documentation',
       tableName: 'technical_memories',
       features: {
         codeExtraction: true,
         errorPatternMatching: true,
-        frameworkDetection: true
+        frameworkDetection: true,
       },
       metadata: {
         searchableFields: ['tool', 'language', 'framework', 'errorType', 'tags'],
         requiredFields: ['content'],
-        indexedFields: ['language', 'framework', 'errorType']
-      }
+        indexedFields: ['language', 'framework', 'errorType'],
+      },
     });
   }
 
   getModuleInfo(): ModuleInfo {
     return {
       name: 'Technical Memory Module',
-      description: 'Specialized storage for technical knowledge, code snippets, debugging info, and documentation',
-      type: 'specialized' as ModuleType
+      description:
+        'Specialized storage for technical knowledge, code snippets, debugging info, and documentation',
+      type: 'specialized' as ModuleType,
     };
   }
 
-  async processMetadata(content: string, metadata: Record<string, any>): Promise<Record<string, any>> {
+  async processMetadata(
+    content: string,
+    metadata: Record<string, any>,
+  ): Promise<Record<string, any>> {
     const enriched: TechnicalMetadata = {
-      ...metadata
+      ...metadata,
     };
 
     // Extract code snippets
@@ -86,16 +91,20 @@ export class TechnicalModule extends BaseModule {
     return {
       ...enriched,
       importanceScore,
-      categories: this.categorizeTechnical(enriched)
+      categories: this.categorizeTechnical(enriched),
     };
   }
 
   formatSearchResult(memory: Memory): Memory {
     const metadata = memory.metadata as TechnicalMetadata;
-    
+
     // Format code snippets for display
     if (metadata.codeSnippet) {
-      memory.content = this.formatCodeSnippet(memory.content, metadata.codeSnippet, metadata.language);
+      memory.content = this.formatCodeSnippet(
+        memory.content,
+        metadata.codeSnippet,
+        metadata.language,
+      );
     }
 
     // Add technical context
@@ -109,31 +118,33 @@ export class TechnicalModule extends BaseModule {
   async searchByEmbedding(
     userId: string,
     embedding: number[],
-    options?: SearchOptions
+    options?: SearchOptions,
   ): Promise<Memory[]> {
-    const results = await vectorDb.searchByEmbedding('technical_memories', userId, embedding, {
+    const results = (await vectorDb.searchByEmbedding('technical_memories', userId, embedding, {
       limit: options?.limit,
       minScore: options?.minScore,
-      filters: options?.filters
-    }) as any[];
+      filters: options?.filters,
+    })) as any[];
 
-    return results.map((memory: any) => this.formatSearchResult({
-      ...memory,
-      score: memory.score
-    }));
+    return results.map((memory: any) =>
+      this.formatSearchResult({
+        ...memory,
+        score: memory.score,
+      }),
+    );
   }
 
   protected async storeInModule(
     userId: string,
     content: string,
     embedding: number[],
-    metadata: Record<string, any>
+    metadata: Record<string, any>,
   ): Promise<Memory> {
     const result = await vectorDb.storeWithEmbedding('technical_memories', {
       userId,
       content,
       embedding,
-      metadata
+      metadata,
     });
 
     return {
@@ -145,7 +156,7 @@ export class TechnicalModule extends BaseModule {
       accessCount: result.accessCount,
       lastAccessed: result.lastAccessed,
       createdAt: result.createdAt,
-      updatedAt: result.updatedAt
+      updatedAt: result.updatedAt,
     };
   }
 
@@ -162,20 +173,20 @@ export class TechnicalModule extends BaseModule {
       accessCount: result.accessCount,
       lastAccessed: result.lastAccessed,
       createdAt: result.createdAt,
-      updatedAt: result.updatedAt
+      updatedAt: result.updatedAt,
     };
   }
 
   protected async updateInModule(
     userId: string,
     memoryId: string,
-    updates: Partial<Memory>
+    updates: Partial<Memory>,
   ): Promise<boolean> {
     try {
       return await vectorDb.updateWithEmbedding('technical_memories', memoryId, userId, {
         content: updates.content,
         embedding: updates.embedding,
-        metadata: updates.metadata
+        metadata: updates.metadata,
       });
     } catch (error) {
       return false;
@@ -187,8 +198,8 @@ export class TechnicalModule extends BaseModule {
       await this.prisma.technicalMemory.delete({
         where: {
           id: memoryId,
-          userId
-        }
+          userId,
+        },
       });
       return true;
     } catch (error) {
@@ -201,7 +212,7 @@ export class TechnicalModule extends BaseModule {
       where: { userId },
       _count: { id: true },
       _avg: { accessCount: true },
-      _max: { lastAccessed: true }
+      _max: { lastAccessed: true },
     });
 
     // Get most frequent categories
@@ -221,7 +232,7 @@ export class TechnicalModule extends BaseModule {
       totalSize: 0, // Calculate if needed
       lastAccessed: stats._max.lastAccessed || undefined,
       mostFrequentCategories: categories.map(c => c.category),
-      averageAccessCount: stats._avg.accessCount || 0
+      averageAccessCount: stats._avg.accessCount || 0,
     };
   }
 
@@ -231,8 +242,8 @@ export class TechnicalModule extends BaseModule {
         where: { id },
         data: {
           accessCount: { increment: 1 },
-          lastAccessed: new Date()
-        }
+          lastAccessed: new Date(),
+        },
       });
     }
   }
@@ -248,7 +259,7 @@ export class TechnicalModule extends BaseModule {
       go: /\b(func|package|import|defer|goroutine|chan)\b/i,
       rust: /\b(fn|mut|impl|trait|match|Some|None)\b/i,
       cpp: /\b(#include|std::|cout|cin|template|namespace)\b/i,
-      csharp: /\b(using|namespace|public|private|class|interface|var)\b/i
+      csharp: /\b(using|namespace|public|private|class|interface|var)\b/i,
     };
 
     for (const [lang, pattern] of Object.entries(languagePatterns)) {
@@ -267,15 +278,15 @@ export class TechnicalModule extends BaseModule {
         vue: /\b(Vue|v-model|v-if|v-for|mounted)\b/i,
         angular: /\b(@Component|@Injectable|NgModule|Observable)\b/i,
         express: /\b(express|app\.(get|post|put|delete)|router)\b/i,
-        nextjs: /\b(next|getServerSideProps|getStaticProps)\b/i
+        nextjs: /\b(next|getServerSideProps|getStaticProps)\b/i,
       },
       python: {
         django: /\b(django|models\.Model|views|urls|migrations)\b/i,
         flask: /\b(Flask|@app\.route|render_template)\b/i,
         fastapi: /\b(FastAPI|@app\.(get|post)|Pydantic)\b/i,
         pytorch: /\b(torch|nn\.Module|tensor|cuda)\b/i,
-        tensorflow: /\b(tensorflow|tf\.|keras)\b/i
-      }
+        tensorflow: /\b(tensorflow|tf\.|keras)\b/i,
+      },
     };
 
     const patterns = frameworkPatterns[language];
@@ -294,16 +305,18 @@ export class TechnicalModule extends BaseModule {
     const errorPatterns = [
       /(?:Error|Exception):\s*([^\n]+)/i,
       /(\w+Error):\s*([^\n]+)/i,
-      /(\w+Exception):\s*([^\n]+)/i
+      /(\w+Exception):\s*([^\n]+)/i,
     ];
 
     for (const pattern of errorPatterns) {
       const match = content.match(pattern);
       if (match) {
-        const stackTraceMatch = content.match(/(?:stack trace|traceback):?\s*([\s\S]+?)(?:\n\n|$)/i);
+        const stackTraceMatch = content.match(
+          /(?:stack trace|traceback):?\s*([\s\S]+?)(?:\n\n|$)/i,
+        );
         return {
           type: match[1].trim(),
-          stackTrace: stackTraceMatch ? stackTraceMatch[1].trim() : undefined
+          stackTrace: stackTraceMatch ? stackTraceMatch[1].trim() : undefined,
         };
       }
     }
@@ -321,9 +334,20 @@ export class TechnicalModule extends BaseModule {
 
     // Extract common technical terms
     const techTerms = [
-      'api', 'database', 'authentication', 'performance', 'security',
-      'testing', 'deployment', 'docker', 'kubernetes', 'aws',
-      'algorithm', 'datastructure', 'optimization', 'debugging'
+      'api',
+      'database',
+      'authentication',
+      'performance',
+      'security',
+      'testing',
+      'deployment',
+      'docker',
+      'kubernetes',
+      'aws',
+      'algorithm',
+      'datastructure',
+      'optimization',
+      'debugging',
     ];
 
     const lowerContent = content.toLowerCase();

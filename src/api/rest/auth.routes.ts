@@ -28,7 +28,7 @@ router.post('/session', async (req, res) => {
 
     // Find or create user
     let user = await prisma.user.findUnique({
-      where: { id: userId }
+      where: { id: userId },
     });
 
     if (!user) {
@@ -41,7 +41,7 @@ router.post('/session', async (req, res) => {
           token: `usr_${userId}_${Date.now()}`,
           oauthProvider: provider,
           oauthId: userId,
-        }
+        },
       });
     }
 
@@ -49,16 +49,16 @@ router.post('/session', async (req, res) => {
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET || 'dev-secret',
-      { expiresIn: '7d' }
+      { expiresIn: '7d' },
     );
 
-    res.json({ 
+    res.json({
       token,
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
-      }
+      },
     });
   } catch (error) {
     console.error('Error creating session:', error);
@@ -73,14 +73,12 @@ router.get('/session', async (req: AuthRequest, res) => {
     return res.status(401).json({ error: 'No authorization header' });
   }
 
-  const token = authHeader.startsWith('Bearer ') 
-    ? authHeader.substring(7) 
-    : authHeader;
+  const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as any;
     const user = await prisma.user.findUnique({
-      where: { id: decoded.userId }
+      where: { id: decoded.userId },
     });
 
     if (!user) {
@@ -92,7 +90,7 @@ router.get('/session', async (req: AuthRequest, res) => {
         id: user.id,
         email: user.email,
         name: user.name,
-      }
+      },
     });
   } catch (error) {
     res.status(401).json({ error: 'Invalid token' });

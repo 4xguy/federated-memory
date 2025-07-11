@@ -53,7 +53,7 @@ export class ModuleRegistry {
   private async initializeRegistry(): Promise<void> {
     try {
       const modules = await this.prisma.memoryModule.findMany({
-        where: { isActive: true }
+        where: { isActive: true },
       });
 
       for (const module of modules) {
@@ -63,12 +63,12 @@ export class ModuleRegistry {
           description: module.description || '',
           moduleType: module.moduleType as ModuleType,
           configuration: module.configuration as unknown as ModuleConfig,
-          isActive: module.isActive
+          isActive: module.isActive,
         });
       }
 
       this.logger.info('Module registry initialized', {
-        moduleCount: this.modules.size
+        moduleCount: this.modules.size,
       });
     } catch (error) {
       this.logger.error('Failed to initialize module registry', { error });
@@ -81,11 +81,11 @@ export class ModuleRegistry {
   async registerModule(
     moduleId: string,
     instance: BaseModule,
-    config?: Partial<ModuleConfig>
+    config?: Partial<ModuleConfig>,
   ): Promise<void> {
     try {
       const moduleInfo = instance.getModuleInfo();
-      
+
       // Store in database
       await this.prisma.memoryModule.upsert({
         where: { moduleId },
@@ -96,19 +96,19 @@ export class ModuleRegistry {
           moduleType: moduleInfo.type,
           configuration: {
             ...this.getDefaultConfig(moduleInfo.type),
-            ...config
+            ...config,
           },
-          isActive: true
+          isActive: true,
         },
         update: {
           moduleName: moduleInfo.name,
           description: moduleInfo.description,
           configuration: {
             ...this.getDefaultConfig(moduleInfo.type),
-            ...config
+            ...config,
           },
-          isActive: true
-        }
+          isActive: true,
+        },
       });
 
       // Store in memory
@@ -119,10 +119,10 @@ export class ModuleRegistry {
         moduleType: moduleInfo.type,
         configuration: {
           ...this.getDefaultConfig(moduleInfo.type),
-          ...config
+          ...config,
         } as ModuleConfig,
         isActive: true,
-        instance
+        instance,
       });
 
       this.moduleInstances.set(moduleId, instance);
@@ -133,7 +133,7 @@ export class ModuleRegistry {
       this.logger.info('Module registered', {
         moduleId,
         moduleName: moduleInfo.name,
-        moduleType: moduleInfo.type
+        moduleType: moduleInfo.type,
       });
     } catch (error) {
       this.logger.error('Failed to register module', { error, moduleId });
@@ -152,7 +152,7 @@ export class ModuleRegistry {
       // Mark as inactive in database
       await this.prisma.memoryModule.update({
         where: { moduleId },
-        data: { isActive: false }
+        data: { isActive: false },
       });
 
       // Remove from memory
@@ -184,31 +184,28 @@ export class ModuleRegistry {
    * Get modules by type
    */
   getModulesByType(type: ModuleType): ModuleRegistration[] {
-    return Array.from(this.modules.values()).filter(
-      m => m.moduleType === type && m.isActive
-    );
+    return Array.from(this.modules.values()).filter(m => m.moduleType === type && m.isActive);
   }
 
   /**
    * List all modules (alias for getActiveModules for compatibility)
    */
-  async listModules(): Promise<Array<{ id: string; name: string; description: string; type: ModuleType }>> {
+  async listModules(): Promise<
+    Array<{ id: string; name: string; description: string; type: ModuleType }>
+  > {
     const activeModules = this.getActiveModules();
     return activeModules.map(m => ({
       id: m.moduleId,
       name: m.moduleName,
       description: m.description,
-      type: m.moduleType
+      type: m.moduleType,
     }));
   }
 
   /**
    * Update module configuration
    */
-  async updateModuleConfig(
-    moduleId: string,
-    config: Partial<ModuleConfig>
-  ): Promise<void> {
+  async updateModuleConfig(moduleId: string, config: Partial<ModuleConfig>): Promise<void> {
     try {
       const module = this.modules.get(moduleId);
       if (!module) {
@@ -217,13 +214,13 @@ export class ModuleRegistry {
 
       const updatedConfig = {
         ...module.configuration,
-        ...config
+        ...config,
       };
 
       // Update database
       await this.prisma.memoryModule.update({
         where: { moduleId },
-        data: { configuration: updatedConfig }
+        data: { configuration: updatedConfig },
       });
 
       // Update memory
@@ -261,7 +258,7 @@ export class ModuleRegistry {
       const stats = await this.prisma.memoryIndex.aggregate({
         where: { moduleId },
         _count: { id: true },
-        _avg: { accessCount: true }
+        _avg: { accessCount: true },
       });
 
       // Calculate error rate (simplified - in production use proper metrics)
@@ -292,9 +289,9 @@ export class ModuleRegistry {
           averageResponseTime: responseTime,
           errorRate,
           memoryUsage: process.memoryUsage().heapUsed / 1024 / 1024, // MB
-          totalMemories: stats._count.id || 0
+          totalMemories: stats._count.id || 0,
         },
-        issues: issues.length > 0 ? issues : undefined
+        issues: issues.length > 0 ? issues : undefined,
       };
 
       return health;
@@ -308,9 +305,9 @@ export class ModuleRegistry {
           averageResponseTime: 0,
           errorRate: 1,
           memoryUsage: 0,
-          totalMemories: 0
+          totalMemories: 0,
         },
-        issues: [`Health check error: ${error}`]
+        issues: [`Health check error: ${error}`],
       };
     }
   }
@@ -320,7 +317,7 @@ export class ModuleRegistry {
    */
   async getAllModuleHealth(): Promise<ModuleHealth[]> {
     const healthStatuses: ModuleHealth[] = [];
-    
+
     for (const moduleId of this.moduleInstances.keys()) {
       const health = await this.getModuleHealth(moduleId);
       healthStatuses.push(health);
@@ -337,13 +334,13 @@ export class ModuleRegistry {
     const interval = setInterval(async () => {
       try {
         const health = await this.getModuleHealth(moduleId);
-        
+
         if (health.status === 'unhealthy') {
           this.logger.error('Module health check failed', {
             moduleId,
-            issues: health.issues
+            issues: health.issues,
           });
-          
+
           // TODO: Implement recovery strategies
           // - Restart module
           // - Send alerts
@@ -378,22 +375,22 @@ export class ModuleRegistry {
         retentionDays: 365,
         searchLimit: 50,
         enableVersioning: false,
-        enableEncryption: false
+        enableEncryption: false,
       },
       specialized: {
         maxMemorySize: 5000,
         retentionDays: 180,
         searchLimit: 30,
         enableVersioning: true,
-        enableEncryption: false
+        enableEncryption: false,
       },
       external: {
         maxMemorySize: 1000,
         retentionDays: 90,
         searchLimit: 20,
         enableVersioning: false,
-        enableEncryption: true
-      }
+        enableEncryption: true,
+      },
     };
 
     return defaults[type] || defaults.standard;

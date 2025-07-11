@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client';
-import { 
-  MemoryModule, 
-  ModuleConfig, 
-  Memory, 
-  SearchOptions, 
+import {
+  MemoryModule,
+  ModuleConfig,
+  Memory,
+  SearchOptions,
   ModuleStats,
   ModuleError,
-  ModuleType
+  ModuleType,
 } from './interfaces';
 import { getCMIService } from '../cmi/index.service';
 import { getEmbeddingService } from '../embeddings/generator.service';
@@ -25,11 +25,11 @@ export abstract class BaseModule implements MemoryModule {
   protected embeddings: ReturnType<typeof getEmbeddingService>;
   protected logger: ReturnType<typeof createModuleLogger>;
   protected redis: Redis | null;
-  
+
   constructor(
     protected config: ModuleConfig,
     prisma?: PrismaClient,
-    cmi?: ReturnType<typeof getCMIService>
+    cmi?: ReturnType<typeof getCMIService>,
   ) {
     this.prisma = prisma || new PrismaClient();
     this.cmi = cmi || getCMIService();
@@ -45,41 +45,34 @@ export abstract class BaseModule implements MemoryModule {
       // Generate embeddings
       const fullEmbedding = await this.embeddings.generateFullEmbedding(content);
       const compressedEmbedding = await this.embeddings.generateCompressedEmbedding(content);
-      
+
       // Extract module-specific metadata
       const enrichedMetadata = await this.processMetadata(content, metadata || {});
-      
+
       // Store in module table
       const memory = await this.storeInModule(userId, content, fullEmbedding, enrichedMetadata);
-      
+
       // Update CMI
-      await this.cmi.indexMemory(
-        userId,
-        this.config.id,
-        memory.id,
-        content,
-        {
-          title: this.extractTitle(content),
-          summary: await this.generateSummary(content),
-          keywords: this.extractKeywords(content),
-          categories: enrichedMetadata.categories || [],
-          importanceScore: enrichedMetadata.importanceScore || 0.5
-        }
-      );
-      
+      await this.cmi.indexMemory(userId, this.config.id, memory.id, content, {
+        title: this.extractTitle(content),
+        summary: await this.generateSummary(content),
+        keywords: this.extractKeywords(content),
+        categories: enrichedMetadata.categories || [],
+        importanceScore: enrichedMetadata.importanceScore || 0.5,
+      });
+
       // Invalidate cache
       await this.invalidateCache(userId);
-      
+
       this.logger.info('Memory stored', { userId, memoryId: memory.id, module: this.config.id });
-      
+
       return memory.id;
-      
     } catch (error) {
       throw new ModuleError(
         this.config.id,
         'STORE_ERROR',
         'Failed to store memory',
-        error as Error
+        error as Error,
       );
     }
   }
@@ -94,26 +87,25 @@ export abstract class BaseModule implements MemoryModule {
           return JSON.parse(cached);
         }
       }
-      
+
       // Generate query embedding
       const queryEmbedding = await this.embeddings.generateFullEmbedding(query);
-      
+
       // Search with embedding
       const results = await this.searchByEmbedding(userId, queryEmbedding, options);
-      
+
       // Cache results
       if (this.redis && results.length > 0) {
         await this.redis.set(cacheKey, JSON.stringify(results), 300); // 5 min TTL
       }
-      
+
       return results;
-      
     } catch (error) {
       throw new ModuleError(
         this.config.id,
         'SEARCH_ERROR',
         'Failed to search memories',
-        error as Error
+        error as Error,
       );
     }
   }
@@ -121,20 +113,14 @@ export abstract class BaseModule implements MemoryModule {
   async get(userId: string, memoryId: string): Promise<Memory | null> {
     try {
       const memory = await this.getFromModule(userId, memoryId);
-      
+
       if (memory) {
         await this.updateAccessCounts([memoryId]);
       }
-      
+
       return memory;
-      
     } catch (error) {
-      throw new ModuleError(
-        this.config.id,
-        'GET_ERROR',
-        'Failed to get memory',
-        error as Error
-      );
+      throw new ModuleError(this.config.id, 'GET_ERROR', 'Failed to get memory', error as Error);
     }
   }
 
@@ -142,44 +128,37 @@ export abstract class BaseModule implements MemoryModule {
     try {
       // If content is updated, regenerate embeddings
       let newEmbedding: number[] | undefined;
-      
+
       if (updates.content) {
         newEmbedding = await this.embeddings.generateFullEmbedding(updates.content);
       }
-      
+
       // Update in module
       const success = await this.updateInModule(userId, memoryId, {
         ...updates,
         embedding: newEmbedding,
       });
-      
+
       // Update CMI if needed
       if (success && (updates.content || updates.metadata)) {
-        await this.cmi.indexMemory(
-          userId,
-          this.config.id,
-          memoryId,
-          updates.content || '',
-          {
-            title: updates.content ? this.extractTitle(updates.content) : '',
-            summary: updates.content ? await this.generateSummary(updates.content) : '',
-            keywords: updates.content ? this.extractKeywords(updates.content) : [],
-            categories: updates.metadata?.categories || []
-          }
-        );
+        await this.cmi.indexMemory(userId, this.config.id, memoryId, updates.content || '', {
+          title: updates.content ? this.extractTitle(updates.content) : '',
+          summary: updates.content ? await this.generateSummary(updates.content) : '',
+          keywords: updates.content ? this.extractKeywords(updates.content) : [],
+          categories: updates.metadata?.categories || [],
+        });
       }
-      
+
       // Invalidate cache
       await this.invalidateCache(userId);
-      
+
       return success;
-      
     } catch (error) {
       throw new ModuleError(
         this.config.id,
         'UPDATE_ERROR',
         'Failed to update memory',
-        error as Error
+        error as Error,
       );
     }
   }
@@ -188,23 +167,22 @@ export abstract class BaseModule implements MemoryModule {
     try {
       // Delete from module
       const success = await this.deleteFromModule(userId, memoryId);
-      
+
       if (success) {
         // Remove from CMI
         await this.cmi.deleteMemory(this.config.id, memoryId);
-        
+
         // Invalidate cache
         await this.invalidateCache(userId);
       }
-      
+
       return success;
-      
     } catch (error) {
       throw new ModuleError(
         this.config.id,
         'DELETE_ERROR',
         'Failed to delete memory',
-        error as Error
+        error as Error,
       );
     }
   }
@@ -235,9 +213,16 @@ export abstract class BaseModule implements MemoryModule {
   // ============= Abstract Methods =============
 
   abstract getModuleInfo(): ModuleInfo;
-  abstract processMetadata(content: string, metadata: Record<string, any>): Promise<Record<string, any>>;
+  abstract processMetadata(
+    content: string,
+    metadata: Record<string, any>,
+  ): Promise<Record<string, any>>;
   abstract formatSearchResult(memory: Memory): Memory;
-  abstract searchByEmbedding(userId: string, embedding: number[], options?: SearchOptions): Promise<Memory[]>;
+  abstract searchByEmbedding(
+    userId: string,
+    embedding: number[],
+    options?: SearchOptions,
+  ): Promise<Memory[]>;
 
   // ============= Protected Methods =============
 
@@ -245,19 +230,19 @@ export abstract class BaseModule implements MemoryModule {
     userId: string,
     content: string,
     embedding: number[],
-    metadata: Record<string, any>
+    metadata: Record<string, any>,
   ): Promise<Memory>;
 
   protected abstract getFromModule(userId: string, memoryId: string): Promise<Memory | null>;
-  
+
   protected abstract updateInModule(
     userId: string,
     memoryId: string,
-    updates: Partial<Memory>
+    updates: Partial<Memory>,
   ): Promise<boolean>;
-  
+
   protected abstract deleteFromModule(userId: string, memoryId: string): Promise<boolean>;
-  
+
   protected abstract calculateStats(userId: string): Promise<ModuleStats>;
 
   // ============= Utility Methods =============
@@ -276,11 +261,24 @@ export abstract class BaseModule implements MemoryModule {
   protected extractKeywords(content: string): string[] {
     // Simple keyword extraction - improve with NLP later
     const words = content.toLowerCase().split(/\W+/);
-    const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for']);
-    
-    return Array.from(new Set(
-      words.filter(word => word.length > 3 && !stopWords.has(word))
-    )).slice(0, 10);
+    const stopWords = new Set([
+      'the',
+      'a',
+      'an',
+      'and',
+      'or',
+      'but',
+      'in',
+      'on',
+      'at',
+      'to',
+      'for',
+    ]);
+
+    return Array.from(new Set(words.filter(word => word.length > 3 && !stopWords.has(word)))).slice(
+      0,
+      10,
+    );
   }
 
   protected async updateAccessCounts(memoryIds: string[]): Promise<void> {
@@ -294,7 +292,7 @@ export abstract class BaseModule implements MemoryModule {
 
   protected async invalidateCache(userId: string): Promise<void> {
     if (!this.redis) return;
-    
+
     const pattern = `${this.config.id}:${userId}:*`;
     const keys = await this.redis.keys(pattern);
     if (keys.length > 0) {
@@ -308,7 +306,7 @@ export abstract class BaseModule implements MemoryModule {
     try {
       // Check database connection
       await this.prisma.$queryRaw`SELECT 1`;
-      
+
       // Check module-specific health
       return await this.checkModuleHealth();
     } catch (error) {

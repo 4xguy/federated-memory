@@ -13,7 +13,7 @@ router.get('/', async (req: Request, res: Response) => {
   return res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    service: 'federated-memory'
+    service: 'federated-memory',
   });
 });
 
@@ -23,7 +23,7 @@ router.get('/detailed', async (req: Request, res: Response) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     service: 'federated-memory',
-    checks: {}
+    checks: {},
   };
 
   try {
@@ -32,13 +32,13 @@ router.get('/detailed', async (req: Request, res: Response) => {
     await prisma.$queryRaw`SELECT 1`;
     health.checks.database = {
       status: 'ok',
-      responseTime: Date.now() - dbStart
+      responseTime: Date.now() - dbStart,
     };
   } catch (error) {
     health.status = 'degraded';
     health.checks.database = {
       status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 
@@ -49,13 +49,13 @@ router.get('/detailed', async (req: Request, res: Response) => {
     health.checks.moduleRegistry = {
       status: 'ok',
       moduleCount: modules.length,
-      modules: modules.map((m: any) => m.id)
+      modules: modules.map((m: any) => m.id),
     };
   } catch (error) {
     health.status = 'degraded';
     health.checks.moduleRegistry = {
       status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 
@@ -63,13 +63,13 @@ router.get('/detailed', async (req: Request, res: Response) => {
     // Check CMI service
     const cmiService = getCMIService();
     health.checks.cmiService = {
-      status: cmiService ? 'ok' : 'not_initialized'
+      status: cmiService ? 'ok' : 'not_initialized',
     };
   } catch (error) {
     health.status = 'degraded';
     health.checks.cmiService = {
       status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 
@@ -78,13 +78,13 @@ router.get('/detailed', async (req: Request, res: Response) => {
     const embeddingService = getEmbeddingService();
     health.checks.embeddingService = {
       status: embeddingService ? 'ok' : 'not_initialized',
-      provider: 'openai'
+      provider: 'openai',
     };
   } catch (error) {
     health.status = 'degraded';
     health.checks.embeddingService = {
       status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 
@@ -95,8 +95,8 @@ router.get('/detailed', async (req: Request, res: Response) => {
       DATABASE_URL: !!process.env.DATABASE_URL,
       OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
       JWT_SECRET: !!process.env.JWT_SECRET,
-      REDIS_URL: !!process.env.REDIS_URL
-    }
+      REDIS_URL: !!process.env.REDIS_URL,
+    },
   };
 
   if (!process.env.DATABASE_URL || !process.env.OPENAI_API_KEY) {
@@ -114,21 +114,21 @@ router.get('/ready', async (req: Request, res: Response) => {
     await prisma.$queryRaw`SELECT 1`;
     const registry = ModuleRegistry.getInstance();
     const modules = await registry.listModules();
-    
+
     if (modules.length === 0) {
       throw new Error('No modules loaded');
     }
 
     return res.json({
       ready: true,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     logger.error('Readiness check failed', { error });
     return res.status(503).json({
       ready: false,
       timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -137,7 +137,7 @@ router.get('/ready', async (req: Request, res: Response) => {
 router.get('/live', async (req: Request, res: Response) => {
   return res.json({
     alive: true,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 

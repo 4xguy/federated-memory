@@ -67,7 +67,9 @@ describe('CMIService', () => {
       categories: ['testing'],
       importanceScore: 0.8,
     };
-    const mockEmbedding = Array(512).fill(0).map(() => Math.random());
+    const mockEmbedding = Array(512)
+      .fill(0)
+      .map(() => Math.random());
 
     it('should index a new memory', async () => {
       mockEmbeddingService.generateCompressedEmbedding.mockResolvedValue(mockEmbedding);
@@ -89,11 +91,11 @@ describe('CMIService', () => {
         mockModuleId,
         mockRemoteMemoryId,
         mockContent,
-        mockMetadata
+        mockMetadata,
       );
 
       expect(mockEmbeddingService.generateCompressedEmbedding).toHaveBeenCalledWith(
-        `${mockMetadata.title} ${mockMetadata.summary} ${mockContent}`
+        `${mockMetadata.title} ${mockMetadata.summary} ${mockContent}`,
       );
       expect(mockPrisma.memoryIndex.upsert).toHaveBeenCalledWith({
         where: {
@@ -119,7 +121,7 @@ describe('CMIService', () => {
 
     it('should handle indexing errors', async () => {
       mockEmbeddingService.generateCompressedEmbedding.mockRejectedValue(
-        new Error('Embedding failed')
+        new Error('Embedding failed'),
       );
 
       await expect(
@@ -128,8 +130,8 @@ describe('CMIService', () => {
           mockModuleId,
           mockRemoteMemoryId,
           mockContent,
-          mockMetadata
-        )
+          mockMetadata,
+        ),
       ).rejects.toThrow('Memory indexing failed');
     });
   });
@@ -137,7 +139,9 @@ describe('CMIService', () => {
   describe('routeQuery', () => {
     const mockUserId = 'user-123';
     const mockQuery = 'How to fix TypeScript errors';
-    const mockEmbedding = Array(512).fill(0).map(() => Math.random());
+    const mockEmbedding = Array(512)
+      .fill(0)
+      .map(() => Math.random());
 
     it('should route query to appropriate modules', async () => {
       mockRedis.get.mockResolvedValue(null);
@@ -182,7 +186,9 @@ describe('CMIService', () => {
   describe('searchMemories', () => {
     const mockUserId = 'user-123';
     const mockQuery = 'test search';
-    const mockEmbedding = Array(512).fill(0).map(() => Math.random());
+    const mockEmbedding = Array(512)
+      .fill(0)
+      .map(() => Math.random());
 
     it('should search memories across modules', async () => {
       mockEmbeddingService.generateCompressedEmbedding.mockResolvedValue(mockEmbedding);
@@ -219,9 +225,7 @@ describe('CMIService', () => {
       await cmiService.searchMemories(mockUserId, mockQuery, ['technical', 'work']);
 
       expect(mockPrisma.$queryRaw).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.stringMatching(/module_id = ANY/),
-        ])
+        expect.arrayContaining([expect.stringMatching(/module_id = ANY/)]),
       );
     });
   });
@@ -252,7 +256,7 @@ describe('CMIService', () => {
         source,
         target,
         'related',
-        0.8
+        0.8,
       );
 
       expect(result).toEqual(mockRelationship);
@@ -293,11 +297,7 @@ describe('CMIService', () => {
 
       mockPrisma.$queryRaw.mockResolvedValue(mockRelated);
 
-      const result = await cmiService.getRelatedMemories(
-        mockUserId,
-        mockModuleId,
-        mockMemoryId
-      );
+      const result = await cmiService.getRelatedMemories(mockUserId, mockModuleId, mockMemoryId);
 
       expect(result).toEqual(mockRelated);
       expect(mockPrisma.$queryRaw).toHaveBeenCalled();

@@ -1,10 +1,10 @@
 import { BaseModule, ModuleInfo } from '@/core/modules/base.module';
-import { 
-  Memory, 
+import {
+  Memory,
   SearchOptions,
   ModuleStats,
   ModuleConfig,
-  ModuleType
+  ModuleType,
 } from '@/core/modules/interfaces';
 import { PrismaClient } from '@prisma/client';
 import { getCMIService } from '@/core/cmi/index.service';
@@ -47,15 +47,15 @@ export class CreativeModule extends BaseModule {
       maxMemorySize: 50000, // Larger size for creative content
       retentionDays: -1, // Never expire creative works
       features: {
-        timeBasedRetrieval: true
+        timeBasedRetrieval: true,
       },
       metadata: {
         searchableFields: ['category', 'medium', 'genre', 'themes', 'tags', 'stage'],
         requiredFields: [],
-        indexedFields: ['category', 'medium', 'stage', 'public_visibility']
-      }
+        indexedFields: ['category', 'medium', 'stage', 'public_visibility'],
+      },
     };
-    
+
     super(config, prisma, cmi);
   }
 
@@ -63,15 +63,18 @@ export class CreativeModule extends BaseModule {
     return {
       name: this.config.name,
       description: this.config.description,
-      type: 'standard' as ModuleType
+      type: 'standard' as ModuleType,
     };
   }
 
-  async processMetadata(content: string, metadata: Record<string, any>): Promise<Record<string, any>> {
+  async processMetadata(
+    content: string,
+    metadata: Record<string, any>,
+  ): Promise<Record<string, any>> {
     const creativeMetadata: CreativeMetadata = {
       ...metadata,
       stage: metadata.stage || 'ideation',
-      public_visibility: metadata.public_visibility || 'private'
+      public_visibility: metadata.public_visibility || 'private',
     };
 
     // Auto-categorize if not provided
@@ -132,7 +135,7 @@ export class CreativeModule extends BaseModule {
 
     // Calculate importance score
     creativeMetadata.importanceScore = this.calculateImportanceScore(creativeMetadata);
-    
+
     // Set categories for CMI
     creativeMetadata.categories = ['creative'];
     if (creativeMetadata.category) {
@@ -150,47 +153,47 @@ export class CreativeModule extends BaseModule {
 
   formatSearchResult(memory: Memory): Memory {
     const metadata = memory.metadata as CreativeMetadata;
-    
+
     const enrichedMetadata: any = {
       ...metadata,
-      contextSummary: []
+      contextSummary: [],
     };
-    
+
     if (metadata.category) {
       enrichedMetadata.contextSummary.push(`Type: ${metadata.category}`);
     }
-    
+
     if (metadata.medium) {
       enrichedMetadata.contextSummary.push(`Medium: ${metadata.medium}`);
     }
-    
+
     if (metadata.stage) {
       enrichedMetadata.contextSummary.push(`Stage: ${metadata.stage}`);
     }
-    
+
     if (metadata.completion_percentage !== undefined) {
       enrichedMetadata.contextSummary.push(`${metadata.completion_percentage}% complete`);
     }
-    
+
     if (metadata.quality_score !== undefined) {
       const stars = '★'.repeat(Math.round(metadata.quality_score * 5));
       enrichedMetadata.contextSummary.push(stars);
     }
-    
+
     if (metadata.themes && metadata.themes.length > 0) {
       enrichedMetadata.contextSummary.push(`Themes: ${metadata.themes.slice(0, 3).join(', ')}`);
     }
-    
+
     return {
       ...memory,
-      metadata: enrichedMetadata
+      metadata: enrichedMetadata,
     };
   }
 
   async searchByEmbedding(
-    userId: string, 
-    embedding: number[], 
-    options?: SearchOptions
+    userId: string,
+    embedding: number[],
+    options?: SearchOptions,
   ): Promise<Memory[]> {
     const limit = options?.limit || 10;
     const minScore = options?.minScore || 0.5;
@@ -218,7 +221,7 @@ export class CreativeModule extends BaseModule {
       userId,
       `[${embedding.join(',')}]`,
       minScore,
-      limit
+      limit,
     );
 
     return result.map(row => ({
@@ -229,7 +232,7 @@ export class CreativeModule extends BaseModule {
       accessCount: row.accessCount,
       lastAccessed: row.lastAccessed,
       createdAt: row.createdAt,
-      updatedAt: row.updatedAt
+      updatedAt: row.updatedAt,
     }));
   }
 
@@ -237,7 +240,7 @@ export class CreativeModule extends BaseModule {
     userId: string,
     content: string,
     embedding: number[],
-    metadata: Record<string, any>
+    metadata: Record<string, any>,
   ): Promise<Memory> {
     const id = await this.prisma.$queryRaw<{ id: string }[]>`
       INSERT INTO creative_memories (id, "userId", content, embedding, metadata, "createdAt", "updatedAt", "accessCount", "lastAccessed")
@@ -256,7 +259,7 @@ export class CreativeModule extends BaseModule {
     `;
 
     const result = await this.prisma.creativeMemory.findUniqueOrThrow({
-      where: { id: id[0].id }
+      where: { id: id[0].id },
     });
 
     return {
@@ -267,7 +270,7 @@ export class CreativeModule extends BaseModule {
       accessCount: result.accessCount,
       lastAccessed: result.lastAccessed,
       createdAt: result.createdAt,
-      updatedAt: result.updatedAt
+      updatedAt: result.updatedAt,
     };
   }
 
@@ -275,8 +278,8 @@ export class CreativeModule extends BaseModule {
     const result = await this.prisma.creativeMemory.findFirst({
       where: {
         id: memoryId,
-        userId
-      }
+        userId,
+      },
     });
 
     if (!result) return null;
@@ -289,27 +292,27 @@ export class CreativeModule extends BaseModule {
       accessCount: result.accessCount,
       lastAccessed: result.lastAccessed,
       createdAt: result.createdAt,
-      updatedAt: result.updatedAt
+      updatedAt: result.updatedAt,
     };
   }
 
   protected async updateInModule(
     userId: string,
     memoryId: string,
-    updates: Partial<Memory>
+    updates: Partial<Memory>,
   ): Promise<boolean> {
     try {
       const updateData: any = {};
       if (updates.content !== undefined) updateData.content = updates.content;
       if (updates.metadata !== undefined) updateData.metadata = updates.metadata;
-      
+
       await this.prisma.creativeMemory.update({
         where: {
-          id: memoryId
+          id: memoryId,
         },
-        data: updateData
+        data: updateData,
       });
-      
+
       return true;
     } catch {
       return false;
@@ -320,8 +323,8 @@ export class CreativeModule extends BaseModule {
     try {
       await this.prisma.creativeMemory.delete({
         where: {
-          id: memoryId
-        }
+          id: memoryId,
+        },
       });
       return true;
     } catch {
@@ -331,7 +334,7 @@ export class CreativeModule extends BaseModule {
 
   protected async calculateStats(userId: string): Promise<ModuleStats> {
     const memories = await this.prisma.creativeMemory.findMany({
-      where: { userId }
+      where: { userId },
     });
 
     const categories: Record<string, number> = {};
@@ -353,23 +356,22 @@ export class CreativeModule extends BaseModule {
     return {
       totalMemories: memories.length,
       totalSize: memories.reduce((sum, m) => sum + m.content.length, 0),
-      lastAccessed: memories.length > 0 
-        ? memories.reduce((latest, m) => 
-            m.lastAccessed > latest ? m.lastAccessed : latest, 
-            memories[0].lastAccessed
-          )
-        : undefined,
+      lastAccessed:
+        memories.length > 0
+          ? memories.reduce(
+              (latest, m) => (m.lastAccessed > latest ? m.lastAccessed : latest),
+              memories[0].lastAccessed,
+            )
+          : undefined,
       mostFrequentCategories: topCategories,
-      averageAccessCount: memories.length > 0 
-        ? totalAccessCount / memories.length 
-        : 0
+      averageAccessCount: memories.length > 0 ? totalAccessCount / memories.length : 0,
     };
   }
 
   // Helper methods
   private categorizeCreativeWork(content: string): CreativeMetadata['category'] {
     const lowerContent = content.toLowerCase();
-    
+
     const categoryKeywords = {
       idea: ['idea', 'concept', 'brainstorm', 'what if', 'imagine', 'possibility'],
       story: ['story', 'narrative', 'plot', 'character', 'scene', 'dialogue', 'chapter'],
@@ -378,12 +380,12 @@ export class CreativeModule extends BaseModule {
       art: ['painting', 'drawing', 'sketch', 'sculpture', 'illustration', 'artwork'],
       writing: ['essay', 'article', 'blog', 'draft', 'manuscript', 'prose', 'verse'],
       brainstorm: ['brainstorm', 'ideas', 'thoughts', 'possibilities', 'options', 'alternatives'],
-      concept: ['concept', 'framework', 'model', 'theory', 'approach', 'methodology']
+      concept: ['concept', 'framework', 'model', 'theory', 'approach', 'methodology'],
     };
-    
+
     let maxScore = 0;
     let bestCategory: CreativeMetadata['category'] = 'idea';
-    
+
     for (const [category, keywords] of Object.entries(categoryKeywords)) {
       const score = keywords.filter(keyword => lowerContent.includes(keyword)).length;
       if (score > maxScore) {
@@ -391,7 +393,7 @@ export class CreativeModule extends BaseModule {
         bestCategory = category as CreativeMetadata['category'];
       }
     }
-    
+
     return bestCategory;
   }
 
@@ -400,39 +402,43 @@ export class CreativeModule extends BaseModule {
     if (content.includes('```') || content.includes('function') || content.includes('class')) {
       return 'code';
     }
-    
+
     // Check for markdown/rich text
     if (content.includes('#') || content.includes('**') || content.includes('![')) {
       return 'text';
     }
-    
+
     // Check for links to media
     if (/\.(jpg|png|gif|svg|mp3|wav|mp4|mov)/i.test(content)) {
       return 'mixed';
     }
-    
+
     // Default based on category
     const categoryDefaults: Record<string, string> = {
       story: 'text',
       design: 'visual',
       music: 'audio',
       art: 'visual',
-      writing: 'text'
+      writing: 'text',
     };
-    
+
     return categoryDefaults[metadata.category || ''] || 'text';
   }
 
   private extractThemes(content: string): string[] {
     const themes: string[] = [];
-    
+
     // Common creative themes
     const themePatterns = [
       { pattern: /(?:about|exploring|theme of|deals with)\s+([a-z\s]+?)(?:\.|,|\n|$)/gi, group: 1 },
-      { pattern: /(?:love|friendship|betrayal|redemption|growth|identity|freedom|power|nature|technology|humanity)/gi, group: 0 },
-      { pattern: /(?:journey|transformation|conflict|discovery|creation|destruction)/gi, group: 0 }
+      {
+        pattern:
+          /(?:love|friendship|betrayal|redemption|growth|identity|freedom|power|nature|technology|humanity)/gi,
+        group: 0,
+      },
+      { pattern: /(?:journey|transformation|conflict|discovery|creation|destruction)/gi, group: 0 },
     ];
-    
+
     for (const { pattern, group } of themePatterns) {
       const matches = content.matchAll(pattern);
       for (const match of matches) {
@@ -442,41 +448,44 @@ export class CreativeModule extends BaseModule {
         }
       }
     }
-    
+
     return [...new Set(themes)].slice(0, 10);
   }
 
   private extractTags(content: string): string[] {
     const tags: string[] = [];
-    
+
     // Look for hashtags
     const hashtagMatches = content.match(/#[a-zA-Z]\w*/g) || [];
     tags.push(...hashtagMatches.map(tag => tag.substring(1).toLowerCase()));
-    
+
     // Look for keywords in brackets or parentheses
     const bracketMatches = content.match(/\[([^\]]+)\]/g) || [];
     const parenMatches = content.match(/\(([^)]+)\)/g) || [];
-    
+
     [...bracketMatches, ...parenMatches].forEach(match => {
       const tag = match.slice(1, -1).trim();
       if (tag.length > 2 && tag.length < 30 && !tag.includes(' ')) {
         tags.push(tag.toLowerCase());
       }
     });
-    
+
     // Extract significant nouns
     const significantWords = content.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b/g) || [];
-    tags.push(...significantWords.filter(word => 
-      word.length > 3 && 
-      !['The', 'This', 'That', 'These', 'Those'].includes(word)
-    ).map(w => w.toLowerCase()));
-    
+    tags.push(
+      ...significantWords
+        .filter(
+          word => word.length > 3 && !['The', 'This', 'That', 'These', 'Those'].includes(word),
+        )
+        .map(w => w.toLowerCase()),
+    );
+
     return [...new Set(tags)].slice(0, 20);
   }
 
   private analyzeMood(content: string): string {
     const lowerContent = content.toLowerCase();
-    
+
     const moodIndicators = {
       inspiring: ['inspire', 'motivate', 'uplift', 'encourage', 'empower', 'hope'],
       melancholic: ['sad', 'melancholy', 'nostalgic', 'longing', 'bittersweet', 'wistful'],
@@ -485,12 +494,12 @@ export class CreativeModule extends BaseModule {
       mysterious: ['mystery', 'enigma', 'unknown', 'secret', 'hidden', 'shadow'],
       whimsical: ['whimsy', 'playful', 'fun', 'silly', 'quirky', 'lighthearted'],
       dark: ['dark', 'grim', 'ominous', 'sinister', 'haunting', 'eerie'],
-      romantic: ['love', 'romance', 'passion', 'tender', 'intimate', 'heart']
+      romantic: ['love', 'romance', 'passion', 'tender', 'intimate', 'heart'],
     };
-    
+
     let maxScore = 0;
     let dominantMood = 'neutral';
-    
+
     for (const [mood, keywords] of Object.entries(moodIndicators)) {
       const score = keywords.filter(keyword => lowerContent.includes(keyword)).length;
       if (score > maxScore) {
@@ -498,53 +507,69 @@ export class CreativeModule extends BaseModule {
         dominantMood = mood;
       }
     }
-    
+
     return dominantMood;
   }
 
   private detectTechniques(content: string, metadata: CreativeMetadata): string[] {
     const techniques: string[] = [];
     const lowerContent = content.toLowerCase();
-    
+
     // Literary techniques
     if (metadata.category === 'story' || metadata.category === 'writing') {
       const literaryTechniques = [
-        'metaphor', 'simile', 'alliteration', 'personification', 
-        'imagery', 'symbolism', 'irony', 'foreshadowing'
+        'metaphor',
+        'simile',
+        'alliteration',
+        'personification',
+        'imagery',
+        'symbolism',
+        'irony',
+        'foreshadowing',
       ];
       techniques.push(...literaryTechniques.filter(t => lowerContent.includes(t)));
     }
-    
+
     // Design techniques
     if (metadata.category === 'design' || metadata.medium === 'visual') {
       const designTechniques = [
-        'grid', 'balance', 'contrast', 'hierarchy', 
-        'whitespace', 'color theory', 'typography'
+        'grid',
+        'balance',
+        'contrast',
+        'hierarchy',
+        'whitespace',
+        'color theory',
+        'typography',
       ];
       techniques.push(...designTechniques.filter(t => lowerContent.includes(t)));
     }
-    
+
     // General creative techniques
     const generalTechniques = [
-      'brainstorming', 'mind mapping', 'iteration', 'prototyping',
-      'collaboration', 'experimentation', 'research'
+      'brainstorming',
+      'mind mapping',
+      'iteration',
+      'prototyping',
+      'collaboration',
+      'experimentation',
+      'research',
     ];
     techniques.push(...generalTechniques.filter(t => lowerContent.includes(t)));
-    
+
     return [...new Set(techniques)].slice(0, 10);
   }
 
   private assessQuality(content: string, metadata: CreativeMetadata): number {
     let score = 0.5; // baseline
-    
+
     // Length and detail
     if (content.length > 500) score += 0.1;
     if (content.length > 1500) score += 0.1;
-    
+
     // Structure indicators
     if (content.includes('\n\n')) score += 0.05; // Paragraphs
     if (/^#{1,6}\s/m.test(content)) score += 0.05; // Headers
-    
+
     // Completion stage bonus
     const stageScores: Record<string, number> = {
       ideation: 0,
@@ -552,43 +577,41 @@ export class CreativeModule extends BaseModule {
       revision: 0.2,
       final: 0.3,
       published: 0.4,
-      archived: 0.4
+      archived: 0.4,
     };
     const stage = metadata.stage || 'ideation';
     score += stageScores[stage] || 0;
-    
+
     // Rich metadata bonus
     if (metadata.themes && metadata.themes.length > 3) score += 0.05;
     if (metadata.techniques && metadata.techniques.length > 2) score += 0.05;
-    
+
     return Math.min(1, score);
   }
 
   private assessOriginality(content: string, metadata: CreativeMetadata): number {
     let score = 0.6; // baseline assumption of some originality
-    
+
     // Unique combinations of themes
     if (metadata.themes && metadata.themes.length > 4) {
       score += 0.1;
     }
-    
+
     // Mixed media or unusual medium
     if (metadata.medium === 'mixed' || metadata.medium === 'experimental') {
       score += 0.1;
     }
-    
+
     // Presence of "new", "novel", "original", "unique" in content
     const originalityWords = ['new', 'novel', 'original', 'unique', 'innovative', 'experimental'];
-    const matches = originalityWords.filter(word => 
-      content.toLowerCase().includes(word)
-    ).length;
+    const matches = originalityWords.filter(word => content.toLowerCase().includes(word)).length;
     score += matches * 0.05;
-    
+
     // Genre-bending indicators
     if (metadata.genre && metadata.genre.includes('/')) {
       score += 0.1; // hybrid genres
     }
-    
+
     return Math.min(1, score);
   }
 
@@ -600,92 +623,95 @@ export class CreativeModule extends BaseModule {
       revision: 60,
       final: 90,
       published: 100,
-      archived: 100
+      archived: 100,
     };
-    
+
     const stage = metadata.stage || 'ideation';
     let completion = stageCompletion[stage] || 0;
-    
+
     // Adjust based on content indicators
     if (content.includes('[TODO]') || content.includes('[WIP]')) {
       completion = Math.max(0, completion - 20);
     }
-    
+
     if (content.includes('[DONE]') || content.includes('[COMPLETE]')) {
       completion = Math.min(100, completion + 20);
     }
-    
+
     // Placeholder detection
     if (content.includes('...') || content.includes('TBD')) {
       completion = Math.max(0, completion - 10);
     }
-    
+
     return completion;
   }
 
   private calculateImportanceScore(metadata: CreativeMetadata): number {
     let score = 0.5; // baseline
-    
+
     // Quality contributes to importance
     score += (metadata.quality_score || 0) * 0.2;
-    
+
     // Originality contributes to importance
     score += (metadata.originality_score || 0) * 0.1;
-    
+
     // Completion status
     if (metadata.stage === 'final' || metadata.stage === 'published') {
       score += 0.2;
     }
-    
+
     // Public visibility indicates importance
     if (metadata.public_visibility === 'public') {
       score += 0.1;
     }
-    
+
     // Collaboration indicates importance
     if (metadata.collaborators && metadata.collaborators.length > 0) {
       score += 0.1;
     }
-    
+
     return Math.min(1, score);
   }
 
   // Additional public methods
-  async analyze(userId: string, options?: { 
-    category?: string;
-    medium?: string;
-    stage?: string;
-    minQuality?: number;
-  }): Promise<any> {
+  async analyze(
+    userId: string,
+    options?: {
+      category?: string;
+      medium?: string;
+      stage?: string;
+      minQuality?: number;
+    },
+  ): Promise<any> {
     try {
       const memories = await this.prisma.creativeMemory.findMany({
-        where: { userId }
+        where: { userId },
       });
-      
+
       let filteredMemories = memories;
-      
+
       // Apply filters
       if (options?.category) {
-        filteredMemories = filteredMemories.filter(m => 
-          (m.metadata as CreativeMetadata).category === options.category
+        filteredMemories = filteredMemories.filter(
+          m => (m.metadata as CreativeMetadata).category === options.category,
         );
       }
       if (options?.medium) {
-        filteredMemories = filteredMemories.filter(m => 
-          (m.metadata as CreativeMetadata).medium === options.medium
+        filteredMemories = filteredMemories.filter(
+          m => (m.metadata as CreativeMetadata).medium === options.medium,
         );
       }
       if (options?.stage) {
-        filteredMemories = filteredMemories.filter(m => 
-          (m.metadata as CreativeMetadata).stage === options.stage
+        filteredMemories = filteredMemories.filter(
+          m => (m.metadata as CreativeMetadata).stage === options.stage,
         );
       }
       if (options?.minQuality !== undefined) {
-        filteredMemories = filteredMemories.filter(m => 
-          (m.metadata as CreativeMetadata).quality_score! >= options.minQuality!
+        filteredMemories = filteredMemories.filter(
+          m => (m.metadata as CreativeMetadata).quality_score! >= options.minQuality!,
         );
       }
-      
+
       const analysis = {
         total_works: filteredMemories.length,
         categories_distribution: this.analyzeCategories(filteredMemories),
@@ -698,9 +724,9 @@ export class CreativeModule extends BaseModule {
         creative_velocity: this.analyzeCreativeVelocity(filteredMemories),
         collaboration_network: this.analyzeCollaborations(filteredMemories),
         completion_rates: this.analyzeCompletionRates(filteredMemories),
-        top_works: this.getTopWorks(filteredMemories)
+        top_works: this.getTopWorks(filteredMemories),
       };
-      
+
       return analysis;
     } catch (error) {
       this.logger.error('Error analyzing creative memories', { error });
@@ -710,34 +736,34 @@ export class CreativeModule extends BaseModule {
 
   private analyzeCategories(memories: any[]): Record<string, number> {
     const categories: Record<string, number> = {};
-    
+
     for (const memory of memories) {
       const category = (memory.metadata as CreativeMetadata).category || 'uncategorized';
       categories[category] = (categories[category] || 0) + 1;
     }
-    
+
     return categories;
   }
 
   private analyzeMedia(memories: any[]): Record<string, number> {
     const media: Record<string, number> = {};
-    
+
     for (const memory of memories) {
       const medium = (memory.metadata as CreativeMetadata).medium || 'unknown';
       media[medium] = (media[medium] || 0) + 1;
     }
-    
+
     return media;
   }
 
   private analyzeStages(memories: any[]): Record<string, number> {
     const stages: Record<string, number> = {};
-    
+
     for (const memory of memories) {
       const stage = (memory.metadata as CreativeMetadata).stage || 'ideation';
       stages[stage] = (stages[stage] || 0) + 1;
     }
-    
+
     return stages;
   }
 
@@ -749,27 +775,27 @@ export class CreativeModule extends BaseModule {
     let total = 0;
     let count = 0;
     const distribution: Record<string, number> = {
-      low: 0,      // 0-0.3
-      medium: 0,   // 0.3-0.7
-      high: 0      // 0.7-1.0
+      low: 0, // 0-0.3
+      medium: 0, // 0.3-0.7
+      high: 0, // 0.7-1.0
     };
-    
+
     for (const memory of memories) {
       const quality = (memory.metadata as CreativeMetadata).quality_score;
       if (quality !== undefined) {
         total += quality;
         count++;
-        
+
         if (quality < 0.3) distribution.low++;
         else if (quality < 0.7) distribution.medium++;
         else distribution.high++;
       }
     }
-    
+
     return {
       average: count > 0 ? total / count : 0,
       distribution,
-      highQuality: distribution.high
+      highQuality: distribution.high,
     };
   }
 
@@ -780,55 +806,53 @@ export class CreativeModule extends BaseModule {
     let total = 0;
     let count = 0;
     const originals: Array<{ content: string; score: number }> = [];
-    
+
     for (const memory of memories) {
       const originality = (memory.metadata as CreativeMetadata).originality_score;
       if (originality !== undefined) {
         total += originality;
         count++;
-        
+
         if (originality > 0.8) {
           originals.push({
             content: memory.content.substring(0, 100) + '...',
-            score: originality
+            score: originality,
           });
         }
       }
     }
-    
+
     return {
       average: count > 0 ? total / count : 0,
-      mostOriginal: originals
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 5)
+      mostOriginal: originals.sort((a, b) => b.score - a.score).slice(0, 5),
     };
   }
 
   private analyzeThemes(memories: any[]): Record<string, number> {
     const themesCount: Record<string, number> = {};
-    
+
     for (const memory of memories) {
       const themes = (memory.metadata as CreativeMetadata).themes || [];
       for (const theme of themes) {
         themesCount[theme] = (themesCount[theme] || 0) + 1;
       }
     }
-    
+
     return Object.fromEntries(
       Object.entries(themesCount)
         .sort(([, a], [, b]) => b - a)
-        .slice(0, 20)
+        .slice(0, 20),
     );
   }
 
   private analyzeMoods(memories: any[]): Record<string, number> {
     const moods: Record<string, number> = {};
-    
+
     for (const memory of memories) {
       const mood = (memory.metadata as CreativeMetadata).mood || 'neutral';
       moods[mood] = (moods[mood] || 0) + 1;
     }
-    
+
     return moods;
   }
 
@@ -841,22 +865,22 @@ export class CreativeModule extends BaseModule {
     let totalIterations = 0;
     let iterationCount = 0;
     const completionTimes: number[] = [];
-    
+
     for (const memory of memories) {
       const metadata = memory.metadata as CreativeMetadata;
-      
+
       // Count by month
       if (metadata.creation_date) {
         const month = metadata.creation_date.substring(0, 7); // YYYY-MM
         monthCounts[month] = (monthCounts[month] || 0) + 1;
       }
-      
+
       // Track iterations
       if (metadata.iterations) {
         totalIterations += metadata.iterations;
         iterationCount++;
       }
-      
+
       // Calculate completion time
       if (metadata.creation_date && metadata.stage === 'final' && metadata.last_modified) {
         const created = new Date(metadata.creation_date);
@@ -865,13 +889,14 @@ export class CreativeModule extends BaseModule {
         completionTimes.push(days);
       }
     }
-    
+
     return {
       worksPerMonth: monthCounts,
       averageIterations: iterationCount > 0 ? totalIterations / iterationCount : 0,
-      completionTime: completionTimes.length > 0 
-        ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length 
-        : 0
+      completionTime:
+        completionTimes.length > 0
+          ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length
+          : 0,
     };
   }
 
@@ -881,32 +906,32 @@ export class CreativeModule extends BaseModule {
     categories: string[];
   }> {
     const collabMap: Record<string, any> = {};
-    
+
     for (const memory of memories) {
       const metadata = memory.metadata as CreativeMetadata;
       const collaborators = metadata.collaborators || [];
-      
+
       for (const collaborator of collaborators) {
         if (!collabMap[collaborator]) {
           collabMap[collaborator] = {
             collaborator,
             projectCount: 0,
-            categories: new Set<string>()
+            categories: new Set<string>(),
           };
         }
-        
+
         collabMap[collaborator].projectCount++;
         if (metadata.category) {
           collabMap[collaborator].categories.add(metadata.category);
         }
       }
     }
-    
+
     return Object.values(collabMap)
       .map(c => ({
         collaborator: c.collaborator,
         projectCount: c.projectCount,
-        categories: Array.from(c.categories) as string[]
+        categories: Array.from(c.categories) as string[],
       }))
       .sort((a, b) => b.projectCount - a.projectCount)
       .slice(0, 10);
@@ -917,18 +942,19 @@ export class CreativeModule extends BaseModule {
     byCategory: Record<string, number>;
     byMedium: Record<string, number>;
   } {
-    const completed = memories.filter(m => 
-      (m.metadata as CreativeMetadata).stage === 'final' || 
-      (m.metadata as CreativeMetadata).stage === 'published'
+    const completed = memories.filter(
+      m =>
+        (m.metadata as CreativeMetadata).stage === 'final' ||
+        (m.metadata as CreativeMetadata).stage === 'published',
     ).length;
-    
+
     const byCategory: Record<string, { total: number; completed: number }> = {};
     const byMedium: Record<string, { total: number; completed: number }> = {};
-    
+
     for (const memory of memories) {
       const metadata = memory.metadata as CreativeMetadata;
       const isCompleted = metadata.stage === 'final' || metadata.stage === 'published';
-      
+
       // By category
       const category = metadata.category || 'uncategorized';
       if (!byCategory[category]) {
@@ -936,7 +962,7 @@ export class CreativeModule extends BaseModule {
       }
       byCategory[category].total++;
       if (isCompleted) byCategory[category].completed++;
-      
+
       // By medium
       const medium = metadata.medium || 'unknown';
       if (!byMedium[medium]) {
@@ -945,22 +971,22 @@ export class CreativeModule extends BaseModule {
       byMedium[medium].total++;
       if (isCompleted) byMedium[medium].completed++;
     }
-    
+
     // Calculate rates
     const categoryRates: Record<string, number> = {};
     for (const [cat, data] of Object.entries(byCategory)) {
       categoryRates[cat] = data.total > 0 ? data.completed / data.total : 0;
     }
-    
+
     const mediumRates: Record<string, number> = {};
     for (const [med, data] of Object.entries(byMedium)) {
       mediumRates[med] = data.total > 0 ? data.completed / data.total : 0;
     }
-    
+
     return {
       overall: memories.length > 0 ? completed / memories.length : 0,
       byCategory: categoryRates,
-      byMedium: mediumRates
+      byMedium: mediumRates,
     };
   }
 
@@ -987,7 +1013,7 @@ export class CreativeModule extends BaseModule {
         category: (m.metadata as CreativeMetadata).category,
         qualityScore: (m.metadata as CreativeMetadata).quality_score,
         originalityScore: (m.metadata as CreativeMetadata).originality_score,
-        stage: (m.metadata as CreativeMetadata).stage
+        stage: (m.metadata as CreativeMetadata).stage,
       }));
   }
 }

@@ -65,15 +65,19 @@ export interface MemoryModule {
   // Core methods
   store(userId: string, content: string, metadata?: Record<string, any>): Promise<string>;
   search(userId: string, query: string, options?: SearchOptions): Promise<Memory[]>;
-  searchByEmbedding(userId: string, embedding: number[], options?: SearchOptions): Promise<Memory[]>;
+  searchByEmbedding(
+    userId: string,
+    embedding: number[],
+    options?: SearchOptions,
+  ): Promise<Memory[]>;
   get(userId: string, memoryId: string): Promise<Memory | null>;
   update(userId: string, memoryId: string, updates: Partial<Memory>): Promise<boolean>;
   delete(userId: string, memoryId: string): Promise<boolean>;
-  
+
   // Module info
   getConfig(): ModuleConfig;
   getStats(userId: string): Promise<ModuleStats>;
-  
+
   // Lifecycle
   initialize(): Promise<void>;
   shutdown(): Promise<void>;
@@ -155,7 +159,7 @@ export class ModuleError extends Error {
     public module: string,
     public code: string,
     message: string,
-    public originalError?: Error
+    public originalError?: Error,
   ) {
     super(message);
     this.name = 'ModuleError';
@@ -166,7 +170,7 @@ export class CMIError extends Error {
   constructor(
     public code: string,
     message: string,
-    public originalError?: Error
+    public originalError?: Error,
   ) {
     super(message);
     this.name = 'CMIError';

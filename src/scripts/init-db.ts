@@ -32,7 +32,6 @@ async function initDatabase() {
     `;
 
     logger.info(`Found ${Array.isArray(tables) ? tables.length : 0} tables`);
-
   } catch (error) {
     logger.error('Database initialization failed:', error);
     // Don't throw error to allow Railway deployment to continue
