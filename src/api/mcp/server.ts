@@ -12,6 +12,8 @@ import { completable } from '@modelcontextprotocol/sdk/server/completable.js';
 import { AuthService } from '@/services/auth.service';
 import { AuthenticationRequiredError } from './auth-error';
 import { createAuthInterceptor } from './auth-interceptor';
+import { mcpOAuthMiddleware } from './oauth-middleware';
+import { McpError } from '@modelcontextprotocol/sdk/types.js';
 
 // Transport storage for session management
 const transports = new Map<string, StreamableHTTPServerTransport>();
@@ -278,17 +280,18 @@ export function createMcpServer(userId?: string) {
     async ({ topic, maxResults }) => {
       if (!userId) {
         const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-        const error = new Error('Authentication required');
-        (error as any).code = -32001;
-        (error as any).data = {
-          type: 'oauth_required',
-          error: 'unauthorized',
-          error_description: 'This operation requires authentication',
-          resource_server: baseUrl,
-          resource_metadata: `${baseUrl}/.well-known/oauth-protected-resource`,
-          www_authenticate: `Bearer realm="${baseUrl}", resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`,
-        };
-        throw error;
+        throw new McpError(
+          -32001,
+          'Authentication required',
+          {
+            type: 'oauth_required',
+            error: 'unauthorized',
+            error_description: 'This operation requires authentication',
+            resource_server: baseUrl,
+            resource_metadata: `${baseUrl}/.well-known/oauth-protected-resource`,
+            www_authenticate: `Bearer realm="${baseUrl}", resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`,
+          }
+        );
       }
       
       const limit = parseInt(maxResults || '5', 10);
@@ -330,6 +333,9 @@ export function createMcpApp() {
   );
 
   app.use(express.json());
+  
+  // Apply OAuth middleware to intercept authentication errors
+  app.use(mcpOAuthMiddleware);
 
   // Handle MCP requests
   app.post('/mcp', async (req: Request, res: Response) => {

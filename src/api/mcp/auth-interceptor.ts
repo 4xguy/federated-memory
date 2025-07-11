@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpError } from '@modelcontextprotocol/sdk/types.js';
 import { logger } from '@/utils/logger';
 
 export interface AuthenticatedRequest {
@@ -21,19 +22,20 @@ export function createAuthInterceptor(server: McpServer, userId?: string) {
       const authRequiredTools = ['searchMemories', 'storeMemory', 'getMemory'];
       
       if (authRequiredTools.includes(name) && !userId) {
-        // Throw an authentication error
+        // Throw an MCP authentication error
         const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-        const error = new Error('Authentication required');
-        (error as any).code = -32001;
-        (error as any).data = {
-          type: 'oauth_required',
-          error: 'unauthorized',
-          error_description: 'This operation requires authentication',
-          resource_server: baseUrl,
-          resource_metadata: `${baseUrl}/.well-known/oauth-protected-resource`,
-          www_authenticate: `Bearer realm="${baseUrl}", resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`,
-        };
-        throw error;
+        throw new McpError(
+          -32001,
+          'Authentication required',
+          {
+            type: 'oauth_required',
+            error: 'unauthorized',
+            error_description: 'This operation requires authentication',
+            resource_server: baseUrl,
+            resource_metadata: `${baseUrl}/.well-known/oauth-protected-resource`,
+            www_authenticate: `Bearer realm="${baseUrl}", resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`,
+          }
+        );
       }
 
       // Call original handler
