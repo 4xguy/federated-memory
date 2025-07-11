@@ -9,9 +9,9 @@ import { getApiUrl } from '@/lib/config'
 interface ApiKey {
   id: string
   name: string
-  key: string
+  prefix: string  // Changed from 'key' to 'prefix'
   createdAt: string
-  lastUsedAt?: string
+  lastUsed?: string  // Changed from 'lastUsedAt'
   expiresAt?: string
 }
 
@@ -26,13 +26,6 @@ export default function ApiKeysPage() {
   const [keyName, setKeyName] = useState('')
   const [creating, setCreating] = useState(false)
 
-  // Debug logging
-  useEffect(() => {
-    console.log('=== Environment Debug ===');
-    console.log('NEXT_PUBLIC_API_URL from env:', process.env.NEXT_PUBLIC_API_URL);
-    console.log('API URL from getApiUrl():', getApiUrl());
-    console.log('All NEXT_PUBLIC vars:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC')));
-  }, [])
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -221,10 +214,10 @@ export default function ApiKeysPage() {
                     <p className="font-semibold">{apiKey.name}</p>
                     <p className="text-sm text-gray-500">
                       Created: {new Date(apiKey.createdAt).toLocaleDateString()}
-                      {apiKey.lastUsedAt && ` • Last used: ${new Date(apiKey.lastUsedAt).toLocaleDateString()}`}
+                      {apiKey.lastUsed && ` • Last used: ${new Date(apiKey.lastUsed).toLocaleDateString()}`}
                     </p>
                     <p className="text-sm font-mono text-gray-400">
-                      {apiKey.key.substring(0, 10)}...{apiKey.key.substring(apiKey.key.length - 10)}
+                      {apiKey.prefix}...
                     </p>
                   </div>
                   <button

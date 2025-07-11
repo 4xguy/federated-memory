@@ -30,7 +30,5 @@ export function getApiUrl(): string {
     // Return empty string to make the error obvious
     return '';
   }
-  // Log the URL being used (remove in production)
-  console.log('Using API URL:', url);
   return url;
 }
