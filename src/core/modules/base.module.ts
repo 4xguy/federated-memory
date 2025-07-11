@@ -53,13 +53,19 @@ export abstract class BaseModule implements MemoryModule {
       const memory = await this.storeInModule(userId, content, fullEmbedding, enrichedMetadata);
 
       // Update CMI
-      await this.cmi.indexMemory(userId, this.config.id, memory.id, content, {
-        title: this.extractTitle(content),
-        summary: await this.generateSummary(content),
-        keywords: this.extractKeywords(content),
-        categories: enrichedMetadata.categories || [],
-        importanceScore: enrichedMetadata.importanceScore || 0.5,
-      });
+      try {
+        await this.cmi.indexMemory(userId, this.config.id, memory.id, content, {
+          title: this.extractTitle(content),
+          summary: await this.generateSummary(content),
+          keywords: this.extractKeywords(content),
+          categories: enrichedMetadata.categories || [],
+          importanceScore: enrichedMetadata.importanceScore || 0.5,
+        });
+        this.logger.info('Memory indexed in CMI', { userId, memoryId: memory.id, module: this.config.id });
+      } catch (indexError) {
+        this.logger.error('Failed to index memory in CMI', { error: indexError, userId, memoryId: memory.id });
+        // Don't throw - memory is stored, just not indexed
+      }
 
       // Invalidate cache
       await this.invalidateCache(userId);

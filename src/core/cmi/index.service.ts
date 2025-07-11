@@ -527,21 +527,57 @@ export class CMIService {
       const limit = options?.limit || 10;
       const results = await this.searchMemories(userId, query, undefined, limit);
 
-      // Fetch full memories from modules
-      const fullMemories = await Promise.all(
-        results.map(async result => {
-          const module = await this.moduleRegistry.getModule(result.moduleId);
-          if (module) {
-            const memory = await module.get(userId, result.remoteMemoryId);
-            return memory
-              ? { ...memory, moduleId: result.moduleId, score: result.importanceScore }
-              : null;
+      // If CMI index returns results, use them
+      if (results.length > 0) {
+        // Fetch full memories from modules
+        const fullMemories = await Promise.all(
+          results.map(async result => {
+            const module = await this.moduleRegistry.getModule(result.moduleId);
+            if (module) {
+              const memory = await module.get(userId, result.remoteMemoryId);
+              return memory
+                ? { ...memory, moduleId: result.moduleId, score: result.similarity }
+                : null;
+            }
+            return null;
+          }),
+        );
+
+        return fullMemories.filter(m => m !== null);
+      }
+
+      // Fallback: If no results from index, search all modules directly
+      this.logger.warn('CMI index returned no results, falling back to module search', { userId, query });
+      
+      const modules = await this.moduleRegistry.listModules();
+      const allResults: any[] = [];
+
+      // Search each module in parallel
+      await Promise.all(
+        modules.map(async moduleInfo => {
+          try {
+            const module = await this.moduleRegistry.getModule(moduleInfo.id);
+            if (module) {
+              const moduleResults = await module.search(userId, query, { 
+                limit: Math.ceil(limit / modules.length), 
+                minScore: options?.minScore 
+              });
+              
+              // Add module ID to each result
+              moduleResults.forEach(result => {
+                allResults.push({ ...result, moduleId: moduleInfo.id });
+              });
+            }
+          } catch (error) {
+            this.logger.warn('Module search failed', { module: moduleInfo.id, error });
           }
-          return null;
         }),
       );
 
-      return fullMemories.filter(m => m !== null);
+      // Sort by score and return top results
+      return allResults
+        .sort((a, b) => (b.score || 0) - (a.score || 0))
+        .slice(0, limit);
     } catch (error) {
       this.logger.error('Failed to search memories through CMI', { error });
       throw error;

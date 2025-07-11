@@ -109,27 +109,11 @@ export function createMcpServer(userId?: string) {
           moduleId,
         });
 
-        // Check if it's actually a success that's being reported as error
-        if (error instanceof Error && error.message.includes('Memory stored successfully')) {
-          // Extract memory ID from error message if possible
-          const idMatch = error.message.match(/Memory stored successfully: ([\w-]+)/);
-          const memoryId = idMatch ? idMatch[1] : 'unknown';
-
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Memory stored successfully: ${memoryId}`,
-              },
-            ],
-          };
-        }
-
         return {
           content: [
             {
               type: 'text',
-              text: `Error storing memory: ${error instanceof Error ? error.message : String(error)}`,
+              text: `Failed to store memory: ${error instanceof Error ? error.message : String(error)}`,
             },
           ],
           isError: true,
