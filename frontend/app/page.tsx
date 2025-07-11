@@ -51,7 +51,10 @@ export default function Home() {
                 <p className="text-sm opacity-75 mb-4">
                   Generate and manage API keys for MCP access
                 </p>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                <button 
+                  onClick={() => window.location.href = '/api-keys'}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
                   Manage API Keys
                 </button>
               </div>
