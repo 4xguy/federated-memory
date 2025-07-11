@@ -31,3 +31,11 @@ export function mcpOAuthMiddleware(req: Request, res: Response, next: NextFuncti
 
   next();
 }
+
+/**
+ * Check if the current request is trying to call a protected tool
+ */
+export function isProtectedToolCall(body: any): boolean {
+  const protectedTools = ['searchMemories', 'storeMemory', 'getMemory'];
+  return body?.method === 'tools/call' && protectedTools.includes(body?.params?.name);
+}
