@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "federated-memory": {
+      "url": "https://your-app.up.railway.app/mcp",
+      "transport": {
+        "type": "http-sse",
+        "config": {
+          "authType": "oauth2",
+          "authorizationUrl": "https://your-app.up.railway.app/api/oauth/authorize",
+          "tokenUrl": "https://your-app.up.railway.app/api/oauth/token",
+          "clientId": "claude-desktop",
+          "scope": "read write profile"
+        }
+      },
+      "name": "Federated Memory",
+      "description": "Personal knowledge management with intelligent routing",
+      "icon": "🧠"
+    }
+  }
+}
