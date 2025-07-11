@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "federated-memory-local": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "http://localhost:3001/mcp"
+      ]
+    }
+  }
+}
