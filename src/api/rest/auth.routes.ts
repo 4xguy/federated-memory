@@ -38,7 +38,7 @@ router.post('/session', async (req, res) => {
           id: userId,
           email,
           name: name || email.split('@')[0],
-          token: authService.generateUserToken(),
+          token: `usr_${userId}_${Date.now()}`,
           oauthProvider: provider,
           oauthId: userId,
         }
