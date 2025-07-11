@@ -1,15 +1,26 @@
 export class AuthenticationRequiredError extends Error {
   public code: number;
   public data: any;
+  public httpStatusCode: number;
+  public httpHeaders: Record<string, string>;
 
-  constructor(authUrl: string) {
+  constructor(baseUrl?: string) {
     super('Authentication required');
     this.name = 'AuthenticationRequiredError';
     this.code = -32001; // Custom error code for auth required
+    this.httpStatusCode = 401;
+    
+    const url = baseUrl || process.env.BASE_URL || 'http://localhost:3000';
+    
+    // Set WWW-Authenticate header as per MCP OAuth spec
+    this.httpHeaders = {
+      'WWW-Authenticate': `Bearer realm="${url}", resource_metadata="${url}/.well-known/oauth-protected-resource"`,
+    };
+    
     this.data = {
       type: 'oauth_required',
-      auth_url: authUrl,
-      message: 'Please authenticate to access this resource',
+      message: 'Authentication required. Please follow the OAuth flow.',
+      resource_metadata_url: `${url}/.well-known/oauth-protected-resource`,
     };
   }
 }

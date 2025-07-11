@@ -11,16 +11,20 @@ import { ModuleRegistry } from '@/core/modules/registry.service';
 import { completable } from '@modelcontextprotocol/sdk/server/completable.js';
 import { AuthService } from '@/services/auth.service';
 import { AuthenticationRequiredError } from './auth-error';
+import { createAuthInterceptor } from './auth-interceptor';
 
 // Transport storage for session management
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
 // Create MCP Server instance
 export function createMcpServer(userId?: string) {
-  const server = new McpServer({
+  let server = new McpServer({
     name: 'federated-memory',
     version: '1.0.0',
   });
+
+  // Apply authentication interceptor
+  server = createAuthInterceptor(server, userId);
 
   // Get service instances
   const cmiService = getCMIService();
@@ -39,14 +43,9 @@ export function createMcpServer(userId?: string) {
       },
     },
     async ({ query, limit, moduleId }) => {
-      if (!userId) {
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-        const authUrl = `${baseUrl}/api/oauth/authorize?client_id=mcp-client&response_type=code&redirect_uri=${encodeURIComponent('https://claude.ai/oauth/callback')}&scope=read%20write`;
-        throw new AuthenticationRequiredError(authUrl);
-      }
       
       try {
-        const results = await cmiService.search(userId, query, { limit, moduleId });
+        const results = await cmiService.search(userId!, query, { limit, moduleId });
 
         const formattedResults = results.map((r: any) => ({
           id: r.id,
@@ -95,14 +94,9 @@ export function createMcpServer(userId?: string) {
       },
     },
     async ({ content, metadata, moduleId }) => {
-      if (!userId) {
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-        const authUrl = `${baseUrl}/api/oauth/authorize?client_id=mcp-client&response_type=code&redirect_uri=${encodeURIComponent('https://claude.ai/oauth/callback')}&scope=read%20write`;
-        throw new AuthenticationRequiredError(authUrl);
-      }
       
       try {
-        const memoryId = await cmiService.store(userId, content, metadata, moduleId);
+        const memoryId = await cmiService.store(userId!, content, metadata, moduleId);
 
         return {
           content: [
@@ -146,14 +140,9 @@ export function createMcpServer(userId?: string) {
       },
     },
     async ({ memoryId }) => {
-      if (!userId) {
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-        const authUrl = `${baseUrl}/api/oauth/authorize?client_id=mcp-client&response_type=code&redirect_uri=${encodeURIComponent('https://claude.ai/oauth/callback')}&scope=read%20write`;
-        throw new AuthenticationRequiredError(authUrl);
-      }
       
       try {
-        const memory = await cmiService.get(userId, memoryId);
+        const memory = await cmiService.get(userId!, memoryId);
         if (!memory) {
           throw new Error('Memory not found');
         }
@@ -288,28 +277,22 @@ export function createMcpServer(userId?: string) {
     },
     async ({ topic, maxResults }) => {
       if (!userId) {
-        return {
-          messages: [
-            {
-              role: 'user',
-              content: {
-                type: 'text',
-                text: `Search for memories about: ${topic}`,
-              },
-            },
-            {
-              role: 'assistant',
-              content: {
-                type: 'text',
-                text: 'Authentication required. Please authenticate via OAuth to access memories.',
-              },
-            },
-          ],
+        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const error = new Error('Authentication required');
+        (error as any).code = -32001;
+        (error as any).data = {
+          type: 'oauth_required',
+          error: 'unauthorized',
+          error_description: 'This operation requires authentication',
+          resource_server: baseUrl,
+          resource_metadata: `${baseUrl}/.well-known/oauth-protected-resource`,
+          www_authenticate: `Bearer realm="${baseUrl}", resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`,
         };
+        throw error;
       }
       
       const limit = parseInt(maxResults || '5', 10);
-      const results = await cmiService.search(userId, topic || '', { limit });
+      const results = await cmiService.search(userId!, topic || '', { limit });
 
       const summaryText = results
         .map((r: any, i: number) => `${i + 1}. [${r.moduleId}] ${r.content.substring(0, 100)}...`)
