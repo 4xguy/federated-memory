@@ -9,8 +9,32 @@ A scalable, modular memory system for LLMs featuring a Central Memory Index (CMI
 - **Federated Search**: Parallel search across modules with intelligent result merging
 - **pgvector Integration**: Semantic search using PostgreSQL's vector extension
 - **Flexible Metadata**: JSONB storage for module-specific data structures
-- **MCP Protocol**: Full Model Context Protocol implementation
+- **REST API**: Complete RESTful API with JWT authentication
 - **High Performance**: Sub-200ms federated search latency
+- **Redis Caching**: Optional caching layer for improved performance
+
+## 📈 Current Status
+
+✅ **Implemented:**
+- Core infrastructure (CMI, module system, embeddings)
+- All 6 memory modules fully functional
+- REST API with authentication
+- MCP server with Streamable HTTP protocol
+- Database schema and migrations
+- Module statistics and analysis
+- User management system
+- Comprehensive logging
+
+🚧 **In Progress:**
+- Comprehensive test coverage
+- Performance benchmarks
+- MCP client libraries
+
+📋 **Planned:**
+- GraphQL API
+- Module plugins system
+- Advanced analytics dashboard
+- Backup and restore tools
 
 ## 🏗️ Architecture
 
@@ -33,12 +57,14 @@ A scalable, modular memory system for LLMs featuring a Central Memory Index (CMI
 
 ## 🚀 Quick Start
 
+> **Want to get started in 5 minutes?** Check out our [Quick Start Guide](QUICKSTART.md)!
+
 ### Prerequisites
 
-- Node.js 20+
-- PostgreSQL 16+ with pgvector
-- Redis (optional)
-- OpenAI API key
+- Node.js 18+ (20+ recommended)
+- PostgreSQL 16+ with pgvector extension
+- Redis (optional, for caching)
+- OpenAI API key for embeddings
 
 ### Installation
 
@@ -61,9 +87,17 @@ psql federated_memory -c "CREATE EXTENSION IF NOT EXISTS vector;"
 # Run migrations
 npm run db:migrate
 
+# Generate Prisma client
+npm run db:generate
+
 # Start development server
 npm run dev
 ```
+
+The server will start on port 3000 (or PORT env variable):
+- REST API: http://localhost:3000/api
+- Health Check: http://localhost:3000/api/health
+- MCP Server: http://localhost:3000/mcp
 
 ### Docker Setup
 
@@ -109,12 +143,58 @@ docker-compose exec app npm run db:migrate
 # Core Configuration
 DATABASE_URL="postgresql://user:pass@localhost:5432/federated_memory"
 OPENAI_API_KEY="sk-..."
-REDIS_URL="redis://localhost:6379"
+JWT_SECRET="your-secret-key"
+REDIS_URL="redis://localhost:6379" # Optional
 
-# Module Configuration
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+
+# Module Configuration (all modules enabled by default)
 ACTIVE_MODULES="technical,personal,work,learning,communication,creative"
-CMI_EMBEDDING_DIM=512
-MODULE_EMBEDDING_DIM=1536
+```
+
+## 🌐 REST API
+
+### Authentication
+All endpoints except health checks require JWT authentication:
+```
+Authorization: Bearer <token>
+```
+
+### Endpoints
+
+#### Health Check
+```bash
+GET /api/health
+GET /api/health/detailed
+GET /api/health/ready
+GET /api/health/live
+```
+
+#### User Management
+```bash
+POST /api/users/register
+POST /api/users/login
+GET /api/users/me
+GET /api/users/stats
+DELETE /api/users/me
+```
+
+#### Memory Operations
+```bash
+POST /api/memories          # Store memory
+GET /api/memories/search    # Search memories
+GET /api/memories/:id       # Get specific memory
+PUT /api/memories/:id       # Update memory
+DELETE /api/memories/:id    # Delete memory
+```
+
+#### Module Management
+```bash
+GET /api/modules            # List modules
+GET /api/modules/:id/stats  # Module statistics
+POST /api/modules/:id/analyze # Module analysis
 ```
 
 ## 🛠️ Development
@@ -139,17 +219,47 @@ federated-memory/
 npm run generate:module -- --name=finance --description="Financial memory module"
 ```
 
-### Testing
+### Available Commands
 
 ```bash
-# Run all tests
-npm test
+# Development
+npm run dev              # Start development server with hot reload
+npm run build            # Build TypeScript to JavaScript
+npm start                # Start production server
 
-# Unit tests only
-npm test -- --testPathPattern=unit
+# Database
+npm run db:migrate       # Run database migrations
+npm run db:generate      # Generate Prisma client
+npm run db:studio        # Open Prisma Studio GUI
 
-# Test coverage
-npm run test:coverage
+# Testing
+npm test                 # Run all tests
+npm run test:watch       # Run tests in watch mode
+npm run test:coverage    # Generate test coverage report
+
+# Code Quality
+npm run lint             # Run ESLint
+npm run format           # Format code with Prettier
+npm run typecheck        # Check TypeScript types
+
+# Utilities
+npm run generate:module  # Generate new module template
+```
+
+### Testing the API
+
+```bash
+# Run the included test script
+npm run test:api
+
+# Or use curl
+curl http://localhost:3000/api/health
+
+# Store a memory (requires auth token)
+curl -X POST http://localhost:3000/api/memories \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"content": "Test memory", "metadata": {"tags": ["test"]}}'
 ```
 
 ## 📊 Performance
@@ -169,10 +279,12 @@ npm run test:coverage
 
 ## 📚 Documentation
 
-- [Master Implementation Guide](docs/MASTER_PROMPT.md)
-- [Development Setup](docs/DEVELOPMENT_SETUP.md)
-- [Module Implementation](docs/MODULE_IMPLEMENTATION.md)
-- [Project Structure](docs/PROJECT_STRUCTURE.md)
+- [User Manual](docs/USER_MANUAL.md) - Complete guide for using the system
+- [MCP Server Guide](docs/MCP_SERVER.md) - MCP protocol implementation
+- [Master Implementation Guide](docs/MASTER_PROMPT.md) - Technical implementation details
+- [Development Setup](docs/DEVELOPMENT_SETUP.md) - Developer environment setup
+- [Module Implementation](docs/MODULE_IMPLEMENTATION.md) - Creating custom modules
+- [Project Structure](docs/PROJECT_STRUCTURE.md) - Codebase organization
 
 ## 🤝 Contributing
 
@@ -188,6 +300,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🙏 Acknowledgments
 
-- Built on the foundation of [BigMemory](https://github.com/yourusername/bigmemory)
+- Built on the foundation of [BigMemory](https://github.com/4xguy/bigmemory)
 - Powered by PostgreSQL pgvector
 - OpenAI embeddings for semantic search
