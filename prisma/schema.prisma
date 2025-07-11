@@ -18,14 +18,23 @@ model User {
   id              String   @id @default(uuid())
   email           String   @unique
   token           String   @unique
+  passwordHash    String?
+  oauthProvider   String?
+  oauthId         String?
+  name            String?
+  avatarUrl       String?
   isActive        Boolean  @default(true)
+  lastLogin       DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   // Relations
   memoryIndices   MemoryIndex[]
   relationships   MemoryRelationship[]
+  apiKeys         ApiKey[]
+  refreshTokens   RefreshToken[]
 
+  @@index([oauthProvider, oauthId])
   @@map("users")
 }
 
@@ -265,4 +274,40 @@ model ModuleStats {
   @@unique([moduleId, date])
   @@index([date])
   @@map("module_stats")
+}
+
+// ============= Auth Models =============
+
+model ApiKey {
+  id        String    @id @default(uuid())
+  userId    String
+  name      String
+  keyHash   String    @unique
+  keyPrefix String
+  lastUsed  DateTime?
+  expiresAt DateTime?
+  scopes    String[]
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([keyPrefix])
+  @@map("api_keys")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String
+  clientId  String
+  scope     String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
 }
