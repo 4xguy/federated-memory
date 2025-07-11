@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import { getApiUrl } from '@/lib/config'
 
 interface ApiKey {
   id: string
@@ -37,7 +38,7 @@ export default function ApiKeysPage() {
     if (!token) return;
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/keys`, {
+      const response = await fetch(`${getApiUrl()}/api/keys`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -71,7 +72,7 @@ export default function ApiKeysPage() {
     setError(null)
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/keys`, {
+      const response = await fetch(`${getApiUrl()}/api/keys`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -106,7 +107,7 @@ export default function ApiKeysPage() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/keys/${keyId}`, {
+      const response = await fetch(`${getApiUrl()}/api/keys/${keyId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -239,7 +240,7 @@ export default function ApiKeysPage() {
     "federated-memory": {
       "transport": {
         "type": "http",
-        "url": "${process.env.NEXT_PUBLIC_API_URL}/mcp"
+        "url": "${getApiUrl()}/mcp"
       },
       "auth": {
         "type": "bearer",

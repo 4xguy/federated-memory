@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { getApiUrl } from './config'
 
 interface AuthContextType {
   token: string | null
@@ -28,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
       // Create a session in the backend
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/session`, {
+      fetch(`${getApiUrl()}/api/auth/session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -67,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const storedToken = localStorage.getItem('auth_token')
       if (storedToken) {
         // Verify token is still valid
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/session`, {
+        fetch(`${getApiUrl()}/api/auth/session`, {
           headers: {
             'Authorization': `Bearer ${storedToken}`,
           },
