@@ -91,7 +91,7 @@ async function main() {
         },
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Mcp-Session-Id'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Mcp-Session-Id', 'x-mcp-proxy-auth', 'X-MCP-Proxy-Auth'],
         exposedHeaders: ['X-Total-Count', 'X-Page-Count', 'WWW-Authenticate', 'Mcp-Session-Id'],
       }),
     );
@@ -102,7 +102,7 @@ async function main() {
     app.options('*', (req, res) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Mcp-Session-Id');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Mcp-Session-Id, x-mcp-proxy-auth, X-MCP-Proxy-Auth');
       res.setHeader('Access-Control-Max-Age', '86400');
       res.status(204).send();
     });
@@ -115,7 +115,7 @@ async function main() {
         // Set CORS headers for all origins
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-mcp-proxy-auth, X-MCP-Proxy-Auth');
         
         res.json({
           mcp: {
@@ -159,7 +159,7 @@ async function main() {
         // Set CORS headers
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-mcp-proxy-auth, X-MCP-Proxy-Auth');
         
         // Check database connectivity
         await prisma.$queryRaw`SELECT 1`;
