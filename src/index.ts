@@ -63,6 +63,10 @@ async function main() {
             'https://*.claude.ai',
             'http://localhost:3001', // Local frontend
             'http://localhost:3000', // Local dev
+            'http://localhost:6274', // MCP Inspector
+            'http://127.0.0.1:6274', // MCP Inspector
+            'https://mcp-inspector.vercel.app', // MCP Inspector hosted
+            'https://*.vercel.app', // Vercel apps
           ];
 
           // Allow requests with no origin (like mobile apps or curl)
@@ -80,33 +84,35 @@ async function main() {
           if (allowed) {
             callback(null, true);
           } else {
+            // For development/debugging, log the rejected origin
+            logger.warn('CORS rejected origin:', origin);
             callback(new Error('Not allowed by CORS'));
           }
         },
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-        exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Mcp-Session-Id'],
+        exposedHeaders: ['X-Total-Count', 'X-Page-Count', 'WWW-Authenticate', 'Mcp-Session-Id'],
       }),
     );
 
     app.use(express.json({ limit: '10mb' }));
 
-    // Handle OPTIONS preflight requests
-    app.options(['/.well-known/*', '/config'], (req, res) => {
+    // Handle OPTIONS preflight requests for all routes
+    app.options('*', (req, res) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Mcp-Session-Id');
       res.setHeader('Access-Control-Max-Age', '86400');
       res.status(204).send();
     });
 
     // Config endpoint for MCP clients (root level)
-    app.get('/config', (req, res) => {
+    app.get('/config', async (req, res) => {
       try {
         const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
         
-        // Set CORS headers
+        // Set CORS headers for all origins
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -127,7 +133,7 @@ async function main() {
             },
             transport: {
               type: 'streamable-http',
-              endpoint: `${baseUrl}/mcp`,
+              endpoint: `${baseUrl}/sse`,
             },
             auth: {
               type: 'oauth2',
@@ -135,12 +141,44 @@ async function main() {
               token_endpoint: `${baseUrl}/api/oauth/token`,
               scopes_supported: ['read', 'write', 'profile'],
               code_challenge_methods_supported: ['S256'],
+              client_id: 'mcp-client',
             },
           },
         });
       } catch (error) {
-        logger.error('Error serving config endpoint', { error });
+        logger.error('Error serving config endpoint', error);
+        // Send CORS headers even on error
+        res.setHeader('Access-Control-Allow-Origin', '*');
         res.status(500).json({ error: 'Internal server error' });
+      }
+    });
+
+    // Health endpoint (root level)
+    app.get('/health', async (req, res) => {
+      try {
+        // Set CORS headers
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        
+        // Check database connectivity
+        await prisma.$queryRaw`SELECT 1`;
+        
+        res.json({
+          status: 'healthy',
+          timestamp: new Date().toISOString(),
+          service: 'federated-memory',
+          version: '1.0.0',
+        });
+      } catch (error) {
+        logger.error('Health check failed', error);
+        // Send CORS headers even on error
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.status(503).json({ 
+          status: 'unhealthy',
+          error: 'Database connection failed',
+          timestamp: new Date().toISOString(),
+        });
       }
     });
 

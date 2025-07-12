@@ -15,8 +15,8 @@ const router = Router();
 // Health routes (no auth required)
 router.use('/health', healthRoutes);
 
-// Config routes (no auth required - for MCP clients)
-router.use('/config', configRoutes);
+// Config routes are now handled at root level in index.ts
+// router.use('/config', configRoutes);
 
 // OAuth routes (mixed auth - some endpoints need session auth)
 router.use('/oauth', oauthRoutes);
