@@ -53,7 +53,7 @@ router.get('/.well-known/oauth-protected-resource', (req: Request, res: Response
 const authorizeSchema = z.object({
   response_type: z.literal('code'),
   client_id: z.string(),
-  redirect_uri: z.string().url(),
+  redirect_uri: z.string(), // Remove .url() validation to allow localhost URLs
   scope: z.string(),
   state: z.string().optional(),
   code_challenge: z.string().optional(),
@@ -154,7 +154,7 @@ const tokenSchema = z.object({
   refresh_token: z.string().optional(),
   client_id: z.string(),
   client_secret: z.string().optional(), // Optional for PKCE
-  redirect_uri: z.string().url().optional(),
+  redirect_uri: z.string().optional(), // Remove .url() validation to allow localhost URLs
   code_verifier: z.string().optional(), // PKCE verifier
 });
 

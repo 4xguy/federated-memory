@@ -40,17 +40,17 @@ export class OAuthProviderService {
         'https://claude.ai/api/organizations/*/integrations/remote-mcp-oauth/callback',
         'https://*.claude.ai/api/organizations/*/integrations/remote-mcp-oauth/callback',
       ],
-      allowedScopes: ['read', 'write', 'profile'],
+      allowedScopes: ['read', 'write', 'profile', 'openid'],
     },
     'claude-desktop': {
       clientSecret: process.env.CLAUDE_DESKTOP_CLIENT_SECRET || 'development-secret',
       redirectUris: ['http://localhost/oauth/callback', 'claude-desktop://oauth/callback'],
-      allowedScopes: ['read', 'write', 'profile'],
+      allowedScopes: ['read', 'write', 'profile', 'openid'],
     },
     'claude-code': {
       clientSecret: process.env.CLAUDE_CODE_CLIENT_SECRET || 'development-secret',
       redirectUris: ['vscode://claude-code/oauth/callback', 'cursor://claude-code/oauth/callback'],
-      allowedScopes: ['read', 'write', 'profile'],
+      allowedScopes: ['read', 'write', 'profile', 'openid'],
     },
     'mcp-client': {
       clientSecret: process.env.MCP_CLIENT_SECRET || 'development-secret',
@@ -66,7 +66,7 @@ export class OAuthProviderService {
         'http://localhost:*/oauth/callback',
         'http://127.0.0.1:*/oauth/callback',
       ],
-      allowedScopes: ['read', 'write', 'profile'],
+      allowedScopes: ['read', 'write', 'profile', 'openid'],
     },
   };
 
@@ -118,7 +118,7 @@ export class OAuthProviderService {
         client = {
           clientSecret: 'dynamic-client-secret', // Not used with PKCE
           redirectUris: [redirectUri], // Allow the provided redirect URI
-          allowedScopes: ['read', 'write', 'profile'],
+          allowedScopes: ['read', 'write', 'profile', 'openid'],
         };
       } else {
         throw new Error('Invalid client_id');
@@ -204,7 +204,7 @@ export class OAuthProviderService {
         client = {
           clientSecret: 'dynamic-client-secret', // Not used with PKCE
           redirectUris: redirectUri ? [redirectUri] : ['http://localhost:*'], // Allow the provided redirect URI
-          allowedScopes: ['read', 'write', 'profile'],
+          allowedScopes: ['read', 'write', 'profile', 'openid'],
         };
       } else {
         throw new Error('Invalid client_id');
