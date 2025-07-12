@@ -97,6 +97,7 @@ async function main() {
     );
 
     app.use(express.json({ limit: '10mb' }));
+    app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies for OAuth
 
     // Handle OPTIONS preflight requests for all routes
     app.options('*', (req, res) => {

@@ -173,6 +173,13 @@ router.post('/token', async (req: Request, res: Response) => {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
+  // Log raw request for debugging
+  logger.info('Token endpoint raw request', {
+    headers: req.headers,
+    body: req.body,
+    contentType: req.headers['content-type'],
+  });
+  
   try {
     const validation = tokenSchema.safeParse(req.body);
     if (!validation.success) {
@@ -180,9 +187,14 @@ router.post('/token', async (req: Request, res: Response) => {
         errors: validation.error.errors,
         body: req.body,
       });
+      
+      const errorDetail = validation.error.errors[0];
+      const fieldPath = errorDetail.path.join('.');
+      const errorMessage = fieldPath ? `${fieldPath}: ${errorDetail.message}` : errorDetail.message;
+      
       return res.status(400).json({
         error: 'invalid_request',
-        error_description: validation.error.errors[0].message,
+        error_description: errorMessage,
       });
     }
 
