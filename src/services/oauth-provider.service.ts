@@ -212,8 +212,11 @@ export class OAuthProviderService {
     }
 
     // For authorization_code grant with PKCE, client_secret is optional
+    // Also skip client secret validation for dynamic MCP clients
     if (grantType === 'authorization_code' && codeVerifier) {
       // Public client with PKCE - no client secret required
+    } else if (clientId.startsWith('mcp-')) {
+      // Dynamic MCP client - skip client secret validation
     } else if (client.clientSecret !== clientSecret) {
       // Confidential client - client secret required
       throw new Error('Invalid client credentials');
@@ -260,16 +263,18 @@ export class OAuthProviderService {
       const accessToken = this.generateAccessToken(authCode.userId, authCode.scope);
       const refreshTokenValue = this.generateRefreshToken(authCode.userId, authCode.scope);
 
-      // Store refresh token
-      await prisma.refreshToken.create({
-        data: {
-          token: createHash('sha256').update(refreshTokenValue).digest('hex'),
-          userId: authCode.userId,
-          clientId,
-          scope: authCode.scope,
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-        },
-      });
+      // Store refresh token (skip for MCP Inspector user)
+      if (authCode.userId !== 'mcp-inspector-user') {
+        await prisma.refreshToken.create({
+          data: {
+            token: createHash('sha256').update(refreshTokenValue).digest('hex'),
+            userId: authCode.userId,
+            clientId,
+            scope: authCode.scope,
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          },
+        });
+      }
 
       return {
         accessToken,

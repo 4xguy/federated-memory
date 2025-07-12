@@ -180,7 +180,12 @@ router.post('/token', async (req: Request, res: Response) => {
 
     return res.json(token);
   } catch (error) {
-    logger.error('OAuth token error', { error });
+    logger.error('OAuth token error', { 
+      error,
+      body: req.body,
+      clientId: req.body.client_id,
+      grantType: req.body.grant_type
+    });
     return res.status(400).json({
       error: 'invalid_grant',
       error_description: error instanceof Error ? error.message : 'Token generation failed',
