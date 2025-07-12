@@ -311,6 +311,15 @@ async function extractUserContextFromAuth(authHeader?: string): Promise<{ userId
     
     if (!userId) return undefined;
     
+    // Special handling for MCP Inspector user
+    if (userId === 'mcp-inspector-user') {
+      return {
+        userId: 'mcp-inspector-user',
+        email: 'mcp-inspector@example.com',
+        name: 'MCP Inspector'
+      };
+    }
+    
     // Get user details from database
     const user = await prisma.user.findUnique({
       where: { id: userId },

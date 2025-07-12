@@ -62,7 +62,37 @@ const authorizeSchema = z.object({
 
 router.get('/authorize', async (req: AuthRequest, res: Response) => {
   try {
-    // User must be authenticated (via session from frontend)
+    const queryClientId = req.query.client_id as string;
+    
+    // Special handling for MCP Inspector and dynamic clients
+    if (queryClientId && queryClientId.startsWith('mcp-')) {
+      // For MCP clients, we'll auto-approve without requiring login
+      // In production, you'd want proper authentication here
+      const validation = authorizeSchema.safeParse(req.query);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: 'invalid_request',
+          error_description: validation.error.errors[0].message,
+        });
+      }
+
+      const validatedData = validation.data;
+
+      // Generate authorization code for MCP client
+      const { redirectUrl } = await oauthProvider.authorize({
+        clientId: validatedData.client_id,
+        redirectUri: validatedData.redirect_uri,
+        scope: validatedData.scope,
+        state: validatedData.state,
+        userId: 'mcp-inspector-user', // Default user for MCP Inspector
+        codeChallenge: validatedData.code_challenge,
+        codeChallengeMethod: validatedData.code_challenge_method,
+      });
+
+      return res.redirect(redirectUrl);
+    }
+    
+    // Regular flow for other clients
     if (!req.user) {
       // Redirect to login with return URL
       const loginUrl = new URL(process.env.FRONTEND_URL || 'http://localhost:3001');

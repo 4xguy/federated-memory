@@ -347,6 +347,15 @@ export class OAuthProviderService {
 
       // Check if user is still active
       const userId = decoded.userId || decoded.sub;
+      
+      // Special handling for MCP Inspector user
+      if (userId === 'mcp-inspector-user') {
+        return {
+          userId,
+          scope: decoded.scope,
+        };
+      }
+      
       const user = await prisma.user.findUnique({
         where: { id: userId },
       });
