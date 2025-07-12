@@ -147,6 +147,15 @@ router.get('/authorize', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// Handle OPTIONS for token endpoint
+router.options('/token', (req: Request, res: Response) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  res.status(204).send();
+});
+
 // OAuth token endpoint
 const tokenSchema = z.object({
   grant_type: z.enum(['authorization_code', 'refresh_token']),
@@ -159,9 +168,18 @@ const tokenSchema = z.object({
 });
 
 router.post('/token', async (req: Request, res: Response) => {
+  // Set CORS headers explicitly
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
   try {
     const validation = tokenSchema.safeParse(req.body);
     if (!validation.success) {
+      logger.error('Token request validation failed', {
+        errors: validation.error.errors,
+        body: req.body,
+      });
       return res.status(400).json({
         error: 'invalid_request',
         error_description: validation.error.errors[0].message,
@@ -186,6 +204,10 @@ router.post('/token', async (req: Request, res: Response) => {
       clientId: req.body.client_id,
       grantType: req.body.grant_type
     });
+    
+    // Ensure CORS headers are set even on error
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    
     return res.status(400).json({
       error: 'invalid_grant',
       error_description: error instanceof Error ? error.message : 'Token generation failed',
