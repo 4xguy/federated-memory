@@ -1,6 +1,7 @@
 import { randomBytes, createHash } from 'crypto';
 import jwt from 'jsonwebtoken';
 import { prisma } from '@/utils/database';
+import { logger } from '@/utils/logger';
 
 interface OAuthCode {
   code: string;
@@ -169,6 +170,14 @@ export class OAuthProviderService {
     };
 
     this.authCodes.set(code, authCode);
+    
+    logger.info('Authorization code stored', {
+      code,
+      clientId,
+      userId,
+      codeChallenge: !!codeChallenge,
+      totalCodes: this.authCodes.size,
+    });
 
     // Build redirect URL
     const url = new URL(redirectUri);
@@ -192,6 +201,14 @@ export class OAuthProviderService {
   }): Promise<OAuthToken> {
     const { grantType, code, refreshToken, clientId, clientSecret, redirectUri, codeVerifier } =
       params;
+      
+    logger.info('OAuth token request', {
+      grantType,
+      clientId,
+      hasCode: !!code,
+      hasCodeVerifier: !!codeVerifier,
+      redirectUri,
+    });
 
     // Validate client - check static clients first
     let client = this.clients[clientId as keyof typeof this.clients];
@@ -229,6 +246,12 @@ export class OAuthProviderService {
 
       // Validate auth code
       const authCode = this.authCodes.get(code);
+      logger.info('Auth code lookup', {
+        code,
+        found: !!authCode,
+        storedCodes: Array.from(this.authCodes.keys()).length,
+      });
+      
       if (!authCode) {
         throw new Error('Invalid or expired authorization code');
       }
@@ -250,6 +273,13 @@ export class OAuthProviderService {
 
         // Verify code_verifier against code_challenge
         const challenge = createHash('sha256').update(codeVerifier).digest('base64url');
+        
+        logger.info('PKCE verification', {
+          providedVerifier: codeVerifier,
+          calculatedChallenge: challenge,
+          expectedChallenge: authCode.codeChallenge,
+          matches: challenge === authCode.codeChallenge,
+        });
 
         if (challenge !== authCode.codeChallenge) {
           throw new Error('Invalid code_verifier');
