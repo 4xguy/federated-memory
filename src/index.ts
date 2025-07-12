@@ -91,7 +91,7 @@ async function main() {
         },
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Mcp-Session-Id', 'x-mcp-proxy-auth', 'X-MCP-Proxy-Auth'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Mcp-Session-Id', 'x-mcp-proxy-auth', 'X-MCP-Proxy-Auth', 'mcp-protocol-version', 'MCP-Protocol-Version'],
         exposedHeaders: ['X-Total-Count', 'X-Page-Count', 'WWW-Authenticate', 'Mcp-Session-Id'],
       }),
     );
@@ -102,7 +102,7 @@ async function main() {
     app.options('*', (req, res) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Mcp-Session-Id, x-mcp-proxy-auth, X-MCP-Proxy-Auth');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Mcp-Session-Id, x-mcp-proxy-auth, X-MCP-Proxy-Auth, mcp-protocol-version, MCP-Protocol-Version');
       res.setHeader('Access-Control-Max-Age', '86400');
       res.status(204).send();
     });
@@ -190,7 +190,7 @@ async function main() {
         // Set CORS headers explicitly for well-known endpoints
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, mcp-protocol-version, MCP-Protocol-Version');
         
         res.json({
           issuer: baseUrl,
@@ -226,7 +226,7 @@ async function main() {
         // Set CORS headers explicitly for well-known endpoints
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, mcp-protocol-version, MCP-Protocol-Version');
         
         res.json({
           resource_server: baseUrl,

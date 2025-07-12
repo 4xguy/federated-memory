@@ -107,10 +107,22 @@ export class OAuthProviderService {
     const { clientId, redirectUri, scope, state, userId, codeChallenge, codeChallengeMethod } =
       params;
 
-    // Validate client
-    const client = this.clients[clientId as keyof typeof this.clients];
+    // Validate client - check static clients first
+    let client = this.clients[clientId as keyof typeof this.clients];
+    
+    // If not a static client, check if it's a dynamically registered client
     if (!client) {
-      throw new Error('Invalid client_id');
+      // For MCP Inspector and other dynamic clients, allow any redirect URI for now
+      // TODO: In production, validate against stored client registrations
+      if (clientId.startsWith('mcp-')) {
+        client = {
+          clientSecret: 'dynamic-client-secret', // Not used with PKCE
+          redirectUris: [redirectUri], // Allow the provided redirect URI
+          allowedScopes: ['read', 'write', 'profile'],
+        };
+      } else {
+        throw new Error('Invalid client_id');
+      }
     }
 
     // Validate redirect URI
@@ -181,10 +193,22 @@ export class OAuthProviderService {
     const { grantType, code, refreshToken, clientId, clientSecret, redirectUri, codeVerifier } =
       params;
 
-    // Validate client
-    const client = this.clients[clientId as keyof typeof this.clients];
+    // Validate client - check static clients first
+    let client = this.clients[clientId as keyof typeof this.clients];
+    
+    // If not a static client, check if it's a dynamically registered client
     if (!client) {
-      throw new Error('Invalid client_id');
+      // For MCP Inspector and other dynamic clients, allow any redirect URI for now
+      // TODO: In production, validate against stored client registrations
+      if (clientId.startsWith('mcp-')) {
+        client = {
+          clientSecret: 'dynamic-client-secret', // Not used with PKCE
+          redirectUris: redirectUri ? [redirectUri] : ['http://localhost:*'], // Allow the provided redirect URI
+          allowedScopes: ['read', 'write', 'profile'],
+        };
+      } else {
+        throw new Error('Invalid client_id');
+      }
     }
 
     // For authorization_code grant with PKCE, client_secret is optional

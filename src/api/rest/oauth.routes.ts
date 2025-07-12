@@ -180,4 +180,52 @@ router.post('/revoke', async (req: Request, res: Response) => {
   }
 });
 
+// Dynamic Client Registration endpoint (RFC 7591)
+router.post('/register', async (req: Request, res: Response) => {
+  try {
+    const {
+      client_name,
+      redirect_uris,
+      grant_types = ['authorization_code'],
+      application_type = 'web',
+      scope = 'read write profile',
+    } = req.body;
+
+    if (!client_name || !redirect_uris || !Array.isArray(redirect_uris)) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        error_description: 'client_name and redirect_uris are required',
+      });
+    }
+
+    // Generate a unique client ID
+    const clientId = `mcp-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    const clientSecret = `secret-${Math.random().toString(36).substring(2, 15)}-${Math.random().toString(36).substring(2, 15)}`;
+
+    // TODO: In production, store this client registration in the database
+    // For now, we'll return a response that allows the client to proceed
+    const response = {
+      client_id: clientId,
+      client_secret: clientSecret,
+      client_id_issued_at: Math.floor(Date.now() / 1000),
+      client_secret_expires_at: 0, // Never expires
+      redirect_uris,
+      grant_types,
+      application_type,
+      client_name,
+      scope,
+      token_endpoint_auth_method: 'client_secret_post',
+    };
+
+    logger.info('Dynamic client registered', { clientId, client_name });
+    return res.status(201).json(response);
+  } catch (error) {
+    logger.error('Dynamic client registration error', { error });
+    return res.status(400).json({
+      error: 'invalid_request',
+      error_description: 'Failed to register client',
+    });
+  }
+});
+
 export default router;
