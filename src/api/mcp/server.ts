@@ -222,9 +222,10 @@ export function createMcpApp() {
 
   // MCP server info endpoint (required for remote MCP servers)
   app.get('/sse/info', (_req: Request, res: Response) => {
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     res.json({
       mcp: {
-        version: '2025-03-26',
+        version: '1.0.0',
         serverInfo: {
           name: 'federated-memory',
           version: '1.0.0',
@@ -232,18 +233,64 @@ export function createMcpApp() {
         },
         capabilities: {
           tools: true,
-          resources: true,
+          resources: false,
           prompts: true,
           sampling: false,
         },
       },
+      transport: {
+        type: 'streamable-http',
+        endpoint: `${baseUrl}/sse`,
+      },
       auth: {
         type: 'oauth2',
-        authorization_endpoint: `${process.env.BASE_URL || 'http://localhost:3000'}/api/oauth/authorize`,
-        token_endpoint: `${process.env.BASE_URL || 'http://localhost:3000'}/api/oauth/token`,
+        authorization_endpoint: `${baseUrl}/api/oauth/authorize`,
+        token_endpoint: `${baseUrl}/api/oauth/token`,
         scopes_supported: ['read', 'write', 'profile'],
         code_challenge_methods_supported: ['S256'],
+        client_id: 'claude-ai',
       },
+    });
+  });
+
+  // SSE endpoint for MCP transport
+  app.post('/sse', async (req: Request, res: Response, next: express.NextFunction) => {
+    // Forward to the main MCP endpoint
+    req.url = '/mcp';
+    next();
+  });
+
+  // SSE endpoint GET for server-sent events
+  app.get('/sse', async (req: Request, res: Response) => {
+    const sessionId = req.headers['mcp-session-id'] as string;
+    
+    if (!sessionId || !transports.has(sessionId)) {
+      return res.status(400).json({
+        error: {
+          code: -32000,
+          message: 'Session required',
+          data: { type: 'session_required' },
+        },
+      });
+    }
+
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    
+    // Send initial connection event
+    res.write('event: connected\ndata: {"status":"connected"}\n\n');
+    
+    // Keep connection alive
+    const keepAlive = setInterval(() => {
+      res.write(':keep-alive\n\n');
+    }, 30000);
+    
+    req.on('close', () => {
+      clearInterval(keepAlive);
+      logger.info('SSE connection closed', { sessionId });
     });
   });
 

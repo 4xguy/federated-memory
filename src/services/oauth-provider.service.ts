@@ -35,6 +35,10 @@ export class OAuthProviderService {
         'https://*.claude.ai/oauth/callback',
         'https://claude.ai/mcp/oauth/callback',
         'https://*.claude.ai/mcp/oauth/callback',
+        'https://claude.ai/settings/integrations/mcp/oauth/callback',
+        'https://*.claude.ai/settings/integrations/mcp/oauth/callback',
+        'https://claude.ai/api/organizations/*/integrations/remote-mcp-oauth/callback',
+        'https://*.claude.ai/api/organizations/*/integrations/remote-mcp-oauth/callback',
       ],
       allowedScopes: ['read', 'write', 'profile'],
     },
@@ -46,6 +50,22 @@ export class OAuthProviderService {
     'claude-code': {
       clientSecret: process.env.CLAUDE_CODE_CLIENT_SECRET || 'development-secret',
       redirectUris: ['vscode://claude-code/oauth/callback', 'cursor://claude-code/oauth/callback'],
+      allowedScopes: ['read', 'write', 'profile'],
+    },
+    'mcp-client': {
+      clientSecret: process.env.MCP_CLIENT_SECRET || 'development-secret',
+      redirectUris: [
+        'https://claude.ai/oauth/callback',
+        'https://*.claude.ai/oauth/callback',
+        'https://claude.ai/mcp/oauth/callback',
+        'https://*.claude.ai/mcp/oauth/callback',
+        'https://claude.ai/settings/integrations/mcp/oauth/callback',
+        'https://*.claude.ai/settings/integrations/mcp/oauth/callback',
+        'https://claude.ai/api/organizations/*/integrations/remote-mcp-oauth/callback',
+        'https://*.claude.ai/api/organizations/*/integrations/remote-mcp-oauth/callback',
+        'http://localhost:*/oauth/callback',
+        'http://127.0.0.1:*/oauth/callback',
+      ],
       allowedScopes: ['read', 'write', 'profile'],
     },
   };

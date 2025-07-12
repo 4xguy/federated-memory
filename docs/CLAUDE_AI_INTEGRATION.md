@@ -60,9 +60,13 @@ When adding your MCP server in Claude.ai:
 
 1. **Server URL**: `https://your-domain.railway.app/sse`
 2. **Authentication Type**: OAuth 2.0
-3. **Client ID**: `claude-ai`
+3. **Client ID**: `claude-ai` or `mcp-client`
 4. **Authorization Flow**: Authorization Code with PKCE
 5. **Scopes**: `read write profile`
+
+Alternatively, Claude.ai may auto-discover your server using:
+- Discovery endpoint: `https://your-domain.railway.app/sse/info`
+- OAuth metadata: `https://your-domain.railway.app/.well-known/oauth-authorization-server`
 
 The OAuth flow will be handled automatically by Claude.ai.
 

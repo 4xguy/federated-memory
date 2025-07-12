@@ -32,7 +32,7 @@ router.get('/', async (req: Request, res: Response) => {
         },
         transport: {
           type: 'streamable-http',
-          endpoint: `${baseUrl}/mcp`,
+          endpoint: `${baseUrl}/sse`,
         },
         auth: {
           type: 'oauth2',
