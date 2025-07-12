@@ -15,10 +15,10 @@ interface OAuthCode {
 }
 
 interface OAuthToken {
-  accessToken: string;
-  tokenType: string;
-  expiresIn: number;
-  refreshToken?: string;
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  refresh_token?: string;
   scope: string;
 }
 
@@ -307,10 +307,10 @@ export class OAuthProviderService {
       }
 
       return {
-        accessToken,
-        tokenType: 'Bearer',
-        expiresIn: 3600, // 1 hour
-        refreshToken: refreshTokenValue,
+        access_token: accessToken,
+        token_type: 'Bearer',
+        expires_in: 3600, // 1 hour
+        refresh_token: refreshTokenValue,
         scope: authCode.scope,
       };
     } else if (grantType === 'refresh_token') {
@@ -337,9 +337,9 @@ export class OAuthProviderService {
       const accessToken = this.generateAccessToken(storedToken.userId, storedToken.scope);
 
       return {
-        accessToken,
-        tokenType: 'Bearer',
-        expiresIn: 3600,
+        access_token: accessToken,
+        token_type: 'Bearer',
+        expires_in: 3600,
         scope: storedToken.scope,
       };
     } else {
