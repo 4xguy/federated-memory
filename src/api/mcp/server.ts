@@ -220,6 +220,18 @@ export function createMcpApp() {
     });
   });
 
+  // SSE health check endpoint
+  app.get('/sse/health', (_req: Request, res: Response) => {
+    res.json({
+      status: 'healthy',
+      transport: 'streamable-http',
+      endpoints: {
+        info: '/sse/info',
+        stream: '/sse',
+      },
+    });
+  });
+  
   // MCP server info endpoint (required for remote MCP servers)
   app.get('/sse/info', (_req: Request, res: Response) => {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
