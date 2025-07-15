@@ -13,7 +13,7 @@ import { getCMIService } from './core/cmi/index.service';
 import { Redis } from './utils/redis';
 import restApiRoutes from './api/rest';
 import { createMcpApp } from './api/mcp';
-import { createSafeSessionMiddleware } from './api/middleware/session-safe';
+import { createRedisSessionMiddleware, upgradeToRedisSession } from './api/middleware/session-redis';
 import { initializePassport } from './services/oauth-strategies/passport.config';
 
 // Initialize Prisma
@@ -67,6 +67,12 @@ async function main() {
     if (redis) {
       await redis.connect();
       logger.info('Connected to Redis');
+      
+      // Try to upgrade session middleware to use Redis
+      const upgraded = await upgradeToRedisSession();
+      if (upgraded) {
+        logger.info('Session storage upgraded to Redis');
+      }
     }
 
     // Load active modules (but don't fail if they can't load)
@@ -173,8 +179,8 @@ async function main() {
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies for OAuth
 
-    // Session middleware (must be before passport) - Using safe version
-    app.use(createSafeSessionMiddleware());
+    // Session middleware (must be before passport) - Using Redis-aware version
+    app.use(createRedisSessionMiddleware());
 
     // Initialize Passport for OAuth
     const passport = initializePassport();
