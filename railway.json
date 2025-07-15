@@ -11,7 +11,7 @@
     ]
   },
   "deploy": {
-    "startCommand": "npm run start:minimal",
+    "startCommand": "npm run start:railway",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
