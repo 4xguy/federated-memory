@@ -12,6 +12,7 @@
     "start:railway": "(npx prisma migrate deploy || npx prisma db push) && (node -r module-alias/register dist/scripts/init-db.js || true) && npm run start:prod",
     "start:minimal": "node dist/minimal-health.js",
     "start:debug": "node dist/minimal-health.js",
+    "start:ultra": "node dist/ultra-minimal.js",
     "test": "jest",
     "test:unit": "jest --testPathPattern=unit",
     "test:integration": "jest --testPathPattern=integration",

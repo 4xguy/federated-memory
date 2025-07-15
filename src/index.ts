@@ -181,13 +181,14 @@ async function main() {
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies for OAuth
 
-    // Session middleware (must be before passport)
-    app.use(createSessionMiddleware());
+    // Session middleware (must be before passport) - TEMPORARILY DISABLED
+    // app.use(createSessionMiddleware());
 
-    // Initialize Passport for OAuth
-    const passport = initializePassport();
-    app.use(passport.initialize());
-    app.use(passport.session());
+    // Initialize Passport for OAuth - TEMPORARILY DISABLED
+    // const passport = initializePassport();
+    // app.use(passport.initialize());
+    // app.use(passport.session());
+    logger.info('Session and Passport temporarily disabled for debugging');
 
     // Handle OPTIONS preflight requests for all routes
     app.options('*', (req, res) => {
@@ -366,12 +367,14 @@ async function main() {
       });
     }
     
-    // REST API routes
-    app.use('/api', restApiRoutes);
+    // REST API routes - TEMPORARILY DISABLED
+    // app.use('/api', restApiRoutes);
+    logger.info('REST API routes temporarily disabled for debugging');
 
-    // MCP Streamable HTTP server
-    const mcpApp = createMcpApp();
-    app.use(mcpApp);
+    // MCP Streamable HTTP server - TEMPORARILY DISABLED
+    // const mcpApp = createMcpApp();
+    // app.use(mcpApp);
+    logger.info('MCP routes temporarily disabled for debugging');
 
     // Error handling
     app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
