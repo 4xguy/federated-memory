@@ -250,7 +250,7 @@ export class EmbeddingService {
 }
 
 // Export singleton instance
-let embeddingService: EmbeddingService | null = null;
+let embeddingService: EmbeddingService | MockEmbeddingService | null = null;
 
 // Mock embedding service for when OpenAI is not configured
 class MockEmbeddingService {
@@ -285,5 +285,5 @@ export function getEmbeddingService(): EmbeddingService | MockEmbeddingService {
       embeddingService = new EmbeddingService(apiKey);
     }
   }
-  return embeddingService;
+  return embeddingService!;
 }
