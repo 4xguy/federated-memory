@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client';
 import cors from 'cors';
 import helmet from 'helmet';
 import { logger } from './utils/logger';
+import { Redis } from './utils/redis';
 
 const prisma = new PrismaClient();
 
@@ -19,6 +20,13 @@ async function main() {
     } catch (error) {
       logger.error('Failed to connect to database', error);
       // Continue anyway - health check should still work
+    }
+    
+    // Connect to Redis if configured
+    const redis = Redis.getInstance();
+    if (redis) {
+      await redis.connect();
+      logger.info('Connected to Redis');
     }
     
     const app = express();
@@ -83,6 +91,11 @@ async function main() {
         await prisma.$disconnect();
       } catch (error) {
         console.error('Error disconnecting from database', error);
+      }
+      
+      const redis = Redis.getInstance();
+      if (redis) {
+        await redis.disconnect();
       }
       
       process.exit(0);

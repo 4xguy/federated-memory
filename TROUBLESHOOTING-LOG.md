@@ -8,8 +8,8 @@ Production server on Railway fails health checks with "Service Unavailable" desp
 ### ✅ CONFIRMED WORKING
 1. **Ultra-minimal server** (just Express + health checks) - WORKS
 2. **Minimal server** (from earlier session) - WORKS
-3. **Minimal + Database connection** - WORKS (currently running)
-4. **Minimal + Database + ??** - WORKS (you mentioned we had added two other services)
+3. **Minimal + Database connection** - WORKS
+4. **Minimal + Database + Basic middleware** (logger, CORS, Helmet, JSON parsing) - WORKS
 
 ### ❌ CONFIRMED FAILING
 1. **Full server with all services** - FAILS
@@ -18,8 +18,8 @@ Production server on Railway fails health checks with "Service Unavailable" desp
 ### 🔍 COMPONENTS TO TEST (in order)
 - [x] Express server with health checks only
 - [x] Database connection (Prisma)
-- [ ] Basic middleware (logger, CORS, Helmet, JSON parsing) - TESTING NOW
-- [ ] Redis connection
+- [x] Basic middleware (logger, CORS, Helmet, JSON parsing) - WORKS
+- [ ] Redis connection - TESTING NOW
 - [ ] Session middleware
 - [ ] Passport/OAuth initialization
 - [ ] Module system initialization (Registry, Loader, CMI)
