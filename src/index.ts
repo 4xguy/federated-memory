@@ -98,6 +98,28 @@ async function main() {
       }
     });
 
+    // Also add root health check in case Railway checks there
+    app.get('/health', (_req, res) => {
+      try {
+        res.status(200).json({
+          status: 'ok',
+          timestamp: new Date().toISOString(),
+          service: 'federated-memory',
+        });
+      } catch (e) {
+        res.status(200).send('OK');
+      }
+    });
+
+    // Add root endpoint
+    app.get('/', (_req, res) => {
+      res.status(200).json({
+        message: 'Federated Memory Server',
+        health: '/api/health',
+        version: '1.0.0',
+      });
+    });
+
     // Middleware
     app.use(
       helmet({
