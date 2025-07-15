@@ -20,22 +20,50 @@ export class Redis {
   }
 
   async connect(): Promise<void> {
-    if (this.isConnected || !process.env.REDIS_URL) {
+    if (this.isConnected) {
+      logger.info('Redis already connected');
       return;
     }
+    
+    if (!process.env.REDIS_URL) {
+      logger.warn('REDIS_URL not set, Redis will not be available');
+      return;
+    }
+
+    logger.info('Attempting to connect to Redis...', {
+      url: process.env.REDIS_URL.replace(/:[^:@]+@/, ':****@') // Hide password in logs
+    });
 
     try {
       this.client = createClient({
         url: process.env.REDIS_URL,
+        socket: {
+          connectTimeout: 10000, // 10 second timeout
+          reconnectStrategy: (retries) => {
+            if (retries > 3) {
+              logger.error('Redis connection failed after 3 retries');
+              return false; // Stop retrying
+            }
+            return Math.min(retries * 100, 3000); // Exponential backoff
+          }
+        }
       });
 
       this.client.on('error', (err: Error) => {
         logger.error('Redis Client Error', err);
       });
 
+      this.client.on('ready', () => {
+        logger.info('Redis client ready');
+      });
+
       await this.client.connect();
       this.isConnected = true;
       logger.info('Redis connected successfully');
+      
+      // Test the connection
+      await this.client.ping();
+      logger.info('Redis ping successful');
     } catch (error) {
       logger.error('Failed to connect to Redis, continuing without cache', error);
       // Don't throw - allow server to run without Redis

@@ -48,11 +48,20 @@ export function createRedisSessionMiddleware(): RequestHandler {
       if (client && redis.isReady()) {
         logger.info('Redis client is ready, creating RedisStore...');
         
+        // Note: We can't use await here since this isn't an async function
+        // The Redis client should already be connected at this point
+        logger.info('Creating RedisStore with connected client...');
+        
         // Create RedisStore with the client
         const store = new RedisStore({
           client: client,
           prefix: 'sess:',
           ttl: 7 * 24 * 60 * 60, // 7 days in seconds
+        });
+        
+        // Test the store
+        store.on('error', (err: Error) => {
+          logger.error('RedisStore error', err);
         });
         
         sessionConfig.store = store;
