@@ -289,7 +289,7 @@ export function createMcpApp() {
       },
       transport: {
         type: 'streamable-http',
-        endpoint: `${baseUrl}/sse`,
+        endpoint: `${baseUrl}/mcp`,
       },
       auth: {
         type: 'oauth2',
