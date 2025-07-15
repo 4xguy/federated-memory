@@ -21,7 +21,7 @@ export interface ModuleInfo {
 
 export abstract class BaseModule implements MemoryModule {
   protected prisma: PrismaClient;
-  protected cmi: ReturnType<typeof getCMIService>;
+  protected cmi: ReturnType<typeof getCMIService> | null;
   protected embeddings: ReturnType<typeof getEmbeddingService>;
   protected logger: ReturnType<typeof createModuleLogger>;
   protected redis: Redis | null;
@@ -54,13 +54,15 @@ export abstract class BaseModule implements MemoryModule {
 
       // Update CMI
       try {
-        await this.cmi.indexMemory(userId, this.config.id, memory.id, content, {
-          title: this.extractTitle(content),
-          summary: await this.generateSummary(content),
-          keywords: this.extractKeywords(content),
-          categories: enrichedMetadata.categories || [],
-          importanceScore: enrichedMetadata.importanceScore || 0.5,
-        });
+        if (this.cmi) {
+          await this.cmi.indexMemory(userId, this.config.id, memory.id, content, {
+            title: this.extractTitle(content),
+            summary: await this.generateSummary(content),
+            keywords: this.extractKeywords(content),
+            categories: enrichedMetadata.categories || [],
+            importanceScore: enrichedMetadata.importanceScore || 0.5,
+          });
+        }
         this.logger.info('Memory indexed in CMI', { userId, memoryId: memory.id, module: this.config.id });
       } catch (indexError) {
         this.logger.error('Failed to index memory in CMI', { error: indexError, userId, memoryId: memory.id });
@@ -146,7 +148,7 @@ export abstract class BaseModule implements MemoryModule {
       });
 
       // Update CMI if needed
-      if (success && (updates.content || updates.metadata)) {
+      if (success && (updates.content || updates.metadata) && this.cmi) {
         await this.cmi.indexMemory(userId, this.config.id, memoryId, updates.content || '', {
           title: updates.content ? this.extractTitle(updates.content) : '',
           summary: updates.content ? await this.generateSummary(updates.content) : '',
@@ -176,7 +178,9 @@ export abstract class BaseModule implements MemoryModule {
 
       if (success) {
         // Remove from CMI
-        await this.cmi.deleteMemory(this.config.id, memoryId);
+        if (this.cmi) {
+          await this.cmi.deleteMemory(this.config.id, memoryId);
+        }
 
         // Invalidate cache
         await this.invalidateCache(userId);

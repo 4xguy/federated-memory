@@ -39,6 +39,9 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 
     const { content, metadata, moduleId } = validation.data;
     const cmiService = getCMIService();
+    if (!cmiService) {
+      return res.status(503).json({ error: 'Service temporarily unavailable' });
+    }
 
     const memoryId = await cmiService.store(req.user!.id, content, metadata, moduleId);
 
@@ -74,6 +77,9 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
 
     const { query, moduleId, limit, minScore } = validation.data;
     const cmiService = getCMIService();
+    if (!cmiService) {
+      return res.status(503).json({ error: 'Service temporarily unavailable' });
+    }
 
     const results = await cmiService.search(req.user!.id, query, {
       moduleId,
@@ -105,6 +111,9 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const cmiService = getCMIService();
+    if (!cmiService) {
+      return res.status(503).json({ error: 'Service temporarily unavailable' });
+    }
 
     const memory = await cmiService.get(req.user!.id, id);
 
@@ -139,6 +148,9 @@ router.put('/:id', async (req: AuthRequest, res: Response) => {
 
     const updates = validation.data;
     const cmiService = getCMIService();
+    if (!cmiService) {
+      return res.status(503).json({ error: 'Service temporarily unavailable' });
+    }
 
     const success = await cmiService.update(req.user!.id, id, updates);
 
@@ -170,6 +182,9 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const cmiService = getCMIService();
+    if (!cmiService) {
+      return res.status(503).json({ error: 'Service temporarily unavailable' });
+    }
 
     const success = await cmiService.delete(req.user!.id, id);
 
