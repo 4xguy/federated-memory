@@ -8,4 +8,4 @@ cmds = ["npm ci"]
 cmds = ["npm run build", "npx prisma generate"]
 
 [start]
-cmd = "npm run start:ultra"
+cmd = "npm run start:railway"

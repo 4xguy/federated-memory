@@ -13,7 +13,7 @@ import { getCMIService } from './core/cmi/index.service';
 import { Redis } from './utils/redis';
 import restApiRoutes from './api/rest';
 import { createMcpApp } from './api/mcp';
-import { createSessionMiddleware } from './api/middleware/session';
+import { createSafeSessionMiddleware } from './api/middleware/session-safe';
 import { initializePassport } from './services/oauth-strategies/passport.config';
 
 // Initialize Prisma
@@ -26,15 +26,11 @@ let moduleRegistry: ModuleRegistry;
 let cmiService: any;
 let moduleLoader: ModuleLoader;
 
-// TEMPORARILY DISABLED for debugging production issues
+// Initialize services with error handling
 try {
-  // moduleRegistry = ModuleRegistry.getInstance();
-  // cmiService = getCMIService();
-  // moduleLoader = ModuleLoader.getInstance();
-  moduleRegistry = {} as ModuleRegistry;
-  cmiService = null;
-  moduleLoader = {} as ModuleLoader;
-  logger.info('Service initialization temporarily disabled for debugging');
+  moduleRegistry = ModuleRegistry.getInstance();
+  cmiService = getCMIService();
+  moduleLoader = ModuleLoader.getInstance();
 } catch (error) {
   logger.error('Failed to initialize services', { error });
   // Create dummy instances to prevent crashes
@@ -74,9 +70,7 @@ async function main() {
     }
 
     // Load active modules (but don't fail if they can't load)
-    // TEMPORARILY DISABLED for debugging production issues
     let moduleResults: any[] = [];
-    /*
     try {
       moduleResults = await moduleLoader.loadAllModules();
       const successfulModules = moduleResults.filter(r => r.success).length;
@@ -85,8 +79,6 @@ async function main() {
       logger.error('Failed to load modules, continuing without them', { error });
       // Continue without modules - server can still run for health checks
     }
-    */
-    logger.info('Module loading temporarily disabled for debugging');
 
     // Initialize Express app
     const app = express();
@@ -181,14 +173,13 @@ async function main() {
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies for OAuth
 
-    // Session middleware (must be before passport) - TEMPORARILY DISABLED
-    // app.use(createSessionMiddleware());
+    // Session middleware (must be before passport) - Using safe version
+    app.use(createSafeSessionMiddleware());
 
-    // Initialize Passport for OAuth - TEMPORARILY DISABLED
-    // const passport = initializePassport();
-    // app.use(passport.initialize());
-    // app.use(passport.session());
-    logger.info('Session and Passport temporarily disabled for debugging');
+    // Initialize Passport for OAuth
+    const passport = initializePassport();
+    app.use(passport.initialize());
+    app.use(passport.session());
 
     // Handle OPTIONS preflight requests for all routes
     app.options('*', (req, res) => {
@@ -367,14 +358,12 @@ async function main() {
       });
     }
     
-    // REST API routes - TEMPORARILY DISABLED
-    // app.use('/api', restApiRoutes);
-    logger.info('REST API routes temporarily disabled for debugging');
+    // REST API routes
+    app.use('/api', restApiRoutes);
 
-    // MCP Streamable HTTP server - TEMPORARILY DISABLED
-    // const mcpApp = createMcpApp();
-    // app.use(mcpApp);
-    logger.info('MCP routes temporarily disabled for debugging');
+    // MCP Streamable HTTP server
+    const mcpApp = createMcpApp();
+    app.use(mcpApp);
 
     // Error handling
     app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -26,13 +26,28 @@ export function createSessionMiddleware() {
   // Use Redis for session storage if available
   const redis = Redis.getInstance();
   if (redis && redis.isReady()) {
-    sessionConfig.store = new RedisStore({
-      client: redis.getClient() as any,
-      prefix: 'sess:',
-    });
-    logger.info('Using Redis for session storage');
+    try {
+      const redisClient = redis.getClient();
+      if (redisClient) {
+        sessionConfig.store = new RedisStore({
+          client: redisClient as any,
+          prefix: 'sess:',
+        });
+        logger.info('Using Redis for session storage');
+      } else {
+        logger.warn('Redis client not available, using memory store for sessions');
+      }
+    } catch (error) {
+      logger.error('Failed to configure RedisStore, using memory store', error);
+    }
   } else {
-    logger.warn('Redis not available, using memory store for sessions');
+    logger.warn('Redis not ready, using memory store for sessions');
+  }
+  
+  // In production, disable secure cookies if not using HTTPS
+  if (process.env.NODE_ENV === 'production' && process.env.DISABLE_SECURE_COOKIES === 'true') {
+    sessionConfig.cookie!.secure = false;
+    logger.warn('Secure cookies disabled in production - only for debugging!');
   }
 
   return session(sessionConfig);
