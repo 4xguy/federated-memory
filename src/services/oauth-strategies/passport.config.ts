@@ -2,11 +2,21 @@ import passport from 'passport';
 import { prisma } from '@/utils/database';
 import { initializeGoogleStrategy } from './google.strategy';
 import { initializeGitHubStrategy } from './github.strategy';
+import { logger } from '@/utils/logger';
 
 export function initializePassport() {
   // Initialize strategies
-  initializeGoogleStrategy();
-  initializeGitHubStrategy();
+  const googleEnabled = initializeGoogleStrategy();
+  const githubEnabled = initializeGitHubStrategy();
+
+  if (!googleEnabled && !githubEnabled) {
+    logger.warn('No OAuth strategies configured - OAuth login will be unavailable');
+  } else {
+    const strategies = [];
+    if (googleEnabled) strategies.push('Google');
+    if (githubEnabled) strategies.push('GitHub');
+    logger.info(`OAuth strategies enabled: ${strategies.join(', ')}`);
+  }
 
   // Serialize user for session
   passport.serializeUser((user: any, done) => {

@@ -6,11 +6,20 @@ import { logger } from '@/utils/logger';
 const authService = AuthService.getInstance();
 
 export function initializeGitHubStrategy() {
+  // Check if GitHub OAuth credentials are configured
+  const clientID = process.env.GITHUB_CLIENT_ID;
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+
+  if (!clientID || !clientSecret || clientID === 'placeholder-github-client-id') {
+    logger.warn('GitHub OAuth not configured - skipping strategy initialization');
+    return false;
+  }
+
   passport.use(
     new GitHubStrategy(
       {
-        clientID: process.env.GITHUB_CLIENT_ID || '',
-        clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
+        clientID,
+        clientSecret,
         callbackURL: process.env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
         scope: ['user:email'],
       },
@@ -42,4 +51,6 @@ export function initializeGitHubStrategy() {
       },
     ),
   );
+
+  return true;
 }

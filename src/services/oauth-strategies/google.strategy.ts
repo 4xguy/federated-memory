@@ -6,11 +6,20 @@ import { logger } from '@/utils/logger';
 const authService = AuthService.getInstance();
 
 export function initializeGoogleStrategy() {
+  // Check if Google OAuth credentials are configured
+  const clientID = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+  if (!clientID || !clientSecret || clientID === 'placeholder-google-client-id') {
+    logger.warn('Google OAuth not configured - skipping strategy initialization');
+    return false;
+  }
+
   passport.use(
     new GoogleStrategy(
       {
-        clientID: process.env.GOOGLE_CLIENT_ID || '',
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+        clientID,
+        clientSecret,
         callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback',
         scope: ['profile', 'email'],
       },
@@ -42,4 +51,6 @@ export function initializeGoogleStrategy() {
       },
     ),
   );
+
+  return true;
 }

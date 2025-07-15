@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import passport from 'passport';
 import { AuthService } from '@/services/auth.service';
 import { logger } from '@/utils/logger';
+import { checkOAuthStrategy } from '@/api/middleware/oauth-check';
 
 const router = Router();
 const authService = AuthService.getInstance();
@@ -9,6 +10,7 @@ const authService = AuthService.getInstance();
 // Google OAuth routes
 router.get(
   '/google',
+  checkOAuthStrategy('google'),
   passport.authenticate('google', {
     scope: ['profile', 'email'],
   }),
@@ -16,6 +18,7 @@ router.get(
 
 router.get(
   '/google/callback',
+  checkOAuthStrategy('google'),
   passport.authenticate('google', { failureRedirect: '/auth/failed' }),
   async (req: Request, res: Response) => {
     try {
@@ -71,6 +74,7 @@ router.get(
 // GitHub OAuth routes
 router.get(
   '/github',
+  checkOAuthStrategy('github'),
   passport.authenticate('github', {
     scope: ['user:email'],
   }),
@@ -78,6 +82,7 @@ router.get(
 
 router.get(
   '/github/callback',
+  checkOAuthStrategy('github'),
   passport.authenticate('github', { failureRedirect: '/auth/failed' }),
   async (req: Request, res: Response) => {
     try {
