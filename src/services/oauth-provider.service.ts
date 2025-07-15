@@ -293,18 +293,16 @@ export class OAuthProviderService {
       const accessToken = this.generateAccessToken(authCode.userId, authCode.scope);
       const refreshTokenValue = this.generateRefreshToken(authCode.userId, authCode.scope);
 
-      // Store refresh token (skip for MCP Inspector user)
-      if (authCode.userId !== 'mcp-inspector-user') {
-        await prisma.refreshToken.create({
-          data: {
-            token: createHash('sha256').update(refreshTokenValue).digest('hex'),
-            userId: authCode.userId,
-            clientId,
-            scope: authCode.scope,
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-          },
-        });
-      }
+      // Store refresh token
+      await prisma.refreshToken.create({
+        data: {
+          token: createHash('sha256').update(refreshTokenValue).digest('hex'),
+          userId: authCode.userId,
+          clientId,
+          scope: authCode.scope,
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        },
+      });
 
       return {
         access_token: accessToken,
@@ -382,14 +380,6 @@ export class OAuthProviderService {
 
       // Check if user is still active
       const userId = decoded.userId || decoded.sub;
-      
-      // Special handling for MCP Inspector user
-      if (userId === 'mcp-inspector-user') {
-        return {
-          userId,
-          scope: decoded.scope,
-        };
-      }
       
       const user = await prisma.user.findUnique({
         where: { id: userId },

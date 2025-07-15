@@ -8,6 +8,7 @@ import oauthRoutes from './oauth.routes';
 import authRoutes from './auth.routes';
 import mcpOauthRoutes from './mcp-oauth.routes';
 import configRoutes from './config.routes';
+import externalAuthRoutes from './external-auth.routes';
 import { apiKeysRoutes } from '../routes/api-keys.routes';
 
 const router = Router();
@@ -26,6 +27,9 @@ router.use('/', mcpOauthRoutes);
 
 // Auth routes (for session management)
 router.use('/auth', authRoutes);
+
+// External auth routes (Google/GitHub OAuth)
+router.use('/auth', externalAuthRoutes);
 
 // User routes (auth required only for some endpoints)
 router.use('/users', userRoutes);

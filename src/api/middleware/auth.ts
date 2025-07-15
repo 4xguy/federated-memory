@@ -5,12 +5,8 @@ import jwt from 'jsonwebtoken';
 
 const logger = Logger.getInstance();
 
-export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-  };
-}
+// AuthRequest now uses the Express User type defined in types/express.d.ts
+export interface AuthRequest extends Request {}
 
 export async function authMiddleware(
   req: AuthRequest,
@@ -51,6 +47,9 @@ export async function authMiddleware(
         req.user = {
           id: user.id,
           email: user.email,
+          name: user.name,
+          avatarUrl: user.avatarUrl,
+          oauthProvider: user.oauthProvider,
         };
         next();
         return;
@@ -73,6 +72,9 @@ export async function authMiddleware(
     req.user = {
       id: user.id,
       email: user.email,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      oauthProvider: user.oauthProvider,
     };
 
     next();

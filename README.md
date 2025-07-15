@@ -82,7 +82,7 @@ npm install
 
 # Set up environment
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your configuration (see OAuth setup below)
 
 # Set up database
 createdb federated_memory
@@ -157,6 +157,34 @@ NODE_ENV=development
 # Module Configuration (all modules enabled by default)
 ACTIVE_MODULES="technical,personal,work,learning,communication,creative"
 ```
+
+### OAuth Setup
+
+#### Google OAuth
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing
+3. Enable Google+ API
+4. Go to Credentials → Create Credentials → OAuth 2.0 Client ID
+5. Add authorized redirect URIs:
+   - For local: `http://localhost:3000/api/auth/google/callback`
+   - For production: `https://your-domain.com/api/auth/google/callback`
+6. Copy Client ID and Client Secret to `.env`:
+   ```env
+   GOOGLE_CLIENT_ID="your-google-client-id"
+   GOOGLE_CLIENT_SECRET="your-google-client-secret"
+   ```
+
+#### GitHub OAuth
+1. Go to GitHub Settings → Developer settings → OAuth Apps
+2. Click "New OAuth App"
+3. Set Authorization callback URL:
+   - For local: `http://localhost:3000/api/auth/github/callback`
+   - For production: `https://your-domain.com/api/auth/github/callback`
+4. Copy Client ID and Client Secret to `.env`:
+   ```env
+   GITHUB_CLIENT_ID="your-github-client-id"
+   GITHUB_CLIENT_SECRET="your-github-client-secret"
+   ```
 
 ## 🌐 REST API
 

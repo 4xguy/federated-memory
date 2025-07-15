@@ -83,18 +83,20 @@ router.get('/authorize', async (req: AuthRequest, res: Response) => {
 
       const validatedData = validation.data;
 
-      // Generate authorization code for MCP client
-      const { redirectUrl } = await oauthProvider.authorize({
+      // For MCP clients, redirect to Google OAuth for authentication
+      // Store the OAuth request params in session to use after authentication
+      req.session = req.session || {};
+      req.session.oauthRequest = {
         clientId: validatedData.client_id,
         redirectUri: validatedData.redirect_uri,
-        scope: validatedData.scope || 'read write', // Default scope if not provided
+        scope: validatedData.scope || 'read write',
         state: validatedData.state,
-        userId: 'mcp-inspector-user', // Default user for MCP Inspector
         codeChallenge: validatedData.code_challenge,
         codeChallengeMethod: validatedData.code_challenge_method,
-      });
-
-      return res.redirect(redirectUrl);
+      };
+      
+      // Redirect to Google OAuth
+      return res.redirect('/api/auth/google');
     }
     
     // Regular flow for other clients

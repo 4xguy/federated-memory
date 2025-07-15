@@ -115,6 +115,10 @@ export class Redis {
   isReady(): boolean {
     return this.isConnected && this.client !== null;
   }
+
+  getClient(): RedisClientType | null {
+    return this.client;
+  }
 }
 
 export default Redis;

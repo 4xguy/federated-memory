@@ -13,6 +13,8 @@ import { getCMIService } from './core/cmi/index.service';
 import { Redis } from './utils/redis';
 import restApiRoutes from './api/rest';
 import { createMcpApp } from './api/mcp';
+import { createSessionMiddleware } from './api/middleware/session';
+import { initializePassport } from './services/oauth-strategies/passport.config';
 
 // Initialize Prisma
 export const prisma = new PrismaClient({
@@ -98,6 +100,14 @@ async function main() {
 
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies for OAuth
+
+    // Session middleware (must be before passport)
+    app.use(createSessionMiddleware());
+
+    // Initialize Passport for OAuth
+    const passport = initializePassport();
+    app.use(passport.initialize());
+    app.use(passport.session());
 
     // Handle OPTIONS preflight requests for all routes
     app.options('*', (req, res) => {
@@ -269,6 +279,13 @@ async function main() {
       }
     });
 
+    // Serve test OAuth page in development
+    if (process.env.NODE_ENV === 'development') {
+      app.get('/test-oauth.html', (_req, res) => {
+        res.sendFile('test-oauth.html', { root: process.cwd() });
+      });
+    }
+    
     // REST API routes
     app.use('/api', restApiRoutes);
 
