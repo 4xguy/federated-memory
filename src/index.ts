@@ -182,6 +182,26 @@ async function main() {
         });
       }
     });
+    
+    // MCP Proxy health endpoint (for MCP Inspector compatibility)
+    app.get('/mcp-proxy/health', async (req, res) => {
+      try {
+        // Set CORS headers
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-mcp-proxy-auth, X-MCP-Proxy-Auth');
+        
+        // Check database connectivity
+        await prisma.$queryRaw`SELECT 1`;
+        
+        // Return simple OK status for MCP Inspector
+        res.status(200).send('OK');
+      } catch (error) {
+        logger.error('MCP proxy health check failed', error);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.status(503).send('Service Unavailable');
+      }
+    });
 
     // Well-known endpoints (OAuth discovery) - must be at root level
     app.get('/.well-known/oauth-authorization-server', (req, res) => {

@@ -204,6 +204,17 @@ export function createMcpApp() {
 
     res.status(204).send();
   });
+  
+  // MCP Proxy Server health check (for MCP Inspector)
+  app.get('/health', (_req: Request, res: Response) => {
+    // Set CORS headers explicitly
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-mcp-proxy-auth, X-MCP-Proxy-Auth');
+    
+    // Return simple health check response
+    res.status(200).json({ status: 'ok' });
+  });
 
   // Handle session termination
   app.delete('/mcp', async (req: Request, res: Response) => {
@@ -243,6 +254,11 @@ export function createMcpApp() {
 
   // SSE health check endpoint
   app.get('/sse/health', (_req: Request, res: Response) => {
+    // Set CORS headers explicitly for MCP Inspector
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-mcp-proxy-auth, X-MCP-Proxy-Auth, mcp-protocol-version, MCP-Protocol-Version');
+    
     res.json({
       status: 'healthy',
       transport: 'streamable-http',
