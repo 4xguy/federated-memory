@@ -30,7 +30,9 @@ Production server on Railway fails health checks with "Service Unavailable" desp
 ### 📝 FINDINGS
 1. Basic Express server works in production
 2. Database connection works in production
-3. The issue appears when we enable the full server with all components
+3. Basic middleware (logger, CORS, Helmet) works in production
+4. Testing Redis connection now
+5. The issue appears when we enable the full server with all components
 
 ### 🎯 NEXT STEPS
 Since ultra-minimal + database is currently working, we should:
