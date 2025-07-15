@@ -50,7 +50,12 @@ export class OAuthProviderService {
     },
     'claude-code': {
       clientSecret: process.env.CLAUDE_CODE_CLIENT_SECRET || 'development-secret',
-      redirectUris: ['vscode://claude-code/oauth/callback', 'cursor://claude-code/oauth/callback'],
+      redirectUris: [
+        'vscode://claude-code/oauth/callback', 
+        'cursor://claude-code/oauth/callback',
+        'http://localhost:*/callback',
+        'http://127.0.0.1:*/callback'
+      ],
       allowedScopes: ['read', 'write', 'profile', 'openid'],
     },
     'mcp-client': {

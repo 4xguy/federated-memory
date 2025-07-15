@@ -8,7 +8,8 @@
           "authType": "oauth2",
           "authorizationUrl": "https://federated-memory-production.up.railway.app/api/oauth/authorize",
           "tokenUrl": "https://federated-memory-production.up.railway.app/api/oauth/token",
-          "clientId": "claude-desktop",
+          "clientId": "claude-code",
+          "redirectUri": "http://localhost:53127/callback",
           "scope": "read write profile"
         }
       },
