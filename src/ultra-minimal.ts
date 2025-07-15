@@ -6,6 +6,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { logger } from './utils/logger';
 import { Redis } from './utils/redis';
+import { createSessionMiddleware } from './api/middleware/session';
+import { initializePassport } from './services/oauth-strategies/passport.config';
 
 const prisma = new PrismaClient();
 
@@ -46,7 +48,15 @@ async function main() {
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true }));
     
-    logger.info('Middleware initialized');
+    // Session middleware (must be before passport)
+    app.use(createSessionMiddleware());
+    
+    // Initialize Passport for OAuth
+    const passport = initializePassport();
+    app.use(passport.initialize());
+    app.use(passport.session());
+    
+    logger.info('Middleware and auth initialized');
 
     // Health check endpoint
     app.get('/api/health', (_req, res) => {

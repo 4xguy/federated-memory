@@ -10,6 +10,7 @@ Production server on Railway fails health checks with "Service Unavailable" desp
 2. **Minimal server** (from earlier session) - WORKS
 3. **Minimal + Database connection** - WORKS
 4. **Minimal + Database + Basic middleware** (logger, CORS, Helmet, JSON parsing) - WORKS
+5. **Minimal + Database + Middleware + Redis** - WORKS
 
 ### ❌ CONFIRMED FAILING
 1. **Full server with all services** - FAILS
@@ -19,8 +20,8 @@ Production server on Railway fails health checks with "Service Unavailable" desp
 - [x] Express server with health checks only
 - [x] Database connection (Prisma)
 - [x] Basic middleware (logger, CORS, Helmet, JSON parsing) - WORKS
-- [ ] Redis connection - TESTING NOW
-- [ ] Session middleware
+- [x] Redis connection - WORKS
+- [ ] Session middleware + Passport/OAuth - TESTING NOW
 - [ ] Passport/OAuth initialization
 - [ ] Module system initialization (Registry, Loader, CMI)
 - [ ] REST API routes
@@ -31,8 +32,9 @@ Production server on Railway fails health checks with "Service Unavailable" desp
 1. Basic Express server works in production
 2. Database connection works in production
 3. Basic middleware (logger, CORS, Helmet) works in production
-4. Testing Redis connection now
-5. The issue appears when we enable the full server with all components
+4. Redis connection works in production
+5. Testing session middleware + Passport/OAuth now
+6. The issue appears when we enable the full server with all components
 
 ### 🎯 NEXT STEPS
 Since ultra-minimal + database is currently working, we should:
