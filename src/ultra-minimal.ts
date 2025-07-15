@@ -2,25 +2,43 @@ import 'dotenv/config';
 import express from 'express';
 import { createServer } from 'http';
 import { PrismaClient } from '@prisma/client';
+import cors from 'cors';
+import helmet from 'helmet';
+import { logger } from './utils/logger';
 
 const prisma = new PrismaClient();
 
 async function main() {
   try {
-    console.log('Starting Ultra-Minimal Federated Memory Server...');
+    logger.info('Starting Ultra-Minimal Federated Memory Server...');
     
     // Connect to database
     try {
       await prisma.$connect();
-      console.log('Connected to PostgreSQL database');
+      logger.info('Connected to PostgreSQL database');
     } catch (error) {
-      console.error('Failed to connect to database', error);
+      logger.error('Failed to connect to database', error);
       // Continue anyway - health check should still work
     }
     
     const app = express();
     const server = createServer(app);
     const port = process.env.PORT || 3000;
+
+    // Add middleware
+    app.use(helmet({
+      crossOriginEmbedderPolicy: false, // Allow SSE connections
+    }));
+    
+    app.use(cors({
+      origin: true, // Allow all origins for now
+      credentials: true,
+    }));
+    
+    app.use(express.json({ limit: '10mb' }));
+    app.use(express.urlencoded({ extended: true }));
+    
+    logger.info('Middleware initialized');
 
     // Health check endpoint
     app.get('/api/health', (_req, res) => {
@@ -51,12 +69,12 @@ async function main() {
 
     // Start server
     server.listen(port, () => {
-      console.log(`Ultra-Minimal server running on port ${port}`);
+      logger.info(`Ultra-Minimal server running on port ${port}`);
     });
 
     // Graceful shutdown
     process.on('SIGTERM', async () => {
-      console.log('SIGTERM received, shutting down gracefully');
+      logger.info('SIGTERM received, shutting down gracefully');
       server.close(() => {
         console.log('HTTP server closed');
       });
@@ -70,12 +88,12 @@ async function main() {
       process.exit(0);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error('Failed to start server:', error);
     process.exit(1);
   }
 }
 
 main().catch(error => {
-  console.error('Unhandled error:', error);
+  logger.error('Unhandled error:', error);
   process.exit(1);
 });
