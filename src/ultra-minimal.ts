@@ -1,10 +1,22 @@
 import 'dotenv/config';
 import express from 'express';
 import { createServer } from 'http';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 async function main() {
   try {
     console.log('Starting Ultra-Minimal Federated Memory Server...');
+    
+    // Connect to database
+    try {
+      await prisma.$connect();
+      console.log('Connected to PostgreSQL database');
+    } catch (error) {
+      console.error('Failed to connect to database', error);
+      // Continue anyway - health check should still work
+    }
     
     const app = express();
     const server = createServer(app);
@@ -43,11 +55,18 @@ async function main() {
     });
 
     // Graceful shutdown
-    process.on('SIGTERM', () => {
+    process.on('SIGTERM', async () => {
       console.log('SIGTERM received, shutting down gracefully');
       server.close(() => {
         console.log('HTTP server closed');
       });
+      
+      try {
+        await prisma.$disconnect();
+      } catch (error) {
+        console.error('Error disconnecting from database', error);
+      }
+      
       process.exit(0);
     });
   } catch (error) {
