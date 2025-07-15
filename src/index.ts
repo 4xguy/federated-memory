@@ -26,10 +26,15 @@ let moduleRegistry: ModuleRegistry;
 let cmiService: any;
 let moduleLoader: ModuleLoader;
 
+// TEMPORARILY DISABLED for debugging production issues
 try {
-  moduleRegistry = ModuleRegistry.getInstance();
-  cmiService = getCMIService();
-  moduleLoader = ModuleLoader.getInstance();
+  // moduleRegistry = ModuleRegistry.getInstance();
+  // cmiService = getCMIService();
+  // moduleLoader = ModuleLoader.getInstance();
+  moduleRegistry = {} as ModuleRegistry;
+  cmiService = null;
+  moduleLoader = {} as ModuleLoader;
+  logger.info('Service initialization temporarily disabled for debugging');
 } catch (error) {
   logger.error('Failed to initialize services', { error });
   // Create dummy instances to prevent crashes
@@ -69,7 +74,9 @@ async function main() {
     }
 
     // Load active modules (but don't fail if they can't load)
+    // TEMPORARILY DISABLED for debugging production issues
     let moduleResults: any[] = [];
+    /*
     try {
       moduleResults = await moduleLoader.loadAllModules();
       const successfulModules = moduleResults.filter(r => r.success).length;
@@ -78,6 +85,8 @@ async function main() {
       logger.error('Failed to load modules, continuing without them', { error });
       // Continue without modules - server can still run for health checks
     }
+    */
+    logger.info('Module loading temporarily disabled for debugging');
 
     // Initialize Express app
     const app = express();
