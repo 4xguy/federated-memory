@@ -72,7 +72,13 @@ export function createMcpApp() {
   app.use(express.json());
   
   // Apply OAuth middleware to intercept authentication errors
-  app.use(mcpOAuthMiddleware);
+  // Skip for health endpoints
+  app.use((req, res, next) => {
+    if (req.path === '/health' || req.path === '/mcp/health' || req.path === '/sse/health') {
+      return next();
+    }
+    mcpOAuthMiddleware(req, res, next);
+  });
 
   // Handle MCP requests
   app.post('/mcp', async (req: Request, res: Response) => {
@@ -214,6 +220,26 @@ export function createMcpApp() {
     
     // Return simple health check response
     res.status(200).json({ status: 'ok' });
+  });
+  
+  // MCP transport health check - no auth required
+  app.get('/mcp/health', (_req: Request, res: Response) => {
+    // Set CORS headers for MCP Inspector
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-mcp-proxy-auth, X-MCP-Proxy-Auth, mcp-protocol-version');
+    
+    res.json({
+      status: 'healthy',
+      transport: 'streamable-http',
+      authenticated: false,
+      capabilities: {
+        tools: true,
+        resources: false,
+        prompts: true,
+        sampling: false,
+      },
+    });
   });
 
   // Handle session termination
