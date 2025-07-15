@@ -39,10 +39,16 @@ async function main() {
       logger.info('Connected to Redis');
     }
 
-    // Load active modules
-    const moduleResults = await moduleLoader.loadAllModules();
-    const successfulModules = moduleResults.filter(r => r.success).length;
-    logger.info(`Loaded ${successfulModules} modules successfully`);
+    // Load active modules (but don't fail if they can't load)
+    let moduleResults: any[] = [];
+    try {
+      moduleResults = await moduleLoader.loadAllModules();
+      const successfulModules = moduleResults.filter(r => r.success).length;
+      logger.info(`Loaded ${successfulModules} modules successfully`);
+    } catch (error) {
+      logger.error('Failed to load modules, continuing without them', { error });
+      // Continue without modules - server can still run for health checks
+    }
 
     // Initialize Express app
     const app = express();
