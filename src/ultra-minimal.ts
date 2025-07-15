@@ -48,8 +48,21 @@ async function main() {
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true }));
     
-    // Session middleware (must be before passport)
-    app.use(createSessionMiddleware());
+    // Session middleware (must be before passport) - Using memory store for now
+    // app.use(createSessionMiddleware());
+    
+    // Simple session without Redis for testing
+    const session = require('express-session');
+    app.use(session({
+      secret: process.env.SESSION_SECRET || 'test-secret',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: false, // Disable HTTPS requirement for testing
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      }
+    }));
     
     // Initialize Passport for OAuth - TEMPORARILY DISABLED to isolate issue
     // const passport = initializePassport();
