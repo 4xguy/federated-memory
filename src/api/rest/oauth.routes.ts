@@ -54,13 +54,18 @@ const authorizeSchema = z.object({
   response_type: z.literal('code'),
   client_id: z.string(),
   redirect_uri: z.string(), // Remove .url() validation to allow localhost URLs
-  scope: z.string(),
+  scope: z.string().optional(), // Make scope fully optional
   state: z.string().optional(),
   code_challenge: z.string().optional(),
   code_challenge_method: z.literal('S256').optional(),
 });
 
 router.get('/authorize', async (req: AuthRequest, res: Response) => {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
   try {
     const queryClientId = req.query.client_id as string;
     
@@ -82,7 +87,7 @@ router.get('/authorize', async (req: AuthRequest, res: Response) => {
       const { redirectUrl } = await oauthProvider.authorize({
         clientId: validatedData.client_id,
         redirectUri: validatedData.redirect_uri,
-        scope: validatedData.scope,
+        scope: validatedData.scope || 'read write', // Default scope if not provided
         state: validatedData.state,
         userId: 'mcp-inspector-user', // Default user for MCP Inspector
         codeChallenge: validatedData.code_challenge,
@@ -118,7 +123,7 @@ router.get('/authorize', async (req: AuthRequest, res: Response) => {
       consentUrl.pathname = '/oauth/consent';
       consentUrl.searchParams.append('client_id', client_id);
       consentUrl.searchParams.append('redirect_uri', redirect_uri);
-      consentUrl.searchParams.append('scope', scope);
+      consentUrl.searchParams.append('scope', scope || 'read write');
       if (state) consentUrl.searchParams.append('state', state);
       if (code_challenge) consentUrl.searchParams.append('code_challenge', code_challenge);
       if (code_challenge_method)
@@ -130,7 +135,7 @@ router.get('/authorize', async (req: AuthRequest, res: Response) => {
     const { redirectUrl } = await oauthProvider.authorize({
       clientId: client_id,
       redirectUri: redirect_uri,
-      scope,
+      scope: scope || 'read write', // Default scope if not provided
       state,
       userId: req.user.id,
       codeChallenge: code_challenge,
@@ -148,7 +153,7 @@ router.get('/authorize', async (req: AuthRequest, res: Response) => {
 });
 
 // Handle OPTIONS for token endpoint
-router.options('/token', (req: Request, res: Response) => {
+router.options('/token', (_req: Request, res: Response) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

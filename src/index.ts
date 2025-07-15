@@ -108,6 +108,13 @@ async function main() {
       res.status(204).send();
     });
 
+    // Handle favicon requests
+    app.get('/favicon.ico', (req, res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.status(204).send(); // No content
+    });
+    
     // Config endpoint for MCP clients (root level)
     app.get('/config', async (req, res) => {
       try {
