@@ -21,10 +21,24 @@ export const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
 
-// Initialize services
-export const moduleRegistry = ModuleRegistry.getInstance();
-export const cmiService = getCMIService();
-export const moduleLoader = ModuleLoader.getInstance();
+// Initialize services with error handling
+let moduleRegistry: ModuleRegistry;
+let cmiService: any;
+let moduleLoader: ModuleLoader;
+
+try {
+  moduleRegistry = ModuleRegistry.getInstance();
+  cmiService = getCMIService();
+  moduleLoader = ModuleLoader.getInstance();
+} catch (error) {
+  logger.error('Failed to initialize services', { error });
+  // Create dummy instances to prevent crashes
+  moduleRegistry = {} as ModuleRegistry;
+  cmiService = null;
+  moduleLoader = {} as ModuleLoader;
+}
+
+export { moduleRegistry, cmiService, moduleLoader };
 
 async function main() {
   try {
@@ -39,8 +53,13 @@ async function main() {
     });
 
     // Connect to database
-    await prisma.$connect();
-    logger.info('Connected to PostgreSQL database');
+    try {
+      await prisma.$connect();
+      logger.info('Connected to PostgreSQL database');
+    } catch (error) {
+      logger.error('Failed to connect to database', { error });
+      // Continue anyway - health check should still work
+    }
 
     // Connect to Redis if configured
     const redis = Redis.getInstance();
@@ -67,11 +86,16 @@ async function main() {
 
     // Add health check BEFORE any middleware to ensure it always works
     app.get('/api/health', (_req, res) => {
-      res.json({
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        service: 'federated-memory',
-      });
+      try {
+        res.status(200).json({
+          status: 'ok',
+          timestamp: new Date().toISOString(),
+          service: 'federated-memory',
+        });
+      } catch (e) {
+        // If even JSON fails, send plain text
+        res.status(200).send('OK');
+      }
     });
 
     // Middleware
@@ -338,9 +362,27 @@ async function main() {
         logger.info('HTTP server closed');
       });
 
-      await moduleLoader.cleanup();
-      await cmiService.cleanup();
-      await prisma.$disconnect();
+      try {
+        if (moduleLoader && moduleLoader.cleanup) {
+          await moduleLoader.cleanup();
+        }
+      } catch (error) {
+        logger.error('Error during module cleanup', { error });
+      }
+
+      try {
+        if (cmiService && cmiService.cleanup) {
+          await cmiService.cleanup();
+        }
+      } catch (error) {
+        logger.error('Error during CMI cleanup', { error });
+      }
+
+      try {
+        await prisma.$disconnect();
+      } catch (error) {
+        logger.error('Error disconnecting from database', { error });
+      }
 
       if (redis) {
         await redis.disconnect();

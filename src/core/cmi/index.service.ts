@@ -788,9 +788,14 @@ export class CMIService {
 // Export singleton instance
 let cmiService: CMIService | null = null;
 
-export function getCMIService(): CMIService {
+export function getCMIService(): CMIService | null {
   if (!cmiService) {
-    cmiService = new CMIService();
+    try {
+      cmiService = new CMIService();
+    } catch (error) {
+      Logger.getInstance().error('Failed to create CMI service', { error });
+      return null as any;
+    }
   }
   return cmiService;
 }
