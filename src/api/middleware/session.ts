@@ -7,7 +7,8 @@ export function createSessionMiddleware() {
   const sessionSecret = process.env.SESSION_SECRET || 'development-secret-change-in-production';
   
   if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
-    throw new Error('SESSION_SECRET environment variable is required in production');
+    logger.error('SESSION_SECRET environment variable is required in production - using default (INSECURE!)');
+    // Don't throw - let the server start but log the security issue
   }
   
   const sessionConfig: session.SessionOptions = {

@@ -15,6 +15,7 @@ Production server on Railway fails health checks with "Service Unavailable" desp
 ### ❌ CONFIRMED FAILING
 1. **Full server with all services** - FAILS
 2. **Full server with defensive initialization** - FAILS
+3. **Minimal + Database + Middleware + Redis + Session/OAuth** - FAILS ⚠️ FOUND THE ISSUE!
 
 ### 🔍 COMPONENTS TO TEST (in order)
 - [x] Express server with health checks only
@@ -33,14 +34,14 @@ Production server on Railway fails health checks with "Service Unavailable" desp
 2. Database connection works in production
 3. Basic middleware (logger, CORS, Helmet) works in production
 4. Redis connection works in production
-5. Testing session middleware + Passport/OAuth now
-6. The issue appears when we enable the full server with all components
+5. **Session middleware + Passport/OAuth FAILS in production** ⚠️
+6. The issue is with OAuth/session initialization
 
 ### 🎯 NEXT STEPS
-Since ultra-minimal + database is currently working, we should:
-1. Add components one by one to the ultra-minimal server
-2. Deploy and test after each addition
-3. Identify which component causes the failure
+Found that session/OAuth causes failure. Testing:
+1. Session middleware alone (without Passport) - TESTING NOW
+2. If session fails, check RedisStore issue
+3. If session works, isolate Passport initialization issue
 
 ### 💡 CURRENT HYPOTHESIS
 The failure is likely in one of:

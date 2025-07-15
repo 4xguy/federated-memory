@@ -51,12 +51,12 @@ async function main() {
     // Session middleware (must be before passport)
     app.use(createSessionMiddleware());
     
-    // Initialize Passport for OAuth
-    const passport = initializePassport();
-    app.use(passport.initialize());
-    app.use(passport.session());
+    // Initialize Passport for OAuth - TEMPORARILY DISABLED to isolate issue
+    // const passport = initializePassport();
+    // app.use(passport.initialize());
+    // app.use(passport.session());
     
-    logger.info('Middleware and auth initialized');
+    logger.info('Middleware and session initialized (OAuth temporarily disabled)');
 
     // Health check endpoint
     app.get('/api/health', (_req, res) => {
