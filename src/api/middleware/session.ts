@@ -1,5 +1,6 @@
 import session from 'express-session';
 import { Redis } from '@/utils/redis';
+import { logger } from '@/utils/logger';
 const RedisStore = require('connect-redis').default;
 
 export function createSessionMiddleware() {
@@ -23,11 +24,14 @@ export function createSessionMiddleware() {
 
   // Use Redis for session storage if available
   const redis = Redis.getInstance();
-  if (redis) {
+  if (redis && redis.isReady()) {
     sessionConfig.store = new RedisStore({
       client: redis.getClient() as any,
       prefix: 'sess:',
     });
+    logger.info('Using Redis for session storage');
+  } else {
+    logger.warn('Redis not available, using memory store for sessions');
   }
 
   return session(sessionConfig);

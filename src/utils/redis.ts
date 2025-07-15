@@ -37,8 +37,10 @@ export class Redis {
       this.isConnected = true;
       logger.info('Redis connected successfully');
     } catch (error) {
-      logger.error('Failed to connect to Redis', error);
-      throw error;
+      logger.error('Failed to connect to Redis, continuing without cache', error);
+      // Don't throw - allow server to run without Redis
+      this.client = null;
+      this.isConnected = false;
     }
   }
 
