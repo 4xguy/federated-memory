@@ -28,6 +28,16 @@ export const moduleLoader = ModuleLoader.getInstance();
 
 async function main() {
   try {
+    logger.info('Starting Federated Memory Server...');
+    logger.info('Environment:', {
+      NODE_ENV: process.env.NODE_ENV,
+      PORT: process.env.PORT,
+      DATABASE_URL: process.env.DATABASE_URL ? 'set' : 'not set',
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY ? 'set' : 'not set',
+      JWT_SECRET: process.env.JWT_SECRET ? 'set' : 'not set',
+      SESSION_SECRET: process.env.SESSION_SECRET ? 'set' : 'not set',
+    });
+
     // Connect to database
     await prisma.$connect();
     logger.info('Connected to PostgreSQL database');
@@ -54,6 +64,15 @@ async function main() {
     const app = express();
     const server = createServer(app);
     const port = process.env.PORT || 3000;
+
+    // Add health check BEFORE any middleware to ensure it always works
+    app.get('/api/health', (_req, res) => {
+      res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        service: 'federated-memory',
+      });
+    });
 
     // Middleware
     app.use(
@@ -334,6 +353,17 @@ async function main() {
     process.exit(1);
   }
 }
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
 
 main().catch(error => {
   logger.error('Unhandled error:', error);
