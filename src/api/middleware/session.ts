@@ -3,8 +3,14 @@ import { Redis } from '@/utils/redis';
 const RedisStore = require('connect-redis').default;
 
 export function createSessionMiddleware() {
+  const sessionSecret = process.env.SESSION_SECRET || 'development-secret-change-in-production';
+  
+  if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+    throw new Error('SESSION_SECRET environment variable is required in production');
+  }
+  
   const sessionConfig: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || 'development-secret-change-in-production',
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {

@@ -76,9 +76,11 @@ router.get('/detailed', async (req: Request, res: Response) => {
   try {
     // Check embedding service
     const embeddingService = getEmbeddingService();
+    const isMock = process.env.OPENAI_API_KEY === 'sk-test' || !process.env.OPENAI_API_KEY;
     health.checks.embeddingService = {
       status: embeddingService ? 'ok' : 'not_initialized',
-      provider: 'openai',
+      provider: isMock ? 'mock' : 'openai',
+      mock: isMock,
     };
   } catch (error) {
     health.status = 'degraded';

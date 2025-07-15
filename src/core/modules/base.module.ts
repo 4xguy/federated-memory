@@ -22,7 +22,7 @@ export interface ModuleInfo {
 export abstract class BaseModule implements MemoryModule {
   protected prisma: PrismaClient;
   protected cmi: ReturnType<typeof getCMIService>;
-  protected embeddings: ReturnType<typeof getEmbeddingService>;
+  protected embeddings: ReturnType<typeof getEmbeddingService> | null;
   protected logger: ReturnType<typeof createModuleLogger>;
   protected redis: Redis | null;
 
