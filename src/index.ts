@@ -21,22 +21,28 @@ export const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
 
-// Initialize services with error handling
+// Initialize services - these will be set in main()
 let moduleRegistry: ModuleRegistry;
-let cmiService: any;
+let cmiService: any = null;
 let moduleLoader: ModuleLoader;
 
-// Initialize services with error handling
+// Initialize basic services that don't depend on modules
 try {
   moduleRegistry = ModuleRegistry.getInstance();
-  cmiService = getCMIService();
   moduleLoader = ModuleLoader.getInstance();
 } catch (error) {
-  logger.error('Failed to initialize services', { error });
+  logger.error('Failed to initialize basic services', { error });
   // Create dummy instances to prevent crashes
   moduleRegistry = {} as ModuleRegistry;
-  cmiService = null;
   moduleLoader = {} as ModuleLoader;
+}
+
+// Export a getter for CMI service that initializes it lazily
+export function getInitializedCMIService() {
+  if (!cmiService) {
+    cmiService = getCMIService();
+  }
+  return cmiService;
 }
 
 export { moduleRegistry, cmiService, moduleLoader };
@@ -81,6 +87,12 @@ async function main() {
       moduleResults = await moduleLoader.loadAllModules();
       const successfulModules = moduleResults.filter(r => r.success).length;
       logger.info(`Loaded ${successfulModules} modules successfully`);
+      
+      // Initialize CMI service AFTER modules are loaded
+      if (successfulModules > 0) {
+        cmiService = getCMIService();
+        logger.info('CMI service initialized after module loading');
+      }
     } catch (error) {
       logger.error('Failed to load modules, continuing without them', { error });
       // Continue without modules - server can still run for health checks

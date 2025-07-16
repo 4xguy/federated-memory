@@ -1,7 +1,7 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { Logger } from '@/utils/logger';
 import { getEmbeddingService } from '@/core/embeddings/generator.service';
-import { ModuleRegistry } from '@/core/modules/registry.service';
+import { ModuleRegistry } from '../modules/registry.service';
 import { Redis } from '@/utils/redis';
 
 export interface MemoryIndexEntry {
@@ -62,6 +62,11 @@ export class CMIService {
     this.embeddingService = getEmbeddingService();
     this.moduleRegistry = ModuleRegistry.getInstance();
     this.redis = Redis.getInstance();
+    
+    // Ensure registry is initialized when CMI starts
+    this.moduleRegistry.ensureInitialized().catch(err => {
+      this.logger.error('Failed to initialize module registry in CMI', { error: err });
+    });
   }
 
   /**
@@ -484,9 +489,33 @@ export class CMIService {
       const targetModule = moduleId || (await this.determineModule(content, metadata));
 
       // Get the module instance
+      this.logger.info('Attempting to get module', { targetModule });
       const module = await this.moduleRegistry.getModule(targetModule);
       if (!module) {
-        throw new Error(`Module ${targetModule} not found`);
+        // Try to load the module if it's not already loaded
+        const { ModuleLoader } = await import('@/core/modules/loader.service');
+        const loader = ModuleLoader.getInstance();
+        
+        this.logger.info('Module not loaded, attempting to load it', { targetModule });
+        const loadResult = await loader.loadModule(targetModule);
+        
+        if (loadResult.success) {
+          // Try again after loading
+          const loadedModule = await this.moduleRegistry.getModule(targetModule);
+          if (loadedModule) {
+            return await this.store(userId, content, metadata, moduleId);
+          }
+        }
+        
+        this.logger.error('Module not found or failed to load', {
+          targetModule,
+          loadResult,
+          registryInfo: {
+            hasRegistry: !!this.moduleRegistry,
+            registryType: this.moduleRegistry?.constructor?.name
+          }
+        });
+        throw new Error(`Module ${targetModule} not found or failed to load`);
       }
 
       // Store in the module
