@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '@/utils/database';
-import { ModuleRegistry } from '@/core/modules/registry.service';
-import { getCMIService } from '@/core/cmi/index.service';
+import { ModuleRegistry } from '../../core/modules/registry.service';
+import { getCMIService } from '../../core/cmi/index.service';
 import { getEmbeddingService } from '@/core/embeddings/generator.service';
 import { Logger } from '@/utils/logger';
 

@@ -7,7 +7,7 @@ import {
   ModuleType,
 } from '@/core/modules/interfaces';
 import { PrismaClient } from '@prisma/client';
-import { getCMIService } from '@/core/cmi/index.service';
+import { getCMIService } from '../../core/cmi/index.service';
 
 interface LearningMetadata {
   category?: 'concept' | 'tutorial' | 'reference' | 'practice' | 'reflection' | 'question';

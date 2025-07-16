@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { completable } from '@modelcontextprotocol/sdk/server/completable.js';
 import { McpError } from '@modelcontextprotocol/sdk/types.js';
 import { logger } from '@/utils/logger';
-import { getCMIService } from '@/core/cmi/index.service';
-import { ModuleRegistry } from '@/core/modules/registry.service';
+import { getCMIService } from '../../core/cmi/index.service';
+import { ModuleRegistry } from '../../core/modules/registry.service';
 
 interface UserContext {
   userId: string;

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { ModuleRegistry } from '@/core/modules/registry.service';
+import { ModuleRegistry } from '../../core/modules/registry.service';
 import { AuthRequest } from '@/api/middleware/auth';
 import { Logger } from '@/utils/logger';
 import { z } from 'zod';
@@ -16,7 +16,16 @@ const analyzeModuleSchema = z.object({
 router.get('/', async (req: AuthRequest, res: Response) => {
   try {
     const registry = ModuleRegistry.getInstance();
+    logger.info('Module route: Getting modules from registry', {
+      registryExists: !!registry,
+      registryId: (registry as any)._instanceId
+    });
+    
     const modules = await registry.listModules();
+    logger.info('Module route: Listed modules', {
+      count: modules.length,
+      moduleIds: modules.map(m => m.id)
+    });
 
     return res.json({
       modules: modules.map((module: any) => ({
