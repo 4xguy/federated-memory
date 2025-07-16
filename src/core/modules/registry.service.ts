@@ -37,7 +37,7 @@ export class ModuleRegistry {
   private constructor() {
     this.prisma = new PrismaClient();
     this.logger = Logger.getInstance();
-    this.initializeRegistry();
+    // Don't initialize here - it's async and can't be awaited in constructor
   }
 
   static getInstance(): ModuleRegistry {
@@ -45,6 +45,15 @@ export class ModuleRegistry {
       ModuleRegistry.instance = new ModuleRegistry();
     }
     return ModuleRegistry.instance;
+  }
+
+  /**
+   * Ensure registry is initialized (call this after getInstance)
+   */
+  async ensureInitialized(): Promise<void> {
+    if (this.modules.size === 0) {
+      await this.initializeRegistry();
+    }
   }
 
   /**
@@ -67,8 +76,9 @@ export class ModuleRegistry {
         });
       }
 
-      this.logger.info('Module registry initialized', {
+      this.logger.info('Module registry initialized from database', {
         moduleCount: this.modules.size,
+        note: 'Module instances need to be loaded separately via ModuleLoader'
       });
     } catch (error) {
       this.logger.error('Failed to initialize module registry', { error });
@@ -170,7 +180,29 @@ export class ModuleRegistry {
    * Get module instance
    */
   async getModule(moduleId: string): Promise<BaseModule | undefined> {
-    return this.moduleInstances.get(moduleId);
+    // Ensure we're initialized before looking for modules
+    await this.ensureInitialized();
+    
+    const module = this.moduleInstances.get(moduleId);
+    if (!module) {
+      // Check if module exists in DB but instance not loaded
+      const moduleInfo = this.modules.get(moduleId);
+      if (moduleInfo) {
+        this.logger.warn('Module exists in registry but instance not loaded. Run ModuleLoader.loadModule() first.', {
+          moduleId,
+          availableInstances: Array.from(this.moduleInstances.keys()),
+          registeredModules: Array.from(this.modules.keys())
+        });
+      } else {
+        this.logger.warn('Module not found in registry', {
+          moduleId,
+          availableModules: Array.from(this.moduleInstances.keys()),
+          registrySize: this.moduleInstances.size,
+          modulesMapSize: this.modules.size
+        });
+      }
+    }
+    return module;
   }
 
   /**
@@ -193,6 +225,9 @@ export class ModuleRegistry {
   async listModules(): Promise<
     Array<{ id: string; name: string; description: string; type: ModuleType }>
   > {
+    // Ensure we're initialized from database
+    await this.ensureInitialized();
+    
     const activeModules = this.getActiveModules();
     return activeModules.map(m => ({
       id: m.moduleId,
