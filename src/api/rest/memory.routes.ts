@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { getCMIService } from '@/core/cmi/index.service';
+import { getCMIService } from '../../core/cmi/index.service';
 import { AuthRequest } from '@/api/middleware/auth';
 import { Logger } from '@/utils/logger';
 import { z } from 'zod';
@@ -17,8 +17,8 @@ const storeMemorySchema = z.object({
 const searchMemorySchema = z.object({
   query: z.string().min(1).max(1000),
   moduleId: z.string().optional(),
-  limit: z.number().int().min(1).max(100).optional().default(10),
-  minScore: z.number().min(0).max(1).optional().default(0.5),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(10),
+  minScore: z.coerce.number().min(0).max(1).optional().default(0.5),
 });
 
 const updateMemorySchema = z.object({
