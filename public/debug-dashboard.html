@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Dashboard</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f0f0f0; }
+        .debug { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .key { color: blue; font-weight: bold; }
+        .value { color: green; }
+        .error { color: red; }
+        button { padding: 10px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Dashboard Debug Information</h1>
+    
+    <div class="debug">
+        <h2>URL Parameters:</h2>
+        <div id="urlParams"></div>
+    </div>
+    
+    <div class="debug">
+        <h2>LocalStorage:</h2>
+        <div id="localStorage"></div>
+    </div>
+    
+    <div class="debug">
+        <h2>Computed Values:</h2>
+        <div id="computed"></div>
+    </div>
+    
+    <div class="debug">
+        <h2>Actions:</h2>
+        <button onclick="testToken()">Test Token Validity</button>
+        <button onclick="clearStorage()">Clear LocalStorage</button>
+        <button onclick="goToEmergency()">Go to Emergency Login</button>
+    </div>
+    
+    <div class="debug">
+        <h2>Test Results:</h2>
+        <div id="results"></div>
+    </div>
+    
+    <script>
+        // Display URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        let urlParamsHtml = '';
+        for (const [key, value] of urlParams) {
+            urlParamsHtml += `<div><span class="key">${key}:</span> <span class="value">${value}</span></div>`;
+        }
+        document.getElementById('urlParams').innerHTML = urlParamsHtml || '<div class="error">No URL parameters found</div>';
+        
+        // Display localStorage
+        let localStorageHtml = '';
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            const value = localStorage.getItem(key);
+            localStorageHtml += `<div><span class="key">${key}:</span> <span class="value">${value}</span></div>`;
+        }
+        document.getElementById('localStorage').innerHTML = localStorageHtml || '<div class="error">LocalStorage is empty</div>';
+        
+        // Compute values
+        const token = urlParams.get('token') || localStorage.getItem('token');
+        const userId = urlParams.get('userId') || localStorage.getItem('userId');
+        const userEmail = urlParams.get('email') || localStorage.getItem('userEmail');
+        const apiUrl = window.location.origin;
+        const mcpUrl = token ? `${apiUrl}/${token}` : 'No token available';
+        const sseUrl = token ? `${apiUrl}/${token}/sse` : 'No token available';
+        
+        document.getElementById('computed').innerHTML = `
+            <div><span class="key">Token:</span> <span class="value">${token || 'NOT FOUND'}</span></div>
+            <div><span class="key">User ID:</span> <span class="value">${userId || 'NOT FOUND'}</span></div>
+            <div><span class="key">Email:</span> <span class="value">${userEmail || 'NOT FOUND'}</span></div>
+            <div><span class="key">API URL:</span> <span class="value">${apiUrl}</span></div>
+            <div><span class="key">MCP URL:</span> <span class="value">${mcpUrl}</span></div>
+            <div><span class="key">SSE URL:</span> <span class="value">${sseUrl}</span></div>
+        `;
+        
+        async function testToken() {
+            const results = document.getElementById('results');
+            if (!token) {
+                results.innerHTML = '<div class="error">No token to test!</div>';
+                return;
+            }
+            
+            results.innerHTML = '<div>Testing token...</div>';
+            
+            try {
+                // Test config endpoint
+                const configRes = await fetch(`/${token}/config`);
+                const configStatus = configRes.status;
+                const configData = configRes.ok ? await configRes.json() : await configRes.text();
+                
+                results.innerHTML += `<div><span class="key">Config endpoint status:</span> <span class="${configRes.ok ? 'value' : 'error'}">${configStatus}</span></div>`;
+                results.innerHTML += `<div><span class="key">Config response:</span> <pre>${JSON.stringify(configData, null, 2)}</pre></div>`;
+                
+                // Test auth validation
+                const authRes = await fetch('/api/user/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const authStatus = authRes.status;
+                const authData = authRes.ok ? await authRes.json() : await authRes.text();
+                
+                results.innerHTML += `<div><span class="key">Auth validation status:</span> <span class="${authRes.ok ? 'value' : 'error'}">${authStatus}</span></div>`;
+                results.innerHTML += `<div><span class="key">Auth response:</span> <pre>${JSON.stringify(authData, null, 2)}</pre></div>`;
+                
+            } catch (error) {
+                results.innerHTML += `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        function clearStorage() {
+            localStorage.clear();
+            location.reload();
+        }
+        
+        function goToEmergency() {
+            window.location.href = '/emergency.html';
+        }
+    </script>
+</body>
+</html>

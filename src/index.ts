@@ -196,7 +196,20 @@ async function main() {
     app.use(
       helmet({
         crossOriginEmbedderPolicy: false, // Allow SSE connections
-        contentSecurityPolicy: process.env.NODE_ENV === 'development' ? false : undefined, // Disable CSP in development
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"], // Allow inline scripts for dashboard
+            scriptSrcAttr: ["'unsafe-inline'"], // Allow onclick handlers
+            styleSrc: ["'self'", "'unsafe-inline'", "https:"],
+            imgSrc: ["'self'", "data:"],
+            connectSrc: ["'self'"],
+            fontSrc: ["'self'", "https:", "data:"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'"],
+            frameSrc: ["'none'"],
+          },
+        },
       }),
     );
 

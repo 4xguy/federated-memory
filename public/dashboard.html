@@ -155,14 +155,16 @@
     </div>
 
     <script>
-        // Debug logging
-        console.log('Dashboard loaded');
-        console.log('localStorage token:', localStorage.getItem('token'));
-        console.log('localStorage userId:', localStorage.getItem('userId'));
-        console.log('localStorage userEmail:', localStorage.getItem('userEmail'));
-        
-        // Check if user is logged in
-        const urlParams = new URLSearchParams(window.location.search);
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Debug logging
+            console.log('Dashboard loaded');
+            console.log('localStorage token:', localStorage.getItem('token'));
+            console.log('localStorage userId:', localStorage.getItem('userId'));
+            console.log('localStorage userEmail:', localStorage.getItem('userEmail'));
+            
+            // Check if user is logged in
+            const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token') || localStorage.getItem('token');
         const userId = urlParams.get('userId') || localStorage.getItem('userId');
         const userEmail = urlParams.get('email') || localStorage.getItem('userEmail');
@@ -193,8 +195,16 @@
             document.getElementById('apiUrl').textContent = apiUrl;
             
             const mcpUrl = `${apiUrl}/${token}`;
+            const sseUrl = `${apiUrl}/${token}/sse`;
             document.getElementById('mcpUrl').textContent = mcpUrl;
             document.getElementById('mcpUrlShort').textContent = mcpUrl;
+            
+            // Log for debugging
+            console.log('Dashboard loaded with:');
+            console.log('Token:', token);
+            console.log('API URL:', apiUrl);
+            console.log('MCP URL:', mcpUrl);
+            console.log('SSE URL:', sseUrl);
             
             // Try to fetch user info if we don't have it
             if (!userEmail && token) {
@@ -214,19 +224,26 @@
                     console.log('Could not fetch user profile:', err);
                 });
             }
+            
+            // Add event listeners for copy buttons
+            document.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const elementId = this.getAttribute('data-copy');
+                    const text = document.getElementById(elementId).textContent;
+                    navigator.clipboard.writeText(text).then(() => {
+                        const originalText = this.textContent;
+                        this.textContent = 'Copied!';
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                        }, 2000);
+                    });
+                });
+            });
+            
+            // Add logout button listener
+            document.getElementById('logoutBtn')?.addEventListener('click', logout);
         }
 
-        function copyToClipboard(elementId) {
-            const text = document.getElementById(elementId).textContent;
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 2000);
-            });
-        }
 
         function logout() {
             localStorage.removeItem('token');
@@ -234,6 +251,8 @@
             localStorage.removeItem('userEmail');
             window.location.href = '/register.html';
         }
+        
+        }); // End of DOMContentLoaded
     </script>
 </body>
 </html>
