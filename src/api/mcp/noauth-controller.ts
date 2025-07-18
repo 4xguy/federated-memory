@@ -855,60 +855,68 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
             }
           }
         } else if (name === 'searchCategories') {
-          // Search categories from the category registry
-          const cmiService = getInitializedCMIService();
-          
-          // Look for the category registry memory
-          const registrySearch = await cmiService.search(
-            userId,
-            'type:list name:category_registry',
-            { moduleId: 'personal', limit: 1 }
-          );
-          
-          let categories = [];
-          
-          if (registrySearch.length > 0) {
-            const registry = registrySearch[0];
-            // Check both 'categories' and 'items' fields for compatibility
-            const registryCategories = registry.metadata?.categories || registry.metadata?.items || [];
+          // Use efficient database function to get categories with counts
+          try {
+            // Query the database directly for category counts
+            const categoryData = await prisma.$queryRaw<Array<{
+              category_name: string;
+              description: string | null;
+              icon: string | null;
+              parent_category: string | null;
+              memory_count: bigint;
+            }>>`
+              SELECT * FROM get_category_registry_with_counts(${userId})
+            `;
             
-            // Ensure we have an array of category objects
-            if (Array.isArray(registryCategories)) {
-              categories = registryCategories;
-            } else if (typeof registryCategories === 'string') {
-              // Handle case where it might be stored as a string
-              try {
-                categories = JSON.parse(registryCategories);
-              } catch (e) {
-                categories = [];
-              }
-            }
+            // Convert bigint to number and format results
+            let categories = categoryData.map(cat => ({
+              name: cat.category_name,
+              description: cat.description,
+              icon: cat.icon,
+              parentCategory: cat.parent_category,
+              memoryCount: Number(cat.memory_count)
+            }));
             
             // Apply search filter if provided
             if (args.query && typeof args.query === 'string') {
               const query = args.query.toLowerCase();
-              categories = categories.filter((cat: any) => 
-                (cat.name && typeof cat.name === 'string' && cat.name.toLowerCase().includes(query)) ||
-                (cat.description && typeof cat.description === 'string' && cat.description.toLowerCase().includes(query))
+              categories = categories.filter(cat => 
+                cat.name.toLowerCase().includes(query) ||
+                (cat.description && cat.description.toLowerCase().includes(query))
               );
             }
             
-            // For now, skip memory counting to avoid database connection issues
-            // In production, this should use a more efficient counting method
-            categories = categories.map((cat: any) => ({
-              ...cat,
-              memoryCount: 0 // Placeholder - would need efficient counting
-            }));
+            result = {
+              categories: categories,
+              count: categories.length,
+              message: categories.length > 0 ? `Found ${categories.length} categories` : 'No categories found'
+            };
+          } catch (dbError) {
+            // Fallback if database function doesn't exist yet
+            logger.warn('Category count function not available, using fallback', { error: dbError });
+            
+            // Simple fallback - just return categories without counts
+            const cmiService = getInitializedCMIService();
+            const registrySearch = await cmiService.search(
+              userId,
+              'type:list name:category_registry',
+              { moduleId: 'personal', limit: 1 }
+            );
+            
+            let categories = [];
+            if (registrySearch.length > 0 && registrySearch[0].metadata?.categories) {
+              categories = registrySearch[0].metadata.categories.map((cat: any) => ({
+                ...cat,
+                memoryCount: 0
+              }));
+            }
+            
+            result = {
+              categories: categories,
+              count: categories.length,
+              message: 'Category counts unavailable - database migration pending'
+            };
           }
-          
-          // Ensure categories is a proper array of objects
-          const finalCategories = Array.isArray(categories) ? categories : [];
-          
-          result = {
-            categories: finalCategories.sort((a: any, b: any) => (b.memoryCount || 0) - (a.memoryCount || 0)),
-            count: finalCategories.length,
-            message: finalCategories.length > 0 ? `Found ${finalCategories.length} categories` : 'No categories found'
-          };
         } else if (name === 'createCategory') {
           // Create or update category in the registry
           const cmiService = getInitializedCMIService();
