@@ -51,3 +51,6 @@ dump.rdb
 
 # Server lock file
 .server.lock
+
+# Deployment
+Dockerfile.backup
