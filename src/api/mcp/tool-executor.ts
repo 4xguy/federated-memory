@@ -394,8 +394,12 @@ export async function executeToolForUser(toolName: string, args: any, userId: st
         userId,
         args.personId,
         args.fieldKey,
-        args.value
+        args.value,
+        args.module || 'people'
       );
+      
+    case 'listCustomFields':
+      return await churchService!.getCustomFieldsForModule(userId, args.module || 'people');
       
     case 'tagPerson':
       return await churchService!.tagPerson(

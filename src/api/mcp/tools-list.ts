@@ -682,6 +682,21 @@ export function getToolsList() {
       }
     },
     {
+      name: 'listCustomFields',
+      description: 'List all custom fields for a specific module',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          module: {
+            type: 'string',
+            enum: ['people', 'calendar', 'registrations', 'groups', 'giving', 'check-ins'],
+            default: 'people',
+            description: 'CRM module to list fields for'
+          }
+        }
+      }
+    },
+    {
       name: 'tagPerson',
       description: 'Add, remove, or set tags for a person',
       inputSchema: {
