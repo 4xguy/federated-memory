@@ -4,6 +4,7 @@ import { ModuleRegistry } from '../../core/modules/registry.service';
 import { getCMIService } from '../../core/cmi/index.service';
 import { getEmbeddingService } from '@/core/embeddings/generator.service';
 import { Logger } from '@/utils/logger';
+import { emailService } from '@/services/email/email.service';
 
 const router = Router();
 const logger = Logger.getInstance();
@@ -100,6 +101,23 @@ router.get('/detailed', async (req: Request, res: Response) => {
     };
   }
 
+  // Check email service
+  try {
+    const emailConnected = await emailService.testConnection();
+    health.checks.email = {
+      status: emailConnected ? 'ok' : 'not_configured',
+      provider: process.env.EMAIL_PROVIDER || 'none',
+      configured: !!process.env.EMAIL_PROVIDER,
+      connected: emailConnected,
+    };
+  } catch (error) {
+    health.checks.email = {
+      status: 'error',
+      provider: process.env.EMAIL_PROVIDER || 'none',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+
   // Check environment variables
   health.checks.environment = {
     status: 'ok',
@@ -108,6 +126,7 @@ router.get('/detailed', async (req: Request, res: Response) => {
       OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
       JWT_SECRET: !!process.env.JWT_SECRET,
       REDIS_URL: !!process.env.REDIS_URL,
+      EMAIL_PROVIDER: !!process.env.EMAIL_PROVIDER,
     },
   };
 
