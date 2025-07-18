@@ -10,7 +10,9 @@ import mcpOauthRoutes from './mcp-oauth.routes';
 import configRoutes from './config.routes';
 import externalAuthRoutes from './external-auth.routes';
 import projectRoutes from '../projects';
-import emailAuthRoutes from '../auth/email-auth';
+// TEMPORARY: Use temp auth until bcrypt issue is resolved
+// import emailAuthRoutes from '../auth/email-auth';
+import emailAuthRoutes from '../auth/email-auth-temp';
 // import { apiKeysRoutes } from '../routes/api-keys.routes'; // Deprecated with BigMemory auth
 
 const router = Router();
