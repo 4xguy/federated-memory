@@ -20,7 +20,10 @@ router.get('/:token', async (req: Request, res: Response) => {
   }
   
   // Return info about the token-based MCP endpoint
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  // Use BASE_URL if set (for Railway deployments) or construct from request
+  const baseUrl = process.env.BASE_URL || 
+    `${req.get('x-forwarded-proto') || req.protocol}://${req.get('host')}`;
+  
   res.json({
     message: 'Federated Memory MCP Server',
     token: token,
@@ -44,7 +47,10 @@ router.get('/:token/config', async (req: Request, res: Response) => {
   }
   
   // Return MCP config for direct SSE connection
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  // Use BASE_URL if set (for Railway deployments) or construct from request
+  const baseUrl = process.env.BASE_URL || 
+    `${req.get('x-forwarded-proto') || req.protocol}://${req.get('host')}`;
+  
   res.json({
     mcp: {
       version: '1.0.0',
