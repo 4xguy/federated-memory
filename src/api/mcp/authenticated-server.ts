@@ -1393,4 +1393,6 @@ function registerProjectManagementTools(
       }
     },
   );
+  
+  return server;
 }

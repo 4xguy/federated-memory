@@ -18,14 +18,14 @@ A universal memory architecture with distributed storage, intelligent routing, a
 - **BigMemory Tool Parity**: Complete implementation of all BigMemory MCP tools
 - **Token-Based Authentication**: Simple token URLs for Claude.ai integration (no OAuth required)
 - **Intelligent Routing (CMI)**: Central Memory Index routes queries to appropriate modules
-- **6 Memory Modules**: Technical, Personal, Work, Learning, Communication, Creative
+- **7 Memory Modules**: Technical, Personal, Work, Learning, Communication, Creative, Church
 - **Category System**: Hierarchical categories with registry-based management
 - **Project Management**: Projects and tasks as memories with full metadata support
 
 ## 🌟 Key Features
 
 - **Central Memory Index (CMI)**: Lightning-fast routing with 512-dimensional embeddings
-- **Specialized Modules**: 6 purpose-built memory modules (Technical, Personal, Work, Learning, Communication, Creative)
+- **Specialized Modules**: 7 purpose-built memory modules (Technical, Personal, Work, Learning, Communication, Creative, Church)
 - **Federated Search**: Parallel search across modules with intelligent result merging
 - **pgvector Integration**: Semantic search using PostgreSQL's vector extension
 - **Flexible Metadata**: JSONB storage for module-specific data structures
@@ -37,10 +37,10 @@ A universal memory architecture with distributed storage, intelligent routing, a
 
 ## 📈 Current Status
 
-✅ **Implemented (18/18 BigMemory Tools):**
+✅ **Implemented Core Tools (18/18 BigMemory Tools):**
 1. **searchMemory** - Semantic search across federated modules
 2. **storeMemory** - Store with auto-routing to appropriate module
-3. **listModules** - List all 6 memory modules
+3. **listModules** - List all 7 memory modules
 4. **getModuleStats** - Memory counts and statistics per module
 5. **getMemory** - Retrieve specific memory by ID
 6. **updateMemory** - Update memory content/metadata
@@ -63,7 +63,15 @@ A universal memory architecture with distributed storage, intelligent routing, a
 - Registry memories for categories and types
 - Token-based authentication (BigMemory style)
 - Database functions for efficient operations
-- Module isolation with shared interfaces
+
+✅ **Church Module Tools (18 Additional Tools):**
+1-6. Person Management: createPerson, updatePerson, getPerson, searchPeople, listPeople, mergePeople
+7-9. Household Management: createHousehold, updateHousehold, addPersonToHousehold
+10-12. Custom Fields & Tags: defineCustomField, setPersonCustomField, tagPerson
+13-15. Lists & Export: createPeopleList, exportPeopleData, bulkUpdatePeople
+16-18. Ministry & Attendance: assignMinistryRole, listMinistryMembers, trackAttendance
+
+**Total Available Tools: 36** (18 Core + 18 Church)
 
 🚧 **Known Limitations:**
 - Category memory counts require database migration
@@ -243,6 +251,11 @@ Special memories that maintain lists:
 ### 6. Creative Module
 - **Purpose**: Ideas, brainstorming, designs
 - **Features**: Idea linking, evolution tracking
+
+### 7. Church Module
+- **Purpose**: Church CRM for people, households, ministries
+- **Features**: Person management, household relationships, custom fields, ministry roles, attendance tracking
+- **18 MCP Tools**: Complete people management system
 
 ## 🔧 Configuration
 
@@ -427,6 +440,8 @@ curl -X POST http://localhost:3000/api/memories \
 - [User Manual](docs/USER_MANUAL.md) - Complete guide for using the system
 - [MCP Server Guide](docs/MCP_SERVER.md) - MCP protocol implementation
 - [Master Implementation Guide](docs/MASTER_PROMPT.md) - Technical implementation details
+- [Church Module Guide](docs/modules/CHURCH_MODULE.md) - Church CRM system documentation
+- [Church Tools Reference](docs/CHURCH_TOOLS_REFERENCE.md) - Quick reference for all 18 Church tools
 - [Development Setup](docs/DEVELOPMENT_SETUP.md) - Developer environment setup
 - [Module Implementation](docs/MODULE_IMPLEMENTATION.md) - Creating custom modules
 - [Project Structure](docs/PROJECT_STRUCTURE.md) - Codebase organization

@@ -6,9 +6,39 @@ import { prisma } from '@/utils/database';
 import { getInitializedCMIService } from '@/index';
 import { ModuleRegistry } from '@/core/modules/registry.service';
 import { OptimizedQueries } from './query-optimizations';
+import { createAuthenticatedMcpServer } from './authenticated-server';
+import { getToolsList } from './tools-list';
 
 const router = Router();
 const authService = AuthService.getInstance();
+
+// Store MCP server instances per user
+const mcpServers = new Map<string, any>();
+
+// Helper to get or create MCP server for user
+function getMcpServerForUser(userId: string, email: string, name?: string) {
+  const key = userId;
+  
+  if (!mcpServers.has(key)) {
+    const userContext = {
+      userId,
+      email,
+      name
+    };
+    
+    const server = createAuthenticatedMcpServer(userContext);
+    mcpServers.set(key, server);
+  }
+  
+  return mcpServers.get(key);
+}
+
+// Get tools list for user
+async function getToolsListForUser(userId: string): Promise<any[]> {
+  // This function returns the complete list of tools available
+  // It's shared between OAuth and token-based authentication
+  return getToolsList();
+}
 
 // Root handler for token URLs
 router.get('/:token', async (req: Request, res: Response) => {
@@ -257,418 +287,27 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
         // Continue without registries - tools can still be listed
       }
       
+      // Get user details for MCP server
+      const user = await prisma.user.findUnique({
+        where: { id: sseConnection.userId },
+        select: { email: true, name: true }
+      });
+      
+      // Get MCP server for this user
+      const mcpServer = getMcpServerForUser(
+        sseConnection.userId,
+        user?.email || 'unknown@example.com',
+        user?.name || undefined
+      );
+      
+      // Instead of hardcoding tools, we'll maintain a list that's shared with authenticated-server
+      // This ensures both OAuth and token users get the same tools
+      const tools = await getToolsListForUser(sseConnection.userId);
+      
       response = {
         jsonrpc: '2.0',
         result: {
-          tools: [
-            {
-              name: 'searchMemory',
-              description: 'Search across federated memory modules',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  query: {
-                    type: 'string',
-                    description: 'What to search for'
-                  },
-                  modules: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'Specific modules to search (optional)'
-                  },
-                  limit: {
-                    type: 'number',
-                    description: 'Maximum results (default: 10)'
-                  }
-                },
-                required: ['query']
-              }
-            },
-            {
-              name: 'storeMemory',
-              description: 'Store information in federated memory',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  content: {
-                    type: 'string',
-                    description: 'The information to remember'
-                  },
-                  metadata: {
-                    type: 'object',
-                    description: 'Additional context or tags'
-                  }
-                },
-                required: ['content']
-              }
-            },
-            {
-              name: 'listModules',
-              description: 'List available memory modules',
-              inputSchema: {
-                type: 'object',
-                properties: {}
-              }
-            },
-            {
-              name: 'getModuleStats',
-              description: 'Get statistics for memory modules',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  moduleId: {
-                    type: 'string',
-                    description: 'Module ID (optional, returns all if not specified)'
-                  }
-                }
-              }
-            },
-            {
-              name: 'getMemory',
-              description: 'Retrieve a specific memory by ID',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  memoryId: {
-                    type: 'string',
-                    description: 'The ID of the memory to retrieve'
-                  }
-                },
-                required: ['memoryId']
-              }
-            },
-            {
-              name: 'updateMemory',
-              description: 'Update an existing memory',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  memoryId: {
-                    type: 'string',
-                    description: 'The ID of the memory to update'
-                  },
-                  content: {
-                    type: 'string',
-                    description: 'New content for the memory (optional)'
-                  },
-                  metadata: {
-                    type: 'object',
-                    description: 'New metadata for the memory (optional)'
-                  }
-                },
-                required: ['memoryId']
-              }
-            },
-            {
-              name: 'removeMemory',
-              description: 'Remove a memory',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  memoryId: {
-                    type: 'string',
-                    description: 'The ID of the memory to remove'
-                  }
-                },
-                required: ['memoryId']
-              }
-            },
-            {
-              name: 'searchCategories',
-              description: 'Search or list available memory categories',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  query: {
-                    type: 'string',
-                    description: 'Search query (optional, returns all if empty)'
-                  }
-                }
-              }
-            },
-            {
-              name: 'createCategory',
-              description: 'Create a new memory category',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  name: {
-                    type: 'string',
-                    description: 'Name of the category'
-                  },
-                  description: {
-                    type: 'string',
-                    description: 'Description of the category (optional)'
-                  },
-                  parentCategory: {
-                    type: 'string',
-                    description: 'Parent category name (optional)'
-                  },
-                  icon: {
-                    type: 'string',
-                    description: 'Emoji icon for the category (optional)'
-                  }
-                },
-                required: ['name']
-              }
-            },
-            {
-              name: 'createProject',
-              description: 'Create a new project',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  name: {
-                    type: 'string',
-                    description: 'Project name'
-                  },
-                  description: {
-                    type: 'string',
-                    description: 'Project description (optional)'
-                  },
-                  status: {
-                    type: 'string',
-                    enum: ['planning', 'active', 'on_hold', 'completed', 'cancelled'],
-                    description: 'Project status (default: planning)'
-                  },
-                  dueDate: {
-                    type: 'string',
-                    format: 'date-time',
-                    description: 'Project due date (optional)'
-                  },
-                  owner: {
-                    type: 'string',
-                    description: 'Project owner (optional)'
-                  },
-                  team: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'Team members (optional)'
-                  }
-                },
-                required: ['name']
-              }
-            },
-            {
-              name: 'listProjects',
-              description: 'List all projects with optional filters',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  status: {
-                    type: 'string',
-                    description: 'Filter by project status'
-                  },
-                  owner: {
-                    type: 'string',
-                    description: 'Filter by project owner'
-                  },
-                  includeCompleted: {
-                    type: 'boolean',
-                    description: 'Include completed projects (default: false)'
-                  }
-                }
-              }
-            },
-            {
-              name: 'getProjectTasks',
-              description: 'Get all tasks for a specific project',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  projectId: {
-                    type: 'string',
-                    description: 'ID of the project'
-                  }
-                },
-                required: ['projectId']
-              }
-            },
-            {
-              name: 'createTask',
-              description: 'Create a new task',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  title: {
-                    type: 'string',
-                    description: 'Task title'
-                  },
-                  description: {
-                    type: 'string',
-                    description: 'Task description (optional)'
-                  },
-                  projectId: {
-                    type: 'string',
-                    description: 'ID of the project this task belongs to (optional)'
-                  },
-                  assignee: {
-                    type: 'string',
-                    description: 'Person assigned to this task (optional)'
-                  },
-                  priority: {
-                    type: 'string',
-                    enum: ['low', 'medium', 'high', 'urgent'],
-                    description: 'Task priority (default: medium)'
-                  },
-                  status: {
-                    type: 'string',
-                    enum: ['todo', 'in_progress', 'in_review', 'blocked', 'done', 'cancelled'],
-                    description: 'Task status (default: todo)'
-                  },
-                  dueDate: {
-                    type: 'string',
-                    format: 'date-time',
-                    description: 'Task due date (optional)'
-                  }
-                },
-                required: ['title']
-              }
-            },
-            {
-              name: 'updateTaskStatus',
-              description: 'Update the status of an existing task',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  taskId: {
-                    type: 'string',
-                    description: 'ID of the task to update'
-                  },
-                  status: {
-                    type: 'string',
-                    enum: ['todo', 'in_progress', 'in_review', 'blocked', 'done', 'cancelled'],
-                    description: 'New task status'
-                  }
-                },
-                required: ['taskId', 'status']
-              }
-            },
-            {
-              name: 'linkTaskDependency',
-              description: 'Create a dependency between two tasks',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  taskId: {
-                    type: 'string',
-                    description: 'ID of the dependent task'
-                  },
-                  dependsOnTaskId: {
-                    type: 'string',
-                    description: 'ID of the task it depends on'
-                  },
-                  dependencyType: {
-                    type: 'string',
-                    enum: ['blocks', 'depends_on', 'related'],
-                    description: 'Type of dependency (default: depends_on)'
-                  }
-                },
-                required: ['taskId', 'dependsOnTaskId']
-              }
-            },
-            {
-              name: 'listTasks',
-              description: 'List all tasks with optional filters',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  projectId: {
-                    type: 'string',
-                    description: 'Filter by project ID'
-                  },
-                  assignee: {
-                    type: 'string',
-                    description: 'Filter by assignee'
-                  },
-                  status: {
-                    type: 'string',
-                    description: 'Filter by task status'
-                  },
-                  priority: {
-                    type: 'string',
-                    description: 'Filter by priority'
-                  },
-                  includeCompleted: {
-                    type: 'boolean',
-                    description: 'Include completed tasks (default: false)'
-                  }
-                }
-              }
-            },
-            {
-              name: 'getTaskDependencies',
-              description: 'Get all dependencies for a specific task',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  taskId: {
-                    type: 'string',
-                    description: 'ID of the task'
-                  }
-                },
-                required: ['taskId']
-              }
-            },
-            {
-              name: 'createRecurringTask',
-              description: 'Create a recurring task that generates instances based on a schedule',
-              inputSchema: {
-                type: 'object',
-                properties: {
-                  title: {
-                    type: 'string',
-                    description: 'Task title (will be used as template)'
-                  },
-                  description: {
-                    type: 'string',
-                    description: 'Task description template'
-                  },
-                  recurrence: {
-                    type: 'object',
-                    properties: {
-                      pattern: {
-                        type: 'string',
-                        enum: ['daily', 'weekly', 'monthly', 'custom'],
-                        description: 'Recurrence pattern'
-                      },
-                      interval: {
-                        type: 'number',
-                        description: 'Interval between occurrences'
-                      },
-                      daysOfWeek: {
-                        type: 'array',
-                        items: {
-                          type: 'string',
-                          enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-                        },
-                        description: 'For weekly pattern, which days'
-                      },
-                      dayOfMonth: {
-                        type: 'number',
-                        description: 'For monthly pattern, which day (1-31)'
-                      },
-                      endDate: {
-                        type: 'string',
-                        format: 'date-time',
-                        description: 'When to stop creating tasks'
-                      }
-                    },
-                    required: ['pattern']
-                  },
-                  assignee: {
-                    type: 'string',
-                    description: 'Default assignee for generated tasks'
-                  },
-                  projectId: {
-                    type: 'string',
-                    description: 'ID of the project (optional)'
-                  }
-                },
-                required: ['title', 'recurrence']
-              }
-            }
-          ]
+          tools
         },
         id
       };
@@ -682,6 +321,56 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
         id
       };
     } else if (method === 'tools/call') {
+      const { name, arguments: args } = params;
+      
+      try {
+        const userId = sseConnection.userId;
+        
+        // Get user details for MCP server
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { email: true, name: true }
+        });
+        
+        // Get MCP server for this user
+        const mcpServer = getMcpServerForUser(
+          userId,
+          user?.email || 'unknown@example.com',
+          user?.name || undefined
+        );
+        
+        // The MCP server has all tools registered, but we need to handle the call differently
+        // Since the SDK doesn't expose a direct callTool method, we'll implement the tool execution
+        // using the same pattern as before but with better organization
+        
+        // Import tool handlers
+        const { executeToolForUser } = await import('./tool-executor');
+        const result = await executeToolForUser(name, args, userId);
+        
+        response = {
+          jsonrpc: '2.0',
+          result: {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2)
+              }
+            ]
+          },
+          id
+        };
+      } catch (error) {
+        response = {
+          jsonrpc: '2.0',
+          error: {
+            code: -32603,
+            message: `Tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          },
+          id
+        };
+      }
+    } else if (method === 'DEPRECATED_tools/call') {
+      // Keep old implementation as fallback temporarily
       const { name, arguments: args } = params;
       
       try {
