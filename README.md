@@ -416,6 +416,14 @@ curl -X POST http://localhost:3000/api/memories \
 
 ## 📚 Documentation
 
+### Architecture & Patterns
+- [System Architecture](docs/ARCHITECTURE.md) - Comprehensive system design and patterns
+- [Memory Patterns](docs/patterns/memory-patterns.md) - Working with the memory system
+- [MCP Tool Patterns](docs/patterns/mcp-tool-patterns.md) - Building MCP tools
+- [Query Patterns](docs/patterns/query-patterns.md) - SQL optimization strategies
+- [Metadata Schemas](docs/patterns/metadata-schemas.md) - Common entity structures
+
+### Guides
 - [User Manual](docs/USER_MANUAL.md) - Complete guide for using the system
 - [MCP Server Guide](docs/MCP_SERVER.md) - MCP protocol implementation
 - [Master Implementation Guide](docs/MASTER_PROMPT.md) - Technical implementation details
