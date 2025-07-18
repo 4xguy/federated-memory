@@ -205,6 +205,9 @@ async function main() {
 
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies for OAuth
+    
+    // Serve static files from public directory
+    app.use(express.static('public'));
 
     // Session middleware (must be before passport) - Using Redis-aware version
     app.use(createRedisSessionMiddleware());
