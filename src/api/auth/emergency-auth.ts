@@ -2,7 +2,7 @@
 // Updated: 2025-07-18 - Ensure emergency auth works in production
 // This provides temporary access when normal auth is unavailable
 
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { prisma } from '@/utils/database';
 import { logger } from '@/utils/logger';
 import { randomUUID } from 'crypto';
@@ -137,6 +137,82 @@ router.get('/emergency-token', async (req, res) => {
       error: 'Emergency token generation failed',
       code: 'EMERGENCY_TOKEN_ERROR'
     });
+  }
+});
+
+/**
+ * POST /api/auth/fix-my-token - Fix token for authenticated user
+ */
+router.post('/fix-my-token', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email required' });
+    }
+    
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        token: true,
+      },
+    });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Check if token needs fixing
+    const isValidUUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(user.token);
+    
+    if (!isValidUUID) {
+      // Generate new UUID token
+      const newToken = randomUUID();
+      
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { token: newToken },
+      });
+      
+      logger.warn('Fixed non-UUID token for user', { 
+        userId: user.id, 
+        email: user.email,
+        oldToken: user.token.substring(0, 10) + '...',
+        newToken: newToken 
+      });
+      
+      return res.json({
+        message: 'Token fixed successfully',
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          token: newToken,
+        },
+        oldTokenFormat: user.token,
+        fixed: true,
+      });
+    }
+    
+    // Token is already valid
+    res.json({
+      message: 'Token is already in correct format',
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        token: user.token,
+      },
+      fixed: false,
+    });
+    
+  } catch (error) {
+    logger.error('Fix token error', { error });
+    res.status(500).json({ error: 'Failed to fix token' });
   }
 });
 
