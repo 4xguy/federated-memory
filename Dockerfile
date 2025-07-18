@@ -28,7 +28,8 @@ RUN npm run build
 FROM node:20-alpine
 
 # Install runtime dependencies including PostgreSQL client for migrations and OpenSSL
-RUN apk add --no-cache python3 postgresql-client openssl openssl-dev libc6-compat
+# Also install build tools needed for bcrypt at runtime
+RUN apk add --no-cache python3 make g++ postgresql-client openssl openssl-dev libc6-compat
 
 WORKDIR /app
 
@@ -38,6 +39,9 @@ COPY prisma ./prisma/
 
 # Install only production dependencies
 RUN npm ci --only=production
+
+# Rebuild bcrypt for Alpine Linux production environment
+RUN npm rebuild bcrypt --build-from-source
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
