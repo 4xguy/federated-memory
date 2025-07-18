@@ -1,0 +1,19 @@
+Direct Dashboard Access Link
+============================
+
+Since the JavaScript might not be storing the data properly, you can access the dashboard directly with this URL:
+
+https://federated-memory-production.up.railway.app/dashboard.html?token=usr_1379300_1752223050905&userId=1379300&email=keithrivas@gmail.com
+
+This URL includes all your credentials as parameters, which the dashboard will use to display your information.
+
+Your Credentials:
+- Token: usr_1379300_1752223050905
+- User ID: 1379300
+- Email: keithrivas@gmail.com
+- MCP URL: https://federated-memory-production.up.railway.app/usr_1379300_1752223050905
+
+The dashboard will now:
+1. Read these parameters from the URL
+2. Display them on the page
+3. Store them in localStorage for future visits

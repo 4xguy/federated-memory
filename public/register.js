@@ -74,9 +74,15 @@ async function handleSubmit(event) {
                 localStorage.setItem('userId', data.userId);
                 localStorage.setItem('userEmail', data.user?.email || formData.email);
                 
-                // Redirect to dashboard after 2 seconds
+                // Redirect to dashboard after 2 seconds with parameters as backup
                 setTimeout(() => {
-                    window.location.href = '/dashboard.html';
+                    const email = data.user?.email || formData.email;
+                    const params = new URLSearchParams({
+                        token: currentToken,
+                        userId: data.userId,
+                        email: email
+                    });
+                    window.location.href = '/dashboard.html?' + params.toString();
                 }, 2000);
             }
             
