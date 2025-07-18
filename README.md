@@ -1,17 +1,26 @@
 # Federated Memory System
 
-A distributed memory and knowledge management system with MCP (Model Context Protocol) integration.
+A universal memory architecture with distributed storage, intelligent routing, and full BigMemory compatibility. Built for LLMs with MCP (Model Context Protocol) integration.
 
-<!-- Trigger redeployment: 2025-07-18 -->
+<!-- Latest Update: 2025-07-18 - BigMemory Tool Parity Complete -->
+
+## 🚀 What's New
+
+- **Full BigMemory Compatibility**: All 18 BigMemory tools implemented
+- **Universal Memory Structure**: Everything stored as memories with JSONB metadata
+- **Registry-Based Categories**: Efficient category and type management
+- **Token Authentication**: BigMemory-style token URLs for Claude.ai
+- **Database-Optimized**: PostgreSQL functions for efficient counting
 
 ## Features
 
-- **BigMemory Integration**: Personal, work, and technical memory management
-- **MCP Support**: Model Context Protocol for AI agent integration
-- **Real-time Collaboration**: WebSocket-based real-time updates
-- **OAuth Authentication**: Google and GitHub OAuth support
-- **Email Authentication**: Email/password login system
-- **Emergency Access**: Temporary bypass authentication for immediate access
+- **Universal Memory Architecture**: All data (projects, tasks, categories) stored as memories with metadata
+- **BigMemory Tool Parity**: Complete implementation of all BigMemory MCP tools
+- **Token-Based Authentication**: Simple token URLs for Claude.ai integration (no OAuth required)
+- **Intelligent Routing (CMI)**: Central Memory Index routes queries to appropriate modules
+- **6 Memory Modules**: Technical, Personal, Work, Learning, Communication, Creative
+- **Category System**: Hierarchical categories with registry-based management
+- **Project Management**: Projects and tasks as memories with full metadata support
 
 ## 🌟 Key Features
 
@@ -28,28 +37,43 @@ A distributed memory and knowledge management system with MCP (Model Context Pro
 
 ## 📈 Current Status
 
-✅ **Implemented:**
-- Core infrastructure (CMI, module system, embeddings)
-- All 6 memory modules fully functional
-- REST API with authentication
-- MCP server with Streamable HTTP protocol
-- OAuth 2.0 with PKCE support for Claude.ai
-- OAuth discovery endpoints (.well-known)
-- Database schema and migrations
-- Module statistics and analysis
-- User management system
-- Comprehensive logging
+✅ **Implemented (18/18 BigMemory Tools):**
+1. **searchMemory** - Semantic search across federated modules
+2. **storeMemory** - Store with auto-routing to appropriate module
+3. **listModules** - List all 6 memory modules
+4. **getModuleStats** - Memory counts and statistics per module
+5. **getMemory** - Retrieve specific memory by ID
+6. **updateMemory** - Update memory content/metadata
+7. **removeMemory** - Delete memory
+8. **searchCategories** - List categories from registry
+9. **createCategory** - Create hierarchical categories
+10. **createProject** - Projects as memories with metadata
+11. **listProjects** - Filter and list projects
+12. **getProjectTasks** - Tasks for specific project
+13. **createTask** - Tasks with priority, status, assignee
+14. **updateTaskStatus** - Update task completion
+15. **linkTaskDependency** - Task relationships
+16. **listTasks** - Filter tasks by multiple criteria
+17. **getTaskDependencies** - Task dependency graph
+18. **createRecurringTask** - Recurring task templates
 
-🚧 **In Progress:**
-- Comprehensive test coverage
-- Performance benchmarks
-- MCP client libraries
+✅ **Architecture Features:**
+- Universal memory structure (no separate tables)
+- JSONB metadata for flexible data storage
+- Registry memories for categories and types
+- Token-based authentication (BigMemory style)
+- Database functions for efficient operations
+- Module isolation with shared interfaces
 
-📋 **Planned:**
-- GraphQL API
-- Module plugins system
+🚧 **Known Limitations:**
+- Category memory counts require database migration
+- Some complex queries may need optimization
+
+📋 **Planned Enhancements:**
+- Real-time memory sync across modules
 - Advanced analytics dashboard
-- Backup and restore tools
+- Memory relationship visualization
+- Backup and archive tools
 
 ## 🏗️ Architecture
 
@@ -68,6 +92,36 @@ A distributed memory and knowledge management system with MCP (Model Context Pro
 │   Technical    │ │   Personal   │ │     Work       │
 │    Module      │ │    Module    │ │    Module      │
 └────────────────┘ └──────────────┘ └────────────────┘
+```
+
+## 🔌 Claude.ai Integration (BigMemory Compatible)
+
+### Token-Based Authentication
+Connect to Claude.ai using a simple token URL (no OAuth required):
+
+1. **Login to get your token**:
+   ```bash
+   curl -X POST http://localhost:3000/api/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"email": "your@email.com", "password": "yourpassword"}'
+   ```
+
+2. **Get your MCP URL from the response**:
+   ```
+   https://your-domain.com/{your-token}/sse
+   ```
+
+3. **Add to Claude.ai**:
+   - Go to Claude.ai settings
+   - Add the MCP URL directly
+   - No OAuth configuration needed!
+
+### Emergency Access
+If you need immediate access:
+```bash
+curl -X POST http://localhost:3000/api/auth/emergency-login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "your@email.com"}'
 ```
 
 ## 🚀 Quick Start
@@ -102,6 +156,9 @@ psql federated_memory -c "CREATE EXTENSION IF NOT EXISTS vector;"
 # Run migrations
 npm run db:migrate
 
+# Apply category counting functions (optional but recommended)
+psql $DATABASE_URL < prisma/migrations/20250118_add_category_counting.sql
+
 # Generate Prisma client
 npm run db:generate
 
@@ -124,6 +181,41 @@ docker-compose up -d
 docker-compose exec app npm run db:migrate
 ```
 
+## 🧠 Universal Memory Architecture
+
+### Core Concept
+Everything in federated-memory is stored as a **memory** with **metadata**:
+
+```javascript
+{
+  id: "unique-memory-id",
+  content: "The actual memory content as text",
+  moduleId: "work",  // Which module stores it
+  metadata: {
+    type: "project",  // What kind of memory
+    category: "project_management",  // How it's categorized
+    // Type-specific fields in metadata:
+    name: "API Redesign",
+    status: "active",
+    dueDate: "2025-02-01",
+    team: ["alice", "bob"],
+    // ... any other structured data
+  }
+}
+```
+
+### No Separate Tables
+- ✅ Projects → Memories with `type: "project"`
+- ✅ Tasks → Memories with `type: "task"`
+- ✅ Categories → Registry memory with `type: "list"`
+- ✅ Relationships → Memories with dependency metadata
+
+### Registry Pattern
+Special memories that maintain lists:
+- **Category Registry**: List of all categories with icons/descriptions
+- **Type Registry**: List of all memory types
+- Auto-created on first use with sensible defaults
+
 ## 📦 Memory Modules
 
 ### 1. Technical Module
@@ -133,10 +225,12 @@ docker-compose exec app npm run db:migrate
 ### 2. Personal Module
 - **Purpose**: Life events, health, relationships, goals
 - **Features**: Privacy controls, emotional context analysis
+- **Registry Storage**: Categories and types stored here
 
 ### 3. Work Module
 - **Purpose**: Projects, meetings, decisions, deadlines
 - **Features**: Time-based retrieval, stakeholder tracking
+- **Project Management**: All projects/tasks stored as memories
 
 ### 4. Learning Module
 - **Purpose**: Courses, books, research, insights
