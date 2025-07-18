@@ -214,6 +214,8 @@ async function main() {
             'http://127.0.0.1:6274', // MCP Inspector
             'https://mcp-inspector.vercel.app', // MCP Inspector hosted
             'https://*.vercel.app', // Vercel apps
+            'https://charming-mercy-production.up.railway.app', // Production frontend
+            'https://*.up.railway.app', // Railway apps
           ];
 
           // Allow requests with no origin (like mobile apps or curl)
