@@ -1,3 +1,7 @@
+// Email authentication routes (temporary implementation)
+// Updated: 2025-07-18 - Ensure proper authentication endpoint configuration
+// This file handles email/password authentication for login and registration
+
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '@/utils/database';

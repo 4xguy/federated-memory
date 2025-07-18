@@ -1,3 +1,7 @@
+// Emergency authentication routes for bypass authentication
+// Updated: 2025-07-18 - Ensure emergency auth works in production
+// This provides temporary access when normal auth is unavailable
+
 import { Router } from 'express';
 import { prisma } from '@/utils/database';
 import { logger } from '@/utils/logger';
