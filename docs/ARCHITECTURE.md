@@ -142,7 +142,69 @@ For managing lists (categories, types, etc.), use registry memories:
 }
 ```
 
-### 3. MCP Tool Implementation Pattern
+### 3. MCP Tool Registration Architecture
+
+**Dynamic Tool Registration System**
+
+The system uses a centralized, dynamic tool registration pattern instead of hardcoded tool lists. This ensures consistency across authentication methods and enables automatic tool updates.
+
+#### Architecture Components:
+
+1. **Central Tool Registry** (`tools-list.ts`)
+   - Single source of truth for all 36 tools (18 BigMemory + 18 Church)
+   - Defines tool schemas and metadata
+   - Shared between OAuth and token authentication
+
+2. **Tool Execution Engine** (`tool-executor.ts`)
+   - Centralized execution logic for all tools
+   - Service instance caching and initialization
+   - Consistent error handling across tools
+
+3. **Dynamic Server Creation** (`authenticated-server.ts`)
+   - Creates MCP servers with registered tools per user
+   - Caches server instances for performance
+   - Supports both OAuth and token authentication
+
+4. **Token Authentication Integration** (`noauth-controller.ts`)
+   - Uses dynamic tool registration instead of hardcoded lists
+   - Gets tools from the MCP server registry
+   - Maintains consistency with OAuth authentication
+
+```typescript
+// Central tool registration pattern
+const mcpServers = new Map<string, McpServer>();
+
+function getMcpServerForUser(userId: string, email: string, name?: string) {
+  const key = userId;
+  
+  if (!mcpServers.has(key)) {
+    const userContext = { userId, email, name };
+    const server = createAuthenticatedMcpServer(userContext);
+    mcpServers.set(key, server);
+  }
+  
+  return mcpServers.get(key);
+}
+
+// Tools list endpoint
+app.get('/api/v1/mcp/tools/list', async (req, res) => {
+  const { user } = req as any;
+  const mcpServer = getMcpServerForUser(user.id, user.email, user.name);
+  const tools = mcpServer.listTools();
+  res.json({ tools });
+});
+```
+
+#### Benefits of Dynamic Registration:
+
+- **Single Source of Truth**: All tools defined once in `tools-list.ts`
+- **Automatic Updates**: New tools automatically available across all auth methods
+- **Consistency**: OAuth and token auth use identical tool sets
+- **Maintainability**: No need to update multiple hardcoded lists
+- **Performance**: Server instances cached per user
+- **Scalability**: Easy to add new modules and tools
+
+#### MCP Tool Implementation Pattern
 
 All tools follow this structure in `authenticated-server.ts`:
 
@@ -426,6 +488,9 @@ See [mcp-tool-patterns.md](./patterns/mcp-tool-patterns.md) for:
 6. **Handle errors gracefully** - Provide meaningful error messages
 7. **Test with large datasets** - Ensure performance at scale
 8. **Document metadata schemas** - Keep track of what fields each type uses
+9. **Use dynamic tool registration** - Avoid hardcoding tool lists
+10. **Cache MCP server instances** - Improve performance for repeated calls
+11. **Centralize tool execution** - Use tool-executor.ts for consistency
 
 ## Migration Guide
 
@@ -458,6 +523,27 @@ const email = person.email || person.contact?.emails?.[0]?.address || '';
 3. **Input Validation**: Use Zod schemas
 4. **Sensitive Data**: Consider encryption for PII
 5. **Audit Trails**: Log all modifications
+
+## Known Issues & Limitations
+
+### Current Issues
+
+See [KNOWN_ISSUES.md](./KNOWN_ISSUES.md) for detailed tracking of current issues.
+
+**Critical Issues:**
+- `cmiService.updateIndex` function missing - affects all memory update operations
+- `searchPeople` semantic search failures
+- SQL type casting errors in ministry queries
+
+**Impact:** Some Church module tools are non-functional pending backend fixes.
+
+### Limitations
+
+1. **Memory Updates**: Update operations require CMI service completion
+2. **Performance**: Large datasets need optimization and indexing
+3. **Real-time**: No live updates between users yet
+4. **Validation**: Limited schema validation on metadata updates
+5. **Backup**: No automated backup system for memories
 
 ## Future Extensibility
 

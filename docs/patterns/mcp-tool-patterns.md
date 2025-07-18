@@ -3,13 +3,220 @@
 This document provides templates and patterns for implementing MCP (Model Context Protocol) tools in the Federated Memory System.
 
 ## Table of Contents
-1. [Tool Registration Pattern](#tool-registration-pattern)
-2. [Authentication Patterns](#authentication-patterns)
-3. [CRUD Tool Templates](#crud-tool-templates)
-4. [Search Tool Patterns](#search-tool-patterns)
-5. [Bulk Operation Tools](#bulk-operation-tools)
-6. [Export/Import Tools](#exportimport-tools)
-7. [Error Handling Patterns](#error-handling-patterns)
+1. [Dynamic Tool Registration Architecture](#dynamic-tool-registration-architecture)
+2. [Tool Registration Pattern](#tool-registration-pattern)
+3. [Authentication Patterns](#authentication-patterns)
+4. [CRUD Tool Templates](#crud-tool-templates)
+5. [Search Tool Patterns](#search-tool-patterns)
+6. [Bulk Operation Tools](#bulk-operation-tools)
+7. [Export/Import Tools](#exportimport-tools)
+8. [Error Handling Patterns](#error-handling-patterns)
+
+## Dynamic Tool Registration Architecture
+
+### Overview
+
+The system uses a dynamic tool registration pattern instead of hardcoded tool lists. This architecture ensures consistency across authentication methods and enables automatic tool updates.
+
+### Key Components
+
+#### 1. Central Tool Registry (`/src/api/mcp/tools-list.ts`)
+
+Single source of truth for all tools:
+
+```typescript
+export function getToolsList() {
+  return [
+    // Core Memory Tools (1-7)
+    {
+      name: 'searchMemory',
+      title: 'Search Memories',
+      description: 'Search through stored memories using natural language or filters',
+      inputSchema: {
+        query: { type: 'string', description: 'Search query' },
+        limit: { type: 'number', description: 'Max results', optional: true },
+        modules: { type: 'array', description: 'Specific modules to search', optional: true }
+      }
+    },
+    // ... all 36 tools (18 BigMemory + 18 Church)
+  ];
+}
+```
+
+#### 2. Tool Execution Engine (`/src/api/mcp/tool-executor.ts`)
+
+Centralized execution with service caching:
+
+```typescript
+// Service instances (cached)
+let cmiService: any = null;
+let projectService: ProjectManagementService | null = null;
+let churchService: ChurchService | null = null;
+
+function getServices() {
+  if (!cmiService) {
+    cmiService = getCMIService();
+  }
+  
+  if (!projectService) {
+    const embeddingService = getEmbeddingService();
+    projectService = new ProjectManagementService(embeddingService, cmiService);
+  }
+  
+  // ... initialize other services
+  
+  return { cmiService, projectService, churchService };
+}
+
+export async function executeToolForUser(
+  toolName: string, 
+  args: any, 
+  userId: string
+): Promise<any> {
+  const { cmiService, projectService, churchService } = getServices();
+  
+  switch (toolName) {
+    case 'searchMemory':
+      return await cmiService.search(userId, args.query, {
+        limit: args.limit || 10,
+        modules: args.modules
+      });
+      
+    case 'createPerson':
+      return await churchService!.createPerson(userId, args);
+      
+    // ... all tool cases
+    
+    default:
+      throw new Error(`Unknown tool: ${toolName}`);
+  }
+}
+```
+
+#### 3. MCP Server Creation (`/src/api/mcp/authenticated-server.ts`)
+
+Dynamic server creation with tool registration:
+
+```typescript
+export function createAuthenticatedMcpServer(userContext?: UserContext) {
+  const server = new McpServer(
+    { name: 'federated-memory', version: '1.0.0' },
+    { capabilities: { tools: {}, resources: {} } }
+  );
+  
+  // Register all tools dynamically
+  const embeddingService = getEmbeddingService();
+  const cmiService = getCMIService();
+  
+  // BigMemory tools
+  registerMemoryTools(server, cmiService, userContext);
+  registerCategoryTools(server, cmiService, userContext);
+  registerProjectTools(server, projectService, userContext);
+  
+  // Church module tools
+  const churchService = new ChurchService(embeddingService, cmiService);
+  registerChurchTools(server, churchService, userContext);
+  
+  return server;
+}
+```
+
+#### 4. Token Authentication Integration (`/src/api/mcp/noauth-controller.ts`)
+
+Dynamic tool access for Claude.ai:
+
+```typescript
+// Helper to get or create MCP server for user
+const mcpServers = new Map<string, McpServer>();
+
+function getMcpServerForUser(userId: string, email: string, name?: string) {
+  const key = userId;
+  
+  if (!mcpServers.has(key)) {
+    const userContext = { userId, email, name };
+    const server = createAuthenticatedMcpServer(userContext);
+    mcpServers.set(key, server);
+  }
+  
+  return mcpServers.get(key);
+}
+
+// Tools list endpoint - uses dynamic registration
+app.get('/api/v1/mcp/tools/list', async (req, res) => {
+  try {
+    const { user } = req as any;
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    // Get MCP server with all registered tools
+    const mcpServer = getMcpServerForUser(user.id, user.email, user.name);
+    const tools = mcpServer.listTools();
+    
+    res.json({ tools });
+  } catch (error) {
+    logger.error('Error listing tools', { error });
+    res.status(500).json({ error: 'Failed to list tools' });
+  }
+});
+
+// Tool execution endpoint - uses centralized executor
+app.post('/api/v1/mcp/tools/call', async (req, res) => {
+  try {
+    const { user } = req as any;
+    const { name, arguments: args } = req.body;
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    // Execute tool using centralized executor
+    const result = await executeToolForUser(name, args, user.id);
+    
+    res.json({ result });
+  } catch (error) {
+    logger.error('Tool execution error', { error, tool: req.body.name });
+    res.status(500).json({ error: error.message });
+  }
+});
+```
+
+### Benefits of Dynamic Registration
+
+1. **Single Source of Truth**: All tools defined once in `tools-list.ts`
+2. **Automatic Updates**: New tools automatically available across all auth methods
+3. **Consistency**: OAuth and token auth use identical tool sets
+4. **Maintainability**: No need to update multiple hardcoded lists
+5. **Performance**: Server instances cached per user
+6. **Scalability**: Easy to add new modules and tools
+7. **Clean Architecture**: Separation of concerns between registration and execution
+
+### Migration from Hardcoded Tools
+
+Previous pattern (deprecated):
+```typescript
+// ❌ Old pattern - hardcoded tools in noauth-controller.ts
+const tools = [
+  { name: 'searchMemory', /* ... hardcoded schema */ },
+  { name: 'createPerson', /* ... hardcoded schema */ },
+  // ... 36 hardcoded tool definitions
+];
+```
+
+New pattern (current):
+```typescript
+// ✅ New pattern - dynamic registration
+const mcpServer = getMcpServerForUser(userId, email, name);
+const tools = mcpServer.listTools(); // Auto-populated from registered tools
+```
+
+### Adding New Tools
+
+1. **Add to tools-list.ts**: Define tool schema
+2. **Add to tool-executor.ts**: Implement execution logic
+3. **Register in authenticated-server.ts**: Add to appropriate registration function
+4. **Tools automatically available**: Both OAuth and token auth get the new tool
 
 ## Tool Registration Pattern
 
@@ -1026,13 +1233,46 @@ async (params) => {
 
 ## Best Practices
 
-1. **Always validate input** using Zod schemas
-2. **Check authentication** before any user-specific operations
-3. **Return structured JSON** for easy parsing by AI
-4. **Include success indicators** in responses
-5. **Log errors with context** for debugging
-6. **Use descriptive error messages** that help users
-7. **Implement pagination** for list operations
-8. **Support dry-run mode** for dangerous operations
-9. **Include timestamps** in responses
-10. **Follow consistent naming** conventions
+### Tool Registration
+1. **Use dynamic registration** - Never hardcode tool lists
+2. **Single source of truth** - Define tools once in `tools-list.ts`
+3. **Centralize execution** - Use `tool-executor.ts` for all tool logic
+4. **Cache service instances** - Avoid recreating services on each call
+5. **Register by module** - Group related tools in registration functions
+
+### Tool Implementation
+6. **Always validate input** using Zod schemas
+7. **Check authentication** before any user-specific operations
+8. **Return structured JSON** for easy parsing by AI
+9. **Include success indicators** in responses
+10. **Log errors with context** for debugging
+11. **Use descriptive error messages** that help users
+12. **Implement pagination** for list operations
+13. **Support dry-run mode** for dangerous operations
+14. **Include timestamps** in responses
+15. **Follow consistent naming** conventions
+
+### Architecture
+16. **Maintain auth consistency** - OAuth and token auth should use same tools
+17. **Cache MCP servers** - One server instance per user
+18. **Handle service initialization** - Gracefully handle service startup errors
+19. **Plan for scalability** - Design for easy addition of new modules
+20. **Document tool dependencies** - Track which services each tool requires
+
+### Testing & Quality Assurance
+21. **Test all CRUD operations** - Verify create, read, update, delete functionality
+22. **Test with real data** - Use realistic test scenarios and data
+23. **Validate error handling** - Ensure graceful failure modes
+24. **Check backend dependencies** - Verify required services are implemented
+25. **Document known issues** - Track and prioritize bug fixes
+
+## Known Issues
+
+See [../KNOWN_ISSUES.md](../KNOWN_ISSUES.md) for current tool issues and their resolution status.
+
+**Critical Issues Affecting Tools:**
+- `cmiService.updateIndex` function missing - affects update operations
+- Semantic search failures in some modules  
+- SQL type casting errors in complex queries
+
+**Recommendation:** Test all tools thoroughly after implementing new modules and document any issues for systematic resolution.

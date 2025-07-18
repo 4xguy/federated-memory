@@ -8,10 +8,33 @@ Federated Memory System - A distributed, modular memory architecture for LLMs wi
 
 ## Key Architecture Concepts
 
+### Universal Memory Cell (UMC) Architecture - CRITICAL
+
+**DO NOT USE SEPARATE DATABASE TABLES** - The system uses a Universal Memory Cell pattern:
+
+- **ALL entities** (persons, projects, tasks, etc.) are stored as memories in module tables
+- **Two universal fields** enable hybrid database functionality:
+  1. **EMBEDDING** (vector): 1536-dimensional vector for semantic search
+  2. **METADATA** (JSONB): Structured data for SQL queries and relationships
+
+This creates a **semantic/graph/SQL hybrid database** where:
+- **Semantic**: Vector similarity search via embeddings  
+- **Graph**: Relationships via metadata references and CMI indexing
+- **SQL**: Structured queries via JSONB metadata fields
+
+**Examples**:
+- Person entities: `metadata.type='person'` in work_memories table
+- Custom fields: Stored in `metadata.customFields` JSONB
+- Relationships: Referenced via IDs in metadata, indexed by CMI
+
+**Benefits**: No schema migrations, semantic search across all types, flexible metadata
+
+### Other Core Concepts
+
 1. **Central Memory Index (CMI)**: Routes queries to appropriate modules using 512-dimensional embeddings
 2. **Memory Modules**: Domain-specific storage with 1536-dimensional embeddings for semantic search
 3. **Dual Embedding Strategy**: Compressed embeddings for routing, full embeddings for search
-4. **Module Isolation**: Each module has its own database table and can evolve independently
+4. **Module Isolation**: Each module uses existing memory tables, no separate schemas needed
 
 ## Development Commands
 

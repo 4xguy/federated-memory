@@ -273,7 +273,7 @@ export class ChurchModule extends BaseModule {
 
       const query = `
         SELECT id, "userId", content, metadata, "accessCount", "lastAccessed", "createdAt", "updatedAt"
-        FROM ${this.config.tableName}
+        FROM work_memories
         WHERE ${whereConditions.join(' AND ')}
         ORDER BY "updatedAt" DESC
       `;
@@ -340,7 +340,7 @@ export class ChurchModule extends BaseModule {
           id, "userId", content, metadata, embedding,
           "accessCount", "lastAccessed", "createdAt", "updatedAt",
           1 - (embedding <=> $2::vector) as similarity
-        FROM ${this.config.tableName}
+        FROM work_memories
         WHERE "userId" = $1
           AND embedding IS NOT NULL
         ORDER BY embedding <=> $2::vector
@@ -455,7 +455,7 @@ export class ChurchModule extends BaseModule {
 
     const typeBreakdown = await this.prisma.$queryRaw<Array<{type: string, count: bigint}>>`
       SELECT metadata->>'type' as type, COUNT(*) as count
-      FROM ${Prisma.raw(this.config.tableName)}
+      FROM work_memories
       WHERE "userId" = ${userId}
       GROUP BY metadata->>'type'
     `;

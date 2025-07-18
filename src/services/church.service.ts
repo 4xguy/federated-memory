@@ -141,7 +141,10 @@ export class ChurchService {
     });
 
     // Update CMI
-    await this.cmiService.updateIndex(userId, 'church', memory.id, content, updatedMetadata);
+    await this.cmiService.update(userId, memory.id, {
+      content: content,
+      metadata: updatedMetadata
+    });
 
     // Send real-time notification
     await this.realtimeService.notifyMemoryChange(userId, 'updated', updatedPerson);
@@ -601,15 +604,20 @@ export class ChurchService {
   }
 
   async listMinistryMembers(userId: string, ministryName: string): Promise<Person[]> {
-    // Find all active ministry roles
-    const roles = await this.module.searchByMetadata(userId, {
+    // Get all ministry roles for this ministry
+    const allRoles = await this.module.searchByMetadata(userId, {
       type: 'ministry_role',
-      ministryName,
-      isActive: true
+      ministryName
+    });
+
+    // Filter for active roles (handling both boolean and string values)
+    const activeRoles = allRoles.filter(role => {
+      const isActive = role.metadata.isActive;
+      return isActive === true || isActive === 'true';
     });
 
     // Get unique person IDs
-    const personIds = [...new Set(roles.map(r => r.metadata.personId as string))];
+    const personIds = [...new Set(activeRoles.map(r => r.metadata.personId as string))];
     
     // Fetch all people
     const people = await Promise.all(
