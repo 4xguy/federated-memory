@@ -51,6 +51,7 @@ export interface ModuleRouting {
 
 export class CMIService {
   private logger: Logger;
+  private prisma: typeof prisma;
   private embeddingService: ReturnType<typeof getEmbeddingService>;
   private moduleRegistry: ModuleRegistry;
   private redis: Redis | null;
@@ -58,6 +59,7 @@ export class CMIService {
 
   constructor() {
     this.logger = Logger.getInstance();
+    this.prisma = prisma;
     this.embeddingService = getEmbeddingService();
     this.moduleRegistry = ModuleRegistry.getInstance();
     this.redis = Redis.getInstance();
@@ -204,7 +206,7 @@ export class CMIService {
       `;
 
       // Convert to routing format
-      const routings: ModuleRouting[] = results.map(r => ({
+      const routings: ModuleRouting[] = results.map((r: any) => ({
         moduleId: r.moduleId,
         confidence: r.avg_similarity,
         keywords: r.matched_keywords || [],
@@ -260,7 +262,7 @@ export class CMIService {
 
       // Update access counts
       if (results.length > 0) {
-        const memoryIds = results.map(r => ({
+        const memoryIds = results.map((r: any) => ({
           moduleId: r.moduleId,
           remoteMemoryId: r.remoteMemoryId,
         }));
@@ -430,7 +432,7 @@ export class CMIService {
         _sum: { accessCount: true },
       });
 
-      return stats.map(s => ({
+      return stats.map((s: any) => ({
         moduleId: s.moduleId,
         memoryCount: s._count.id,
         avgImportance: s._avg.importanceScore || 0,

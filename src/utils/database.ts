@@ -6,23 +6,22 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+// Configure connection pool via URL parameters
+const databaseUrl = process.env.DATABASE_URL || '';
+const pooledUrl = databaseUrl.includes('?') 
+  ? `${databaseUrl}&connection_limit=20&pool_timeout=30`
+  : `${databaseUrl}?connection_limit=20&pool_timeout=30`;
+
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     datasources: {
       db: {
-        url: process.env.DATABASE_URL,
+        url: pooledUrl,
       },
     },
-    // Limit connection pool to prevent "too many clients" error
-    // Railway's PostgreSQL typically allows 100 connections total
-    // We'll use 20 to leave room for other services
-    pool: {
-      min: 2,
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
-    },
+    // Log settings
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
 if (process.env.NODE_ENV !== 'production') {
