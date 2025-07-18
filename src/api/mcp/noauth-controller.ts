@@ -310,6 +310,351 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
                   }
                 }
               }
+            },
+            {
+              name: 'getMemory',
+              description: 'Retrieve a specific memory by ID',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  memoryId: {
+                    type: 'string',
+                    description: 'The ID of the memory to retrieve'
+                  }
+                },
+                required: ['memoryId']
+              }
+            },
+            {
+              name: 'updateMemory',
+              description: 'Update an existing memory',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  memoryId: {
+                    type: 'string',
+                    description: 'The ID of the memory to update'
+                  },
+                  content: {
+                    type: 'string',
+                    description: 'New content for the memory (optional)'
+                  },
+                  metadata: {
+                    type: 'object',
+                    description: 'New metadata for the memory (optional)'
+                  }
+                },
+                required: ['memoryId']
+              }
+            },
+            {
+              name: 'removeMemory',
+              description: 'Remove a memory',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  memoryId: {
+                    type: 'string',
+                    description: 'The ID of the memory to remove'
+                  }
+                },
+                required: ['memoryId']
+              }
+            },
+            {
+              name: 'searchCategories',
+              description: 'Search or list available memory categories',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  query: {
+                    type: 'string',
+                    description: 'Search query (optional, returns all if empty)'
+                  }
+                }
+              }
+            },
+            {
+              name: 'createCategory',
+              description: 'Create a new memory category',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  name: {
+                    type: 'string',
+                    description: 'Name of the category'
+                  },
+                  description: {
+                    type: 'string',
+                    description: 'Description of the category (optional)'
+                  },
+                  parentCategory: {
+                    type: 'string',
+                    description: 'Parent category name (optional)'
+                  },
+                  icon: {
+                    type: 'string',
+                    description: 'Emoji icon for the category (optional)'
+                  }
+                },
+                required: ['name']
+              }
+            },
+            {
+              name: 'createProject',
+              description: 'Create a new project',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  name: {
+                    type: 'string',
+                    description: 'Project name'
+                  },
+                  description: {
+                    type: 'string',
+                    description: 'Project description (optional)'
+                  },
+                  status: {
+                    type: 'string',
+                    enum: ['planning', 'active', 'on_hold', 'completed', 'cancelled'],
+                    description: 'Project status (default: planning)'
+                  },
+                  dueDate: {
+                    type: 'string',
+                    format: 'date-time',
+                    description: 'Project due date (optional)'
+                  },
+                  owner: {
+                    type: 'string',
+                    description: 'Project owner (optional)'
+                  },
+                  team: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Team members (optional)'
+                  }
+                },
+                required: ['name']
+              }
+            },
+            {
+              name: 'listProjects',
+              description: 'List all projects with optional filters',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  status: {
+                    type: 'string',
+                    description: 'Filter by project status'
+                  },
+                  owner: {
+                    type: 'string',
+                    description: 'Filter by project owner'
+                  },
+                  includeCompleted: {
+                    type: 'boolean',
+                    description: 'Include completed projects (default: false)'
+                  }
+                }
+              }
+            },
+            {
+              name: 'getProjectTasks',
+              description: 'Get all tasks for a specific project',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  projectId: {
+                    type: 'string',
+                    description: 'ID of the project'
+                  }
+                },
+                required: ['projectId']
+              }
+            },
+            {
+              name: 'createTask',
+              description: 'Create a new task',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  title: {
+                    type: 'string',
+                    description: 'Task title'
+                  },
+                  description: {
+                    type: 'string',
+                    description: 'Task description (optional)'
+                  },
+                  projectId: {
+                    type: 'string',
+                    description: 'ID of the project this task belongs to (optional)'
+                  },
+                  assignee: {
+                    type: 'string',
+                    description: 'Person assigned to this task (optional)'
+                  },
+                  priority: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high', 'urgent'],
+                    description: 'Task priority (default: medium)'
+                  },
+                  status: {
+                    type: 'string',
+                    enum: ['todo', 'in_progress', 'in_review', 'blocked', 'done', 'cancelled'],
+                    description: 'Task status (default: todo)'
+                  },
+                  dueDate: {
+                    type: 'string',
+                    format: 'date-time',
+                    description: 'Task due date (optional)'
+                  }
+                },
+                required: ['title']
+              }
+            },
+            {
+              name: 'updateTaskStatus',
+              description: 'Update the status of an existing task',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  taskId: {
+                    type: 'string',
+                    description: 'ID of the task to update'
+                  },
+                  status: {
+                    type: 'string',
+                    enum: ['todo', 'in_progress', 'in_review', 'blocked', 'done', 'cancelled'],
+                    description: 'New task status'
+                  }
+                },
+                required: ['taskId', 'status']
+              }
+            },
+            {
+              name: 'linkTaskDependency',
+              description: 'Create a dependency between two tasks',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  taskId: {
+                    type: 'string',
+                    description: 'ID of the dependent task'
+                  },
+                  dependsOnTaskId: {
+                    type: 'string',
+                    description: 'ID of the task it depends on'
+                  },
+                  dependencyType: {
+                    type: 'string',
+                    enum: ['blocks', 'depends_on', 'related'],
+                    description: 'Type of dependency (default: depends_on)'
+                  }
+                },
+                required: ['taskId', 'dependsOnTaskId']
+              }
+            },
+            {
+              name: 'listTasks',
+              description: 'List all tasks with optional filters',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  projectId: {
+                    type: 'string',
+                    description: 'Filter by project ID'
+                  },
+                  assignee: {
+                    type: 'string',
+                    description: 'Filter by assignee'
+                  },
+                  status: {
+                    type: 'string',
+                    description: 'Filter by task status'
+                  },
+                  priority: {
+                    type: 'string',
+                    description: 'Filter by priority'
+                  },
+                  includeCompleted: {
+                    type: 'boolean',
+                    description: 'Include completed tasks (default: false)'
+                  }
+                }
+              }
+            },
+            {
+              name: 'getTaskDependencies',
+              description: 'Get all dependencies for a specific task',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  taskId: {
+                    type: 'string',
+                    description: 'ID of the task'
+                  }
+                },
+                required: ['taskId']
+              }
+            },
+            {
+              name: 'createRecurringTask',
+              description: 'Create a recurring task that generates instances based on a schedule',
+              inputSchema: {
+                type: 'object',
+                properties: {
+                  title: {
+                    type: 'string',
+                    description: 'Task title (will be used as template)'
+                  },
+                  description: {
+                    type: 'string',
+                    description: 'Task description template'
+                  },
+                  recurrence: {
+                    type: 'object',
+                    properties: {
+                      pattern: {
+                        type: 'string',
+                        enum: ['daily', 'weekly', 'monthly', 'custom'],
+                        description: 'Recurrence pattern'
+                      },
+                      interval: {
+                        type: 'number',
+                        description: 'Interval between occurrences'
+                      },
+                      daysOfWeek: {
+                        type: 'array',
+                        items: {
+                          type: 'string',
+                          enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+                        },
+                        description: 'For weekly pattern, which days'
+                      },
+                      dayOfMonth: {
+                        type: 'number',
+                        description: 'For monthly pattern, which day (1-31)'
+                      },
+                      endDate: {
+                        type: 'string',
+                        format: 'date-time',
+                        description: 'When to stop creating tasks'
+                      }
+                    },
+                    required: ['pattern']
+                  },
+                  assignee: {
+                    type: 'string',
+                    description: 'Default assignee for generated tasks'
+                  },
+                  projectId: {
+                    type: 'string',
+                    description: 'ID of the project (optional)'
+                  }
+                },
+                required: ['title', 'recurrence']
+              }
             }
           ]
         },
@@ -406,6 +751,608 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
               memoryCount: s._count
             })),
             total: stats.reduce((sum, s) => sum + s._count, 0)
+          };
+        } else if (name === 'getMemory') {
+          // Get a specific memory
+          const cmiService = getInitializedCMIService();
+          const memory = await cmiService.get(userId, args.memoryId);
+          
+          if (!memory) {
+            response = {
+              jsonrpc: '2.0',
+              error: {
+                code: -32602,
+                message: 'Memory not found'
+              },
+              id
+            };
+          } else {
+            result = {
+              memory: memory,
+              message: 'Memory retrieved successfully'
+            };
+          }
+        } else if (name === 'updateMemory') {
+          // Update an existing memory
+          const cmiService = getInitializedCMIService();
+          
+          // First get the memory to find its module
+          const existingMemory = await cmiService.get(userId, args.memoryId);
+          if (!existingMemory) {
+            response = {
+              jsonrpc: '2.0',
+              error: {
+                code: -32602,
+                message: 'Memory not found'
+              },
+              id
+            };
+          } else {
+            // Update through the module
+            const moduleRegistry = ModuleRegistry.getInstance();
+            const module = await moduleRegistry.getModule(existingMemory.moduleId);
+            if (module) {
+              const updates: any = {};
+              if (args.content !== undefined) updates.content = args.content;
+              if (args.metadata !== undefined) updates.metadata = args.metadata;
+              
+              const success = await module.update(userId, args.memoryId, updates);
+              result = {
+                success: success,
+                message: success ? 'Memory updated successfully' : 'Failed to update memory',
+                memoryId: args.memoryId
+              };
+            } else {
+              response = {
+                jsonrpc: '2.0',
+                error: {
+                  code: -32603,
+                  message: 'Module not found'
+                },
+                id
+              };
+            }
+          }
+        } else if (name === 'removeMemory') {
+          // Remove a memory
+          const cmiService = getInitializedCMIService();
+          
+          // First get the memory to find its module
+          const existingMemory = await cmiService.get(userId, args.memoryId);
+          if (!existingMemory) {
+            response = {
+              jsonrpc: '2.0',
+              error: {
+                code: -32602,
+                message: 'Memory not found'
+              },
+              id
+            };
+          } else {
+            // Delete through the module
+            const moduleRegistry = ModuleRegistry.getInstance();
+            const module = await moduleRegistry.getModule(existingMemory.moduleId);
+            if (module) {
+              const success = await module.delete(userId, args.memoryId);
+              result = {
+                success: success,
+                message: success ? 'Memory removed successfully' : 'Failed to remove memory',
+                memoryId: args.memoryId
+              };
+            } else {
+              response = {
+                jsonrpc: '2.0',
+                error: {
+                  code: -32603,
+                  message: 'Module not found'
+                },
+                id
+              };
+            }
+          }
+        } else if (name === 'searchCategories') {
+          // Search or list categories
+          const categories = await prisma.category.findMany({
+            where: {
+              userId: userId,
+              ...(args.query ? {
+                OR: [
+                  { name: { contains: args.query, mode: 'insensitive' } },
+                  { description: { contains: args.query, mode: 'insensitive' } }
+                ]
+              } : {})
+            },
+            include: {
+              _count: {
+                select: { memories: true }
+              }
+            }
+          });
+          
+          result = {
+            categories: categories.map(cat => ({
+              id: cat.id,
+              name: cat.name,
+              description: cat.description,
+              icon: cat.icon,
+              parentId: cat.parentId,
+              memoryCount: cat._count.memories
+            })),
+            count: categories.length
+          };
+        } else if (name === 'createCategory') {
+          // Create a new category
+          const category = await prisma.category.create({
+            data: {
+              name: args.name,
+              description: args.description,
+              icon: args.icon,
+              userId: userId,
+              parentId: args.parentCategory ? 
+                (await prisma.category.findFirst({
+                  where: { userId, name: args.parentCategory }
+                }))?.id : undefined
+            }
+          });
+          
+          result = {
+            success: true,
+            message: 'Category created successfully',
+            category: {
+              id: category.id,
+              name: category.name,
+              description: category.description,
+              icon: category.icon,
+              parentId: category.parentId
+            }
+          };
+        } else if (name === 'createProject') {
+          // Create a new project as a memory with project metadata
+          const cmiService = getInitializedCMIService();
+          const projectId = randomUUID();
+          
+          const projectData = {
+            id: projectId,
+            name: args.name,
+            description: args.description,
+            status: args.status || 'planning',
+            dueDate: args.dueDate,
+            startDate: args.startDate,
+            owner: args.owner,
+            team: args.team || [],
+            ministry: args.ministry,
+            type: 'project'
+          };
+          
+          const content = `Project: ${args.name}\n${args.description || ''}`;
+          const memoryId = await cmiService.store(
+            userId,
+            content,
+            {
+              ...projectData,
+              category: 'project_management'
+            },
+            'work' // Store in work module
+          );
+          
+          result = {
+            success: true,
+            message: 'Project created successfully',
+            project: projectData,
+            memoryId: memoryId
+          };
+        } else if (name === 'listProjects') {
+          // List projects by searching memories with project metadata
+          const cmiService = getInitializedCMIService();
+          
+          // Search for all project memories
+          const projectMemories = await cmiService.search(
+            userId,
+            'type:project',
+            {
+              moduleId: 'work',
+              limit: 100
+            }
+          );
+          
+          // Filter based on arguments
+          let filteredProjects = projectMemories.filter((memory: any) => {
+            const metadata = memory.metadata || {};
+            
+            // Check if it's a project type
+            if (metadata.type !== 'project') return false;
+            
+            // Apply filters
+            if (args.status && metadata.status !== args.status) return false;
+            if (args.owner && metadata.owner !== args.owner) return false;
+            if (args.ministry && metadata.ministry !== args.ministry) return false;
+            if (args.includeCompleted === false) {
+              if (metadata.status === 'completed' || metadata.status === 'cancelled') {
+                return false;
+              }
+            }
+            
+            return true;
+          });
+          
+          // Count tasks for each project
+          const projectsWithCounts = await Promise.all(
+            filteredProjects.map(async (memory: any) => {
+              const taskCount = await cmiService.search(
+                userId,
+                `projectId:${memory.metadata.id}`,
+                { moduleId: 'work', limit: 1000 }
+              ).then((tasks: any[]) => tasks.filter((t: any) => t.metadata?.type === 'task').length);
+              
+              return {
+                id: memory.metadata.id || memory.id,
+                name: memory.metadata.name,
+                description: memory.metadata.description,
+                status: memory.metadata.status,
+                dueDate: memory.metadata.dueDate,
+                owner: memory.metadata.owner,
+                team: memory.metadata.team || [],
+                ministry: memory.metadata.ministry,
+                taskCount: taskCount,
+                createdAt: memory.createdAt,
+                updatedAt: memory.updatedAt
+              };
+            })
+          );
+          
+          result = {
+            projects: projectsWithCounts,
+            count: projectsWithCounts.length
+          };
+        } else if (name === 'getProjectTasks') {
+          // Get tasks for a project by searching memories
+          const cmiService = getInitializedCMIService();
+          
+          const taskMemories = await cmiService.search(
+            userId,
+            `projectId:${args.projectId} type:task`,
+            {
+              moduleId: 'work',
+              limit: 1000
+            }
+          );
+          
+          const tasks = taskMemories
+            .filter((memory: any) => memory.metadata?.type === 'task' && memory.metadata?.projectId === args.projectId)
+            .map((memory: any) => ({
+              id: memory.metadata.id || memory.id,
+              title: memory.metadata.title,
+              description: memory.metadata.description,
+              projectId: memory.metadata.projectId,
+              assignee: memory.metadata.assignee,
+              priority: memory.metadata.priority || 'medium',
+              status: memory.metadata.status || 'todo',
+              dueDate: memory.metadata.dueDate,
+              estimatedHours: memory.metadata.estimatedHours,
+              completedAt: memory.metadata.completedAt,
+              ministry: memory.metadata.ministry,
+              createdAt: memory.createdAt,
+              updatedAt: memory.updatedAt
+            }));
+          
+          result = {
+            tasks: tasks,
+            count: tasks.length,
+            projectId: args.projectId
+          };
+        } else if (name === 'createTask') {
+          // Create a new task as a memory with task metadata
+          const cmiService = getInitializedCMIService();
+          const taskId = randomUUID();
+          
+          const taskData = {
+            id: taskId,
+            title: args.title,
+            description: args.description,
+            projectId: args.projectId,
+            assignee: args.assignee,
+            priority: args.priority || 'medium',
+            status: args.status || 'todo',
+            dueDate: args.dueDate,
+            estimatedHours: args.estimatedHours,
+            ministry: args.ministry,
+            type: 'task'
+          };
+          
+          const content = `Task: ${args.title}\n${args.description || ''}\nProject: ${args.projectId || 'None'}`;
+          const memoryId = await cmiService.store(
+            userId,
+            content,
+            {
+              ...taskData,
+              category: 'project_management'
+            },
+            'work' // Store in work module
+          );
+          
+          result = {
+            success: true,
+            message: 'Task created successfully',
+            task: taskData,
+            memoryId: memoryId
+          };
+        } else if (name === 'updateTaskStatus') {
+          // Update task status by finding and updating the memory
+          const cmiService = getInitializedCMIService();
+          
+          // First find the task
+          const taskMemory = await cmiService.get(userId, args.taskId);
+          
+          if (!taskMemory || taskMemory.metadata?.type !== 'task') {
+            response = {
+              jsonrpc: '2.0',
+              error: {
+                code: -32602,
+                message: 'Task not found'
+              },
+              id
+            };
+          } else {
+            // Update the task metadata
+            const updatedMetadata = {
+              ...taskMemory.metadata,
+              status: args.status,
+              completedAt: args.status === 'done' ? new Date().toISOString() : taskMemory.metadata.completedAt
+            };
+            
+            const success = await cmiService.update(
+              userId,
+              args.taskId,
+              { metadata: updatedMetadata }
+            );
+            
+            result = {
+              success: success,
+              message: success ? 'Task status updated successfully' : 'Failed to update task status',
+              task: {
+                id: taskMemory.metadata.id || args.taskId,
+                title: taskMemory.metadata.title,
+                status: args.status,
+                completedAt: updatedMetadata.completedAt
+              }
+            };
+          }
+        } else if (name === 'linkTaskDependency') {
+          // Create task dependency as a memory
+          const cmiService = getInitializedCMIService();
+          const dependencyId = randomUUID();
+          
+          const dependencyData = {
+            id: dependencyId,
+            taskId: args.taskId,
+            dependsOnTaskId: args.dependsOnTaskId,
+            dependencyType: args.dependencyType || 'depends_on',
+            type: 'task_dependency'
+          };
+          
+          const content = `Task Dependency: ${args.taskId} ${args.dependencyType || 'depends_on'} ${args.dependsOnTaskId}`;
+          const memoryId = await cmiService.store(
+            userId,
+            content,
+            {
+              ...dependencyData,
+              category: 'project_management'
+            },
+            'work'
+          );
+          
+          result = {
+            success: true,
+            message: 'Task dependency created successfully',
+            dependency: dependencyData,
+            memoryId: memoryId
+          };
+        } else if (name === 'listTasks') {
+          // List tasks by searching memories with task metadata
+          const cmiService = getInitializedCMIService();
+          
+          // Build search query
+          let searchQuery = 'type:task';
+          if (args.projectId) searchQuery += ` projectId:${args.projectId}`;
+          if (args.assignee) searchQuery += ` assignee:${args.assignee}`;
+          if (args.status) searchQuery += ` status:${args.status}`;
+          if (args.priority) searchQuery += ` priority:${args.priority}`;
+          
+          const taskMemories = await cmiService.search(
+            userId,
+            searchQuery,
+            {
+              moduleId: 'work',
+              limit: 1000
+            }
+          );
+          
+          // Filter tasks
+          let filteredTasks = taskMemories.filter((memory: any) => {
+            const metadata = memory.metadata || {};
+            
+            // Check if it's a task type
+            if (metadata.type !== 'task') return false;
+            
+            // Apply filters
+            if (args.includeCompleted === false) {
+              if (metadata.status === 'done' || metadata.status === 'cancelled') {
+                return false;
+              }
+            }
+            
+            return true;
+          });
+          
+          // Get project names if needed
+          const tasksWithDetails = await Promise.all(
+            filteredTasks.map(async (memory: any) => {
+              let projectName = null;
+              if (memory.metadata.projectId) {
+                const projectMemory = await cmiService.get(userId, memory.metadata.projectId);
+                if (projectMemory && projectMemory.metadata?.type === 'project') {
+                  projectName = projectMemory.metadata.name;
+                }
+              }
+              
+              return {
+                id: memory.metadata.id || memory.id,
+                title: memory.metadata.title,
+                description: memory.metadata.description,
+                projectId: memory.metadata.projectId,
+                projectName: projectName,
+                assignee: memory.metadata.assignee,
+                priority: memory.metadata.priority || 'medium',
+                status: memory.metadata.status || 'todo',
+                dueDate: memory.metadata.dueDate,
+                estimatedHours: memory.metadata.estimatedHours,
+                completedAt: memory.metadata.completedAt,
+                ministry: memory.metadata.ministry,
+                createdAt: memory.createdAt,
+                updatedAt: memory.updatedAt
+              };
+            })
+          );
+          
+          result = {
+            tasks: tasksWithDetails,
+            count: tasksWithDetails.length
+          };
+        } else if (name === 'getTaskDependencies') {
+          // Get dependencies for a task by searching dependency memories
+          const cmiService = getInitializedCMIService();
+          
+          // Search for dependencies where this task is involved
+          const dependencyMemories = await cmiService.search(
+            userId,
+            `type:task_dependency`,
+            {
+              moduleId: 'work',
+              limit: 1000
+            }
+          );
+          
+          // Filter dependencies involving this task
+          const relevantDeps = dependencyMemories.filter((memory: any) => {
+            const metadata = memory.metadata || {};
+            return metadata.type === 'task_dependency' && 
+                   (metadata.taskId === args.taskId || metadata.dependsOnTaskId === args.taskId);
+          });
+          
+          // Get task details for dependencies
+          const dependencies = [];
+          const dependents = [];
+          
+          for (const dep of relevantDeps) {
+            if (dep.metadata.taskId === args.taskId) {
+              // This is a dependency
+              const dependsOnTask = await cmiService.get(userId, dep.metadata.dependsOnTaskId);
+              if (dependsOnTask && dependsOnTask.metadata?.type === 'task') {
+                dependencies.push({
+                  id: dep.metadata.id || dep.id,
+                  dependsOnTaskId: dep.metadata.dependsOnTaskId,
+                  dependsOnTaskTitle: dependsOnTask.metadata.title,
+                  dependsOnTaskStatus: dependsOnTask.metadata.status,
+                  dependencyType: dep.metadata.dependencyType
+                });
+              }
+            } else if (dep.metadata.dependsOnTaskId === args.taskId) {
+              // This is a dependent
+              const task = await cmiService.get(userId, dep.metadata.taskId);
+              if (task && task.metadata?.type === 'task') {
+                dependents.push({
+                  id: dep.metadata.id || dep.id,
+                  taskId: dep.metadata.taskId,
+                  taskTitle: task.metadata.title,
+                  taskStatus: task.metadata.status,
+                  dependencyType: dep.metadata.dependencyType
+                });
+              }
+            }
+          }
+          
+          result = {
+            dependencies: dependencies,
+            dependents: dependents,
+            taskId: args.taskId
+          };
+        } else if (name === 'createRecurringTask') {
+          // Create a recurring task template as a memory
+          const cmiService = getInitializedCMIService();
+          const recurringTaskId = randomUUID();
+          const nextDue = calculateNextDue(args.recurrence);
+          
+          const recurringTaskData = {
+            id: recurringTaskId,
+            title: args.title,
+            description: args.description,
+            recurrence: args.recurrence,
+            assignee: args.assignee,
+            projectId: args.projectId,
+            priority: args.priority || 'medium',
+            ministry: args.ministry,
+            nextDue: nextDue.toISOString(),
+            isActive: true,
+            type: 'recurring_task'
+          };
+          
+          const content = `Recurring Task: ${args.title}\n${args.description || ''}\nRecurrence: ${JSON.stringify(args.recurrence)}`;
+          const memoryId = await cmiService.store(
+            userId,
+            content,
+            {
+              ...recurringTaskData,
+              category: 'project_management'
+            },
+            'work'
+          );
+          
+          // Create the first task instance
+          const firstTaskId = randomUUID();
+          const firstTaskData = {
+            id: firstTaskId,
+            title: args.title,
+            description: args.description,
+            projectId: args.projectId,
+            assignee: args.assignee,
+            priority: args.priority || 'medium',
+            status: 'todo',
+            dueDate: nextDue.toISOString(),
+            recurringTaskId: recurringTaskId,
+            ministry: args.ministry,
+            type: 'task'
+          };
+          
+          const firstTaskContent = `Task: ${args.title}\n${args.description || ''}\nDue: ${nextDue.toISOString()}\n(From recurring task)`;
+          const firstTaskMemoryId = await cmiService.store(
+            userId,
+            firstTaskContent,
+            {
+              ...firstTaskData,
+              category: 'project_management'
+            },
+            'work'
+          );
+          
+          result = {
+            success: true,
+            message: 'Recurring task created successfully',
+            recurringTask: {
+              id: recurringTaskId,
+              title: args.title,
+              description: args.description,
+              recurrence: args.recurrence,
+              nextDue: nextDue.toISOString()
+            },
+            firstTask: {
+              id: firstTaskId,
+              title: args.title,
+              dueDate: nextDue.toISOString()
+            },
+            memoryIds: {
+              recurringTask: memoryId,
+              firstTask: firstTaskMemoryId
+            }
           };
         } else {
           response = {
@@ -515,5 +1462,47 @@ router.get('/:token', async (req: Request, res: Response) => {
     status: 'ready'
   });
 });
+
+// Helper function to calculate next due date for recurring tasks
+function calculateNextDue(recurrence: any): Date {
+  const now = new Date();
+  const { pattern, interval = 1, daysOfWeek, dayOfMonth } = recurrence;
+  
+  switch (pattern) {
+    case 'daily':
+      return new Date(now.getTime() + (interval * 24 * 60 * 60 * 1000));
+      
+    case 'weekly':
+      if (daysOfWeek && daysOfWeek.length > 0) {
+        const weekDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const currentDay = now.getDay();
+        
+        // Find next occurrence
+        for (let i = 1; i <= 7; i++) {
+          const checkDay = (currentDay + i) % 7;
+          const dayName = weekDays[checkDay];
+          if (daysOfWeek.includes(dayName)) {
+            const nextDate = new Date(now);
+            nextDate.setDate(now.getDate() + i);
+            return nextDate;
+          }
+        }
+      }
+      // Default to next week same day
+      return new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));
+      
+    case 'monthly':
+      const nextMonth = new Date(now);
+      nextMonth.setMonth(now.getMonth() + interval);
+      if (dayOfMonth) {
+        nextMonth.setDate(Math.min(dayOfMonth, new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0).getDate()));
+      }
+      return nextMonth;
+      
+    default:
+      // Default to tomorrow
+      return new Date(now.getTime() + (24 * 60 * 60 * 1000));
+  }
+}
 
 export default router;
