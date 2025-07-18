@@ -1,6 +1,17 @@
-# 🧠 Federated Memory System
+# Federated Memory System
 
-A scalable, modular memory system for LLMs featuring a Central Memory Index (CMI) that intelligently routes queries to specialized memory modules. Built with TypeScript, PostgreSQL, and pgvector.
+A distributed memory and knowledge management system with MCP (Model Context Protocol) integration.
+
+<!-- Trigger redeployment: 2025-07-18 -->
+
+## Features
+
+- **BigMemory Integration**: Personal, work, and technical memory management
+- **MCP Support**: Model Context Protocol for AI agent integration
+- **Real-time Collaboration**: WebSocket-based real-time updates
+- **OAuth Authentication**: Google and GitHub OAuth support
+- **Email Authentication**: Email/password login system
+- **Emergency Access**: Temporary bypass authentication for immediate access
 
 ## 🌟 Key Features
 
