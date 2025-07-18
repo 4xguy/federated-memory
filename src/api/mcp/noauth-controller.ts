@@ -245,6 +245,10 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
       logger.info('Client initialized', { sessionId });
       return;
     } else if (method === 'tools/list') {
+      // Ensure registries exist for this user
+      const cmiService = getInitializedCMIService();
+      await ensureRegistries(cmiService, sseConnection.userId);
+      
       response = {
         jsonrpc: '2.0',
         result: {
@@ -851,96 +855,128 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
             }
           }
         } else if (name === 'searchCategories') {
-          // Search or list categories from memory metadata
+          // Search categories from the category registry
           const cmiService = getInitializedCMIService();
           
-          // Search all memories to extract unique categories
-          const allMemories = await cmiService.search(userId, '', { limit: 10000 });
+          // Look for the category registry memory
+          const registrySearch = await cmiService.search(
+            userId,
+            'type:list name:category_registry',
+            { moduleId: 'personal', limit: 1 }
+          );
           
-          // Extract categories from metadata
-          const categoryMap = new Map<string, { count: number, description?: string, icon?: string, parentCategory?: string }>();
+          let categories = [];
           
-          for (const memory of allMemories) {
-            if (memory.metadata?.category) {
-              const cat = memory.metadata.category;
-              if (!categoryMap.has(cat)) {
-                categoryMap.set(cat, { 
-                  count: 0,
-                  description: memory.metadata.categoryDescription,
-                  icon: memory.metadata.categoryIcon,
-                  parentCategory: memory.metadata.parentCategory
-                });
-              }
-              categoryMap.get(cat)!.count++;
+          if (registrySearch.length > 0 && registrySearch[0].metadata?.categories) {
+            // Get categories from registry
+            categories = registrySearch[0].metadata.categories;
+            
+            // Apply search filter if provided
+            if (args.query) {
+              const query = args.query.toLowerCase();
+              categories = categories.filter((cat: any) => 
+                cat.name.toLowerCase().includes(query) ||
+                (cat.description && cat.description.toLowerCase().includes(query))
+              );
             }
             
-            // Also check for categories array (BigMemory style)
-            if (Array.isArray(memory.metadata?.categories)) {
-              for (const cat of memory.metadata.categories) {
-                if (!categoryMap.has(cat)) {
-                  categoryMap.set(cat, { count: 0 });
-                }
-                categoryMap.get(cat)!.count++;
-              }
-            }
-          }
-          
-          // Convert to array and filter by query
-          let categories = Array.from(categoryMap.entries()).map(([name, data]) => ({
-            name,
-            description: data.description,
-            icon: data.icon,
-            parentCategory: data.parentCategory,
-            memoryCount: data.count
-          }));
-          
-          // Apply search filter if provided
-          if (args.query) {
-            const query = args.query.toLowerCase();
-            categories = categories.filter(cat => 
-              cat.name.toLowerCase().includes(query) ||
-              (cat.description && cat.description.toLowerCase().includes(query))
+            // Get memory counts for each category
+            const categoriesWithCounts = await Promise.all(
+              categories.map(async (cat: any) => {
+                const count = await cmiService.search(
+                  userId,
+                  `category:"${cat.name}"`,
+                  { limit: 1 }
+                ).then((results: any[]) => results.length > 0 ? results[0].metadata?.totalCount || 0 : 0);
+                
+                return {
+                  ...cat,
+                  memoryCount: count
+                };
+              })
             );
+            
+            categories = categoriesWithCounts;
           }
           
           result = {
-            categories: categories.sort((a, b) => b.memoryCount - a.memoryCount),
+            categories: categories.sort((a: any, b: any) => (b.memoryCount || 0) - (a.memoryCount || 0)),
             count: categories.length
           };
         } else if (name === 'createCategory') {
-          // Create a category as a special memory that defines the category
+          // Create or update category in the registry
           const cmiService = getInitializedCMIService();
           const categoryId = randomUUID();
           
-          const categoryData = {
+          // First, get or create the category registry
+          const registrySearch = await cmiService.search(
+            userId,
+            'type:list name:category_registry',
+            { moduleId: 'personal', limit: 1 }
+          );
+          
+          let registryMemory;
+          let categories = [];
+          
+          if (registrySearch.length > 0) {
+            registryMemory = registrySearch[0];
+            categories = registryMemory.metadata?.categories || [];
+          }
+          
+          // Check if category already exists
+          const existingIndex = categories.findIndex((cat: any) => cat.name === args.name);
+          
+          const newCategory = {
             id: categoryId,
             name: args.name,
             description: args.description,
             icon: args.icon,
             parentCategory: args.parentCategory,
-            type: 'category_definition',
-            category: 'system' // System category for category definitions
+            createdAt: new Date().toISOString()
           };
           
-          const content = `Category: ${args.name}\n${args.description || 'No description'}`;
-          const memoryId = await cmiService.store(
-            userId,
-            content,
-            categoryData,
-            'personal' // Store category definitions in personal module
-          );
+          if (existingIndex >= 0) {
+            // Update existing category
+            categories[existingIndex] = { ...categories[existingIndex], ...newCategory };
+          } else {
+            // Add new category
+            categories.push(newCategory);
+          }
+          
+          // Update or create the registry
+          if (registryMemory) {
+            // Update existing registry
+            await cmiService.update(
+              userId,
+              registryMemory.id,
+              {
+                metadata: {
+                  ...registryMemory.metadata,
+                  categories: categories,
+                  updatedAt: new Date().toISOString()
+                }
+              }
+            );
+          } else {
+            // Create new registry
+            await cmiService.store(
+              userId,
+              'Category Registry\nThis memory maintains the list of all categories in the system.',
+              {
+                type: 'list',
+                name: 'category_registry',
+                category: 'system',
+                categories: categories,
+                createdAt: new Date().toISOString()
+              },
+              'personal'
+            );
+          }
           
           result = {
             success: true,
-            message: 'Category created successfully',
-            category: {
-              id: categoryId,
-              name: args.name,
-              description: args.description,
-              icon: args.icon,
-              parentCategory: args.parentCategory
-            },
-            memoryId: memoryId
+            message: existingIndex >= 0 ? 'Category updated successfully' : 'Category created successfully',
+            category: newCategory
           };
         } else if (name === 'createProject') {
           // Create a new project as a memory with project metadata
@@ -1513,6 +1549,74 @@ router.get('/:token', async (req: Request, res: Response) => {
     status: 'ready'
   });
 });
+
+// Helper function to ensure registry memories exist
+async function ensureRegistries(cmiService: any, userId: string) {
+  // Check for category registry
+  const categoryRegistry = await cmiService.search(
+    userId,
+    'type:list name:category_registry',
+    { moduleId: 'personal', limit: 1 }
+  );
+  
+  if (categoryRegistry.length === 0) {
+    // Create default category registry with common categories
+    await cmiService.store(
+      userId,
+      'Category Registry\nThis memory maintains the list of all categories in the system.',
+      {
+        type: 'list',
+        name: 'category_registry',
+        category: 'system',
+        categories: [
+          { id: randomUUID(), name: 'Personal', description: 'Personal memories and notes', icon: '👤' },
+          { id: randomUUID(), name: 'Work', description: 'Work-related memories', icon: '💼' },
+          { id: randomUUID(), name: 'Learning', description: 'Learning and education', icon: '📚' },
+          { id: randomUUID(), name: 'Technical', description: 'Technical documentation and code', icon: '💻' },
+          { id: randomUUID(), name: 'Ideas', description: 'Creative ideas and brainstorming', icon: '💡' },
+          { id: randomUUID(), name: 'References', description: 'Reference materials and links', icon: '🔗' },
+          { id: randomUUID(), name: 'project_management', description: 'Projects and tasks', icon: '📋' },
+          { id: randomUUID(), name: 'system', description: 'System and configuration', icon: '⚙️' }
+        ],
+        createdAt: new Date().toISOString()
+      },
+      'personal'
+    );
+  }
+  
+  // Check for type registry
+  const typeRegistry = await cmiService.search(
+    userId,
+    'type:list name:type_registry',
+    { moduleId: 'personal', limit: 1 }
+  );
+  
+  if (typeRegistry.length === 0) {
+    // Create default type registry
+    await cmiService.store(
+      userId,
+      'Type Registry\nThis memory maintains the list of all memory types in the system.',
+      {
+        type: 'list',
+        name: 'type_registry',
+        category: 'system',
+        types: [
+          { name: 'note', description: 'General notes and thoughts' },
+          { name: 'project', description: 'Project definitions' },
+          { name: 'task', description: 'Tasks and to-dos' },
+          { name: 'task_dependency', description: 'Task relationships' },
+          { name: 'recurring_task', description: 'Recurring task templates' },
+          { name: 'list', description: 'List or registry of items' },
+          { name: 'reference', description: 'External references and links' },
+          { name: 'code_snippet', description: 'Code examples and snippets' },
+          { name: 'configuration', description: 'System configuration' }
+        ],
+        createdAt: new Date().toISOString()
+      },
+      'personal'
+    );
+  }
+}
 
 // Helper function to calculate next due date for recurring tasks
 function calculateNextDue(recurrence: any): Date {
