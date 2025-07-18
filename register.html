@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Federated Memory - Register</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #F5F3F0;
+            color: #2B2417;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo h1 {
+            color: #D4AE96;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo p {
+            color: #635C4F;
+            font-size: 0.875rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2B2417;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #D4CFC6;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #D4AE96;
+        }
+
+        .btn {
+            width: 100%;
+            background: #000;
+            color: white;
+            border: none;
+            padding: 0.875rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 1rem;
+        }
+
+        .btn:hover {
+            background: #333;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #2B2417;
+            border: 2px solid #D4CFC6;
+        }
+
+        .btn-secondary:hover {
+            background: #F5F3F0;
+            border-color: #2B2417;
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .message.success {
+            background: #B8D4CC;
+            color: #2B2417;
+            border: 1px solid #8FB5A8;
+        }
+
+        .message.error {
+            background: #FFE5E5;
+            color: #D32F2F;
+            border: 1px solid #FFCDD2;
+        }
+
+        .token-display {
+            background: #2B2417;
+            color: #D4AE96;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.875rem;
+            word-break: break-all;
+            margin: 1rem 0;
+        }
+
+        .token-label {
+            color: #9C9589;
+            font-size: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background: #D4CFC6;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 1rem;
+            position: relative;
+            color: #9C9589;
+            font-size: 0.875rem;
+        }
+
+        .oauth-section {
+            margin-top: 1.5rem;
+        }
+
+        .oauth-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            background: white;
+            border: 1px solid #D4CFC6;
+            color: #2B2417;
+        }
+
+        .oauth-btn:hover {
+            background: #F5F3F0;
+            border-color: #2B2417;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #D4CFC6;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 0.75rem;
+            text-align: center;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #9C9589;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            color: #2B2417;
+            border-bottom: 2px solid #D4AE96;
+        }
+
+        .copy-btn {
+            background: #D4AE96;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+
+        .copy-btn:hover {
+            background: #C09B80;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="logo">
+            <h1>Federated Memory</h1>
+            <p>Create an account or sign in</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" id="registerTab">Register</button>
+            <button class="tab" id="loginTab">Login</button>
+        </div>
+
+        <div id="message"></div>
+
+        <form id="authForm">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required placeholder="you@example.com">
+            </div>
+
+            <div class="form-group" id="nameGroup">
+                <label for="name">Name (optional)</label>
+                <input type="text" id="name" name="name" placeholder="Your name">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required minlength="8" placeholder="At least 8 characters">
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">Create Account</button>
+        </form>
+
+        <div class="divider">
+            <span>or continue with</span>
+        </div>
+
+        <div class="oauth-section">
+            <button class="btn oauth-btn" id="googleOAuthBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Continue with Google
+            </button>
+            <button class="btn oauth-btn" id="githubOAuthBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                </svg>
+                Continue with GitHub
+            </button>
+            
+            <div class="divider">
+                <span>or</span>
+            </div>
+            
+            <button class="btn btn-secondary" id="quickRegisterBtn">
+                Generate MCP URL without Email
+            </button>
+        </div>
+
+        <div id="tokenDisplay" style="display: none;">
+            <div class="divider">
+                <span>Your authentication credentials</span>
+            </div>
+            <div class="token-display">
+                <div class="token-label">UUID TOKEN (save this!)</div>
+                <div id="tokenValue"></div>
+            </div>
+            <button class="copy-btn" id="copyTokenBtn">Copy Token</button>
+            
+            <div style="margin-top: 2rem;">
+                <h3 style="color: #2B2417; margin-bottom: 1rem;">MCP URL for Claude Desktop</h3>
+                <div class="token-display" style="background: #e7f3ff; color: #0056b3;">
+                    <div class="token-label">MCP SERVER URL</div>
+                    <div id="mcpUrlValue"></div>
+                </div>
+                <button class="copy-btn" id="copyMcpUrlBtn" style="background: #0056b3;">Copy MCP URL</button>
+                <div style="margin-top: 1rem; padding: 1rem; background: #F5F3F0; border-radius: 0.5rem;">
+                    <h4 style="color: #2B2417; margin-bottom: 0.5rem; font-size: 0.875rem;">Quick Setup for Claude Desktop:</h4>
+                    <ol style="font-size: 0.875rem; color: #635C4F; line-height: 1.6; margin-left: 1.5rem;">
+                        <li>Copy the MCP URL above</li>
+                        <li>Open Claude Desktop settings</li>
+                        <li>Add a new MCP server with type "SSE"</li>
+                        <li>Paste the URL and save</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'register';
+        let currentToken = '';
+
+        function switchTab(mode) {
+            currentMode = mode;
+            
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.toggle('active', tab.textContent.toLowerCase() === mode);
+            });
+            
+            // Update form
+            document.getElementById('nameGroup').style.display = mode === 'register' ? 'block' : 'none';
+            document.getElementById('submitBtn').textContent = mode === 'register' ? 'Create Account' : 'Sign In';
+            
+            // Clear messages
+            document.getElementById('message').innerHTML = '';
+            document.getElementById('tokenDisplay').style.display = 'none';
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const submitBtn = document.getElementById('submitBtn');
+            const messageDiv = document.getElementById('message');
+            
+            // Disable button
+            submitBtn.disabled = true;
+            submitBtn.textContent = currentMode === 'register' ? 'Creating account...' : 'Signing in...';
+            
+            // Get form data
+            const formData = {
+                email: form.email.value,
+                password: form.password.value
+            };
+            
+            if (currentMode === 'register') {
+                formData.name = form.name.value;
+            }
+            
+            try {
+                const endpoint = currentMode === 'register' ? 'register-email' : 'login-email';
+                const response = await fetch(`${window.location.origin}/api/auth/${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Success
+                    currentToken = data.user?.token || data.data?.token || data.token;
+                    messageDiv.innerHTML = `<div class="message success">${data.message || 'Success!'}</div>`;
+                    
+                    // Show token and MCP URL
+                    document.getElementById('tokenValue').textContent = currentToken;
+                    const mcpUrl = `${window.location.origin}/${currentToken}/sse`;
+                    document.getElementById('mcpUrlValue').textContent = mcpUrl;
+                    document.getElementById('tokenDisplay').style.display = 'block';
+                    
+                    // Clear form
+                    form.reset();
+                } else {
+                    // Error
+                    messageDiv.innerHTML = `<div class="message error">${data.error || 'An error occurred'}</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="message error">Network error: ${error.message}</div>`;
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = currentMode === 'register' ? 'Create Account' : 'Sign In';
+            }
+        }
+
+        function copyToken() {
+            navigator.clipboard.writeText(currentToken).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+        
+        function copyMcpUrl() {
+            const mcpUrl = document.getElementById('mcpUrlValue').textContent;
+            navigator.clipboard.writeText(mcpUrl).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        function oauthLogin(provider) {
+            window.location.href = `${window.location.origin}/api/auth/${provider}`;
+        }
+        
+        async function quickRegister() {
+            const btn = document.getElementById('quickRegisterBtn');
+            const messageDiv = document.getElementById('message');
+            
+            // Disable button
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+            
+            try {
+                const response = await fetch(`${window.location.origin}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Success
+                    currentToken = data.data.token;
+                    messageDiv.innerHTML = `<div class="message success">MCP URL generated successfully!</div>`;
+                    
+                    // Show token and MCP URL
+                    document.getElementById('tokenValue').textContent = currentToken;
+                    const mcpUrl = `${window.location.origin}/${currentToken}/sse`;
+                    document.getElementById('mcpUrlValue').textContent = mcpUrl;
+                    document.getElementById('tokenDisplay').style.display = 'block';
+                    
+                    // Hide the form
+                    document.getElementById('authForm').style.display = 'none';
+                } else {
+                    // Error
+                    messageDiv.innerHTML = `<div class="message error">${data.error || 'Failed to generate MCP URL'}</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="message error">Network error: ${error.message}</div>`;
+            } finally {
+                // Re-enable button
+                btn.disabled = false;
+                btn.textContent = 'Generate MCP URL without Email';
+            }
+        }
+
+        // Add event listeners when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching
+            document.getElementById('registerTab').addEventListener('click', () => switchTab('register'));
+            document.getElementById('loginTab').addEventListener('click', () => switchTab('login'));
+            
+            // Form submission
+            document.getElementById('authForm').addEventListener('submit', handleSubmit);
+            
+            // OAuth buttons
+            document.getElementById('googleOAuthBtn').addEventListener('click', () => oauthLogin('google'));
+            document.getElementById('githubOAuthBtn').addEventListener('click', () => oauthLogin('github'));
+            
+            // Copy token button
+            document.getElementById('copyTokenBtn').addEventListener('click', copyToken);
+            
+            // Copy MCP URL button
+            document.getElementById('copyMcpUrlBtn').addEventListener('click', copyMcpUrl);
+            
+            // Quick register button
+            document.getElementById('quickRegisterBtn').addEventListener('click', quickRegister);
+        });
+    </script>
+</body>
+</html>

@@ -13,8 +13,11 @@ import { getCMIService } from './core/cmi/index.service';
 import { Redis } from './utils/redis';
 import restApiRoutes from './api/rest';
 import { createMcpApp } from './api/mcp';
+import mcpNoAuthRoutes from './api/mcp/noauth-controller';
 import { createRedisSessionMiddleware, upgradeToRedisSession } from './api/middleware/session-redis';
 import { initializePassport } from './services/oauth-strategies/passport.config';
+import { handleSSE } from './api/sse';
+import RealtimeService from './services/realtime.service';
 
 // Initialize Prisma
 export const prisma = new PrismaClient({
@@ -98,6 +101,16 @@ async function main() {
       // Continue without modules - server can still run for health checks
     }
 
+    // Initialize realtime service
+    const realtimeService = RealtimeService.getInstance();
+    try {
+      await realtimeService.initialize();
+      logger.info('Realtime service initialized');
+    } catch (error) {
+      logger.error('Failed to initialize realtime service', { error });
+      // Continue without realtime - server can still run
+    }
+
     // Initialize Express app
     const app = express();
     const server = createServer(app);
@@ -143,6 +156,7 @@ async function main() {
     app.use(
       helmet({
         crossOriginEmbedderPolicy: false, // Allow SSE connections
+        contentSecurityPolicy: process.env.NODE_ENV === 'development' ? false : undefined, // Disable CSP in development
       }),
     );
 
@@ -155,6 +169,7 @@ async function main() {
             'https://*.claude.ai',
             'http://localhost:3001', // Local frontend
             'http://localhost:3000', // Local dev
+            'http://localhost:3002', // Local dev alternate port
             'http://localhost:6274', // MCP Inspector
             'http://127.0.0.1:6274', // MCP Inspector
             'https://mcp-inspector.vercel.app', // MCP Inspector hosted
@@ -369,19 +384,31 @@ async function main() {
       }
     });
 
-    // Serve test OAuth page in development
+    // Serve test pages in development
     if (process.env.NODE_ENV === 'development') {
       app.get('/test-oauth.html', (_req, res) => {
         res.sendFile('test-oauth.html', { root: process.cwd() });
       });
+      
+      app.get('/realtime-test.html', (_req, res) => {
+        res.sendFile('realtime-test.html', { root: process.cwd() });
+      });
+      
+      app.get('/register.html', (_req, res) => {
+        res.sendFile('register.html', { root: process.cwd() });
+      });
     }
+    
+    // MCP no-auth routes (BigMemory pattern) - MUST come before API routes
+    // These handle /:token/sse and /:token/messages/:sessionId
+    app.use('/', mcpNoAuthRoutes);
     
     // REST API routes
     app.use('/api', restApiRoutes);
 
-    // MCP Streamable HTTP server
+    // MCP Streamable HTTP server - mount at /mcp to avoid conflicts
     const mcpApp = createMcpApp();
-    app.use(mcpApp);
+    app.use('/mcp', mcpApp);
 
     // Error handling
     app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -427,6 +454,13 @@ async function main() {
 
       if (redis) {
         await redis.disconnect();
+      }
+
+      // Shutdown realtime service
+      try {
+        await realtimeService.shutdown();
+      } catch (error) {
+        logger.error('Error during realtime service shutdown', { error });
       }
 
       process.exit(0);

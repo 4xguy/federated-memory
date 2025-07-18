@@ -9,7 +9,9 @@ import authRoutes from './auth.routes';
 import mcpOauthRoutes from './mcp-oauth.routes';
 import configRoutes from './config.routes';
 import externalAuthRoutes from './external-auth.routes';
-import { apiKeysRoutes } from '../routes/api-keys.routes';
+import projectRoutes from '../projects';
+import emailAuthRoutes from '../auth/email-auth';
+// import { apiKeysRoutes } from '../routes/api-keys.routes'; // Deprecated with BigMemory auth
 
 const router = Router();
 
@@ -31,14 +33,18 @@ router.use('/auth', authRoutes);
 // External auth routes (Google/GitHub OAuth)
 router.use('/auth', externalAuthRoutes);
 
+// Email authentication routes (email/password)
+router.use('/auth', emailAuthRoutes);
+
 // User routes (auth required only for some endpoints)
 router.use('/users', userRoutes);
 
 // Protected routes (auth required)
 router.use('/memories', authMiddleware, memoryRoutes);
 router.use('/modules', authMiddleware, moduleRoutes);
+router.use('/', projectRoutes); // Project routes have their own auth middleware
 
-// API key management routes
-router.use('/', apiKeysRoutes);
+// API key management routes - Deprecated with BigMemory auth
+// router.use('/', apiKeysRoutes);
 
 export default router;
