@@ -334,39 +334,49 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
         if (name === 'searchMemory') {
           // Search across federated modules
           const cmiService = getInitializedCMIService();
-          const searchResult = await cmiService.search(userId, args.query, {
+          const searchResults = await cmiService.search(userId, args.query, {
             limit: args.limit || 10,
             modules: args.modules
           });
           
+          // Ensure searchResults is an array
+          const results = Array.isArray(searchResults) ? searchResults : [];
+          
           result = {
-            results: searchResult.results.map((r: any) => ({
-              content: r.content,
+            results: results.map((r: any) => ({
+              content: r.content || r.summary || '',
               moduleId: r.moduleId,
-              similarity: r.similarity,
-              metadata: r.metadata,
-              timestamp: r.timestamp
+              similarity: r.similarity || r.score || 0,
+              metadata: r.metadata || {},
+              timestamp: r.timestamp || r.createdAt || new Date().toISOString()
             })),
             query: args.query,
-            count: searchResult.results.length,
-            message: searchResult.results.length > 0 
-              ? `Found ${searchResult.results.length} memories`
+            count: results.length,
+            message: results.length > 0 
+              ? `Found ${results.length} memories`
               : 'No memories found matching your query'
           };
         } else if (name === 'storeMemory') {
           // Store in appropriate module via CMI
           const cmiService = getInitializedCMIService();
-          const storedMemory = await cmiService.store(userId, {
-            content: args.content,
-            metadata: args.metadata || {},
-            source: 'mcp'
-          });
+          
+          // Ensure content is a string
+          const content = typeof args.content === 'string' 
+            ? args.content 
+            : JSON.stringify(args.content);
+          
+          const memoryId = await cmiService.store(
+            userId, 
+            content,
+            { ...args.metadata, source: 'mcp' },
+            undefined // Let CMI determine the module
+          );
           
           result = {
             success: true,
             message: 'Memory stored successfully',
-            memoryId: storedMemory.id,
-            moduleId: storedMemory.moduleId
+            memoryId: memoryId,
+            moduleId: 'auto-determined' // CMI determines the module
           };
         } else if (name === 'listModules') {
           // List available modules
