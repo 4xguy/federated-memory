@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/utils/database';
 import { logger } from '@/utils/logger';
 import { randomUUID } from 'crypto';
+import bcrypt from 'bcrypt';
 
 const router = Router();
 
@@ -77,19 +78,27 @@ router.post('/login', async (req: Request, res: Response) => {
       });
     }
 
-    // Verify password (temporary SHA256 for now)
-    const crypto = require('crypto');
-    const hashMethod = (user.metadata as any)?.hashMethod;
-    
+    // Verify password
     let isValidPassword = false;
     
-    if (hashMethod === 'sha256-temp') {
+    try {
+      // Try bcrypt first (new standard)
+      isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    } catch (error) {
+      // If bcrypt fails, try SHA256 for legacy users
+      const crypto = require('crypto');
       const testHash = crypto.createHash('sha256').update(password).digest('hex');
       isValidPassword = testHash === user.passwordHash;
-    } else {
-      // Fallback for existing users
-      logger.warn('Using fallback auth for user', { email });
-      isValidPassword = true; // TEMPORARY: Allow all existing users
+      
+      if (isValidPassword) {
+        // Migrate to bcrypt on successful login
+        const newHash = await bcrypt.hash(password, 10);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { passwordHash: newHash }
+        });
+        logger.info('Migrated user password to bcrypt', { userId: user.id });
+      }
     }
     
     if (!isValidPassword) {
@@ -147,9 +156,8 @@ router.post('/register-email', async (req: Request, res: Response) => {
       });
     }
 
-    // Hash password (temporary SHA256)
-    const crypto = require('crypto');
-    const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
+    // Hash password with bcrypt
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
       data: {
@@ -161,8 +169,7 @@ router.post('/register-email', async (req: Request, res: Response) => {
         emailVerified: false,
         metadata: {
           registrationMethod: 'email',
-          registeredAt: new Date().toISOString(),
-          hashMethod: 'sha256-temp'
+          registeredAt: new Date().toISOString()
         }
       },
       select: {
