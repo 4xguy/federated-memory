@@ -9,6 +9,64 @@ import { ModuleRegistry } from '@/core/modules/registry.service';
 const router = Router();
 const authService = AuthService.getInstance();
 
+// Root handler for token URLs
+router.get('/:token', async (req: Request, res: Response) => {
+  const token = req.params.token;
+  
+  // Validate token
+  const authResult = await authService.validateToken(token);
+  if (!authResult) {
+    return res.status(404).json({ error: 'Invalid token' });
+  }
+  
+  // Return info about the token-based MCP endpoint
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  res.json({
+    message: 'Federated Memory MCP Server',
+    token: token,
+    endpoints: {
+      config: `${baseUrl}/${token}/config`,
+      sse: `${baseUrl}/${token}/sse`,
+      messages: `${baseUrl}/${token}/messages/:sessionId`,
+    },
+    usage: 'Use this URL in Claude Desktop or any MCP-compatible client',
+  });
+});
+
+// Config endpoint for token-based URLs (BigMemory pattern)
+router.get('/:token/config', async (req: Request, res: Response) => {
+  const token = req.params.token;
+  
+  // Validate token
+  const authResult = await authService.validateToken(token);
+  if (!authResult) {
+    return res.status(404).json({ error: 'Invalid token' });
+  }
+  
+  // Return MCP config for direct SSE connection
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  res.json({
+    mcp: {
+      version: '1.0.0',
+      serverInfo: {
+        name: 'federated-memory',
+        version: '1.0.0',
+        description: 'Distributed memory system for LLMs with intelligent routing',
+      },
+      capabilities: {
+        tools: true,
+        resources: false,
+        prompts: true,
+        sampling: false,
+      },
+      transport: {
+        type: 'streamable-http',
+        endpoint: `${baseUrl}/${token}/sse`,
+      },
+    },
+  });
+});
+
 // Override well-known OAuth endpoints for token-based URLs
 router.get('/:token/.well-known/oauth-authorization-server', async (req: Request, res: Response) => {
   const token = req.params.token;
