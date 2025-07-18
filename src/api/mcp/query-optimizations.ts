@@ -11,9 +11,7 @@ export const OptimizedQueries = {
    * List all projects for a user (SQL-optimized)
    */
   async listProjects(userId: string, includeCompleted = false) {
-    const statusFilter = includeCompleted ? '' : `AND metadata->>'status' != 'completed'`;
-    
-    const projects = await prisma.$queryRaw<any[]>`
+    let query = Prisma.sql`
       SELECT 
         id,
         content,
@@ -23,9 +21,15 @@ export const OptimizedQueries = {
       FROM work_memories
       WHERE "userId" = ${userId}
         AND metadata->>'type' = 'project'
-        ${Prisma.raw(statusFilter)}
-      ORDER BY metadata->>'createdAt' DESC
     `;
+    
+    if (!includeCompleted) {
+      query = Prisma.sql`${query} AND metadata->>'status' != 'completed'`;
+    }
+    
+    query = Prisma.sql`${query} ORDER BY metadata->>'createdAt' DESC`;
+    
+    const projects = await prisma.$queryRaw<any[]>(query);
 
     // Get task counts for each project
     const projectsWithCounts = await Promise.all(
@@ -57,27 +61,8 @@ export const OptimizedQueries = {
     assignee?: string;
     includeCompleted?: boolean;
   } = {}) {
-    const conditions = [`"userId" = ${userId}`, `metadata->>'type' = 'task'`];
-    
-    if (filters.projectId) {
-      conditions.push(`metadata->>'projectId' = '${filters.projectId}'`);
-    }
-    
-    if (filters.status) {
-      conditions.push(`metadata->>'status' = '${filters.status}'`);
-    }
-    
-    if (filters.assignee) {
-      conditions.push(`metadata->>'assignee' = '${filters.assignee}'`);
-    }
-    
-    if (!filters.includeCompleted) {
-      conditions.push(`(metadata->>'status' != 'done' AND metadata->>'status' != 'cancelled')`);
-    }
-
-    const whereClause = conditions.join(' AND ');
-
-    return await prisma.$queryRaw`
+    // Build query using Prisma's safe SQL template
+    let query = Prisma.sql`
       SELECT 
         id,
         content,
@@ -85,7 +70,27 @@ export const OptimizedQueries = {
         "createdAt",
         "updatedAt"
       FROM work_memories
-      WHERE ${Prisma.raw(whereClause)}
+      WHERE "userId" = ${userId}
+        AND metadata->>'type' = 'task'
+    `;
+    
+    if (filters.projectId) {
+      query = Prisma.sql`${query} AND metadata->>'projectId' = ${filters.projectId}`;
+    }
+    
+    if (filters.status) {
+      query = Prisma.sql`${query} AND metadata->>'status' = ${filters.status}`;
+    }
+    
+    if (filters.assignee) {
+      query = Prisma.sql`${query} AND metadata->>'assignee' = ${filters.assignee}`;
+    }
+    
+    if (!filters.includeCompleted) {
+      query = Prisma.sql`${query} AND (metadata->>'status' != 'done' AND metadata->>'status' != 'cancelled')`;
+    }
+
+    query = Prisma.sql`${query}
       ORDER BY 
         CASE metadata->>'priority'
           WHEN 'urgent' THEN 1
@@ -97,23 +102,51 @@ export const OptimizedQueries = {
         metadata->>'dueDate' ASC NULLS LAST,
         metadata->>'createdAt' DESC
     `;
+
+    return await prisma.$queryRaw(query);
   },
 
   /**
    * Get registry by type (SQL-optimized)
    */
   async getRegistry(userId: string, registryType: string, moduleName = 'personal') {
-    const [registry] = await prisma.$queryRaw<any[]>`
-      SELECT 
-        id,
-        metadata,
-        content
-      FROM ${Prisma.raw(moduleName + '_memories')}
-      WHERE "userId" = ${userId}
-        AND metadata->>'type' = 'registry'
-        AND metadata->>'registryType' = ${registryType}
-      LIMIT 1
-    `;
+    // First try the specified module
+    const tableName = `${moduleName}_memories`;
+    let registry = null;
+    
+    try {
+      const result = await prisma.$queryRawUnsafe<any[]>(`
+        SELECT 
+          id,
+          metadata,
+          content
+        FROM ${tableName}
+        WHERE "userId" = $1
+          AND metadata->>'type' = 'registry'
+          AND metadata->>'registryType' = $2
+        LIMIT 1
+      `, userId, registryType);
+      
+      registry = result[0];
+    } catch (e) {
+      // Table might not exist
+    }
+    
+    // If not found, try work_memories as fallback
+    if (!registry) {
+      const result = await prisma.$queryRaw<any[]>`
+        SELECT 
+          id,
+          metadata,
+          content
+        FROM work_memories
+        WHERE "userId" = ${userId}
+          AND metadata->>'type' = 'registry'
+          AND metadata->>'registryType' = ${registryType}
+        LIMIT 1
+      `;
+      registry = result[0];
+    }
 
     return registry || null;
   },

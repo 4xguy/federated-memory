@@ -924,9 +924,37 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
             );
             
             let categories = [];
-            if (registrySearch && registrySearch.metadata?.categories) {
-              categories = registrySearch.metadata.categories.map((cat: any) => ({
+            if (registrySearch && registrySearch.metadata?.items) {
+              // Registry stores categories in 'items' field
+              categories = registrySearch.metadata.items.map((cat: any) => ({
                 ...cat,
+                memoryCount: 0
+              }));
+            } else {
+              // If no registry found, use CMI fallback to search for categories
+              const categoryMemories = await prisma.$queryRaw<any[]>`
+                SELECT DISTINCT metadata->>'category' as category_name
+                FROM personal_memories
+                WHERE "userId" = ${userId}
+                  AND metadata->>'category' IS NOT NULL
+                UNION
+                SELECT DISTINCT metadata->>'category' as category_name
+                FROM work_memories
+                WHERE "userId" = ${userId}
+                  AND metadata->>'category' IS NOT NULL
+                UNION
+                SELECT DISTINCT metadata->>'category' as category_name
+                FROM technical_memories
+                WHERE "userId" = ${userId}
+                  AND metadata->>'category' IS NOT NULL
+                LIMIT 50
+              `;
+              
+              categories = categoryMemories.map(c => ({
+                name: c.category_name,
+                description: null,
+                icon: null,
+                parentCategory: null,
                 memoryCount: 0
               }));
             }
