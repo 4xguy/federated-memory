@@ -41,10 +41,46 @@ router.get('/detailed', async (req: Request, res: Response) => {
     // Check database connection
     const dbStart = Date.now();
     await prisma.$queryRaw`SELECT 1`;
+    
+    // Also check connection pool status
+    const connectionStats = await prisma.$queryRaw<[{ 
+      total: bigint, 
+      active: bigint, 
+      idle: bigint,
+      max_connections: string 
+    }]>`
+      WITH stats AS (
+        SELECT 
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE state = 'active') as active,
+          COUNT(*) FILTER (WHERE state = 'idle') as idle
+        FROM pg_stat_activity
+        WHERE datname = current_database()
+      ),
+      max_conn AS (
+        SELECT setting as max_connections FROM pg_settings WHERE name = 'max_connections'
+      )
+      SELECT stats.*, max_conn.max_connections FROM stats, max_conn
+    `;
+    
+    const stats = connectionStats[0];
+    const usage = (Number(stats.total) / parseInt(stats.max_connections)) * 100;
+    
     health.checks.database = {
-      status: 'ok',
+      status: usage > 80 ? 'warning' : 'ok',
       responseTime: Date.now() - dbStart,
+      connections: {
+        total: Number(stats.total),
+        active: Number(stats.active),
+        idle: Number(stats.idle),
+        max: parseInt(stats.max_connections),
+        usage: `${usage.toFixed(1)}%`,
+      },
     };
+    
+    if (usage > 80) {
+      health.status = 'degraded';
+    }
   } catch (error) {
     health.status = 'degraded';
     health.checks.database = {
