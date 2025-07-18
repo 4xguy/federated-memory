@@ -45,7 +45,8 @@ async function handleSubmit(event) {
     }
     
     try {
-        const endpoint = currentMode === 'register' ? 'register-email' : 'login-email';
+        // Use BigMemory-style endpoints
+        const endpoint = currentMode === 'register' ? 'register-email' : 'login';
         const response = await fetch(`${window.location.origin}/api/auth/${endpoint}`, {
             method: 'POST',
             headers: {
