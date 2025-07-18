@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Claude.ai MCP Flow</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    .log { margin: 5px 0; padding: 5px; background: #f0f0f0; }
+    .error { background: #ffe0e0; }
+    .success { background: #e0ffe0; }
+    button { padding: 10px; margin: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Testing Claude.ai MCP Connection Flow</h1>
+  
+  <div>
+    <input type="text" id="serverUrl" placeholder="Enter MCP URL (e.g., https://server/token)" style="width: 400px;">
+    <button onclick="testConnection()">Test Connection</button>
+  </div>
+  
+  <div id="logs"></div>
+  
+  <script>
+    function log(message, type = 'log') {
+      const logs = document.getElementById('logs');
+      const div = document.createElement('div');
+      div.className = `log ${type}`;
+      div.textContent = `${new Date().toISOString()}: ${message}`;
+      logs.appendChild(div);
+    }
+    
+    async function testConnection() {
+      const serverUrl = document.getElementById('serverUrl').value;
+      if (!serverUrl) {
+        log('Please enter a server URL', 'error');
+        return;
+      }
+      
+      log(`Testing connection to: ${serverUrl}`);
+      
+      // Step 1: Check if URL contains a token pattern
+      const tokenMatch = serverUrl.match(/\/([a-f0-9-]{36})(\/|$)/);
+      if (tokenMatch) {
+        log(`Detected token in URL: ${tokenMatch[1].substring(0, 8)}...`);
+        log('Using token-based authentication flow');
+        
+        // For token-based auth, try direct config endpoint
+        try {
+          const configUrl = serverUrl.endsWith('/') ? `${serverUrl}config` : `${serverUrl}/config`;
+          log(`Fetching config from: ${configUrl}`);
+          
+          const configRes = await fetch(configUrl);
+          log(`Config response status: ${configRes.status}`);
+          
+          if (configRes.ok) {
+            const config = await configRes.json();
+            log(`Config received: ${JSON.stringify(config, null, 2)}`, 'success');
+            
+            if (config.mcp && config.mcp.transport) {
+              log(`Transport type: ${config.mcp.transport.type}`, 'success');
+              log(`SSE endpoint: ${config.mcp.transport.endpoint}`, 'success');
+              
+              if (!config.mcp.auth) {
+                log('No auth section found - using token-based auth', 'success');
+              }
+            }
+          } else {
+            log(`Config fetch failed: ${configRes.status}`, 'error');
+          }
+        } catch (e) {
+          log(`Error fetching config: ${e.message}`, 'error');
+        }
+      } else {
+        log('No token detected in URL, checking for OAuth support');
+        
+        // Check OAuth discovery endpoints
+        try {
+          const baseUrl = new URL(serverUrl).origin;
+          const oauthUrl = `${baseUrl}/.well-known/oauth-authorization-server`;
+          log(`Checking OAuth discovery: ${oauthUrl}`);
+          
+          const oauthRes = await fetch(oauthUrl);
+          log(`OAuth discovery status: ${oauthRes.status}`);
+          
+          if (oauthRes.status === 404) {
+            log('OAuth not supported (404) - server might use different auth', 'error');
+          } else if (oauthRes.ok) {
+            const oauthConfig = await oauthRes.json();
+            log('OAuth supported - would use OAuth flow', 'success');
+            log(`OAuth config: ${JSON.stringify(oauthConfig, null, 2)}`);
+          }
+          
+          // Also check main config
+          const configUrl = `${baseUrl}/config`;
+          log(`Checking main config: ${configUrl}`);
+          
+          const configRes = await fetch(configUrl);
+          if (configRes.ok) {
+            const config = await configRes.json();
+            log(`Main config: ${JSON.stringify(config, null, 2)}`);
+            
+            if (config.mcp && config.mcp.auth) {
+              log(`Auth type specified: ${config.mcp.auth.type}`, 'success');
+            }
+          }
+        } catch (e) {
+          log(`Error during discovery: ${e.message}`, 'error');
+        }
+      }
+    }
+  </script>
+</body>
+</html>

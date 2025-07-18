@@ -60,9 +60,10 @@ router.get('/:token/config', async (req: Request, res: Response) => {
         sampling: false,
       },
       transport: {
-        type: 'streamable-http',
+        type: 'sse',
         endpoint: `${baseUrl}/${token}/sse`,
       },
+      // No auth section - authentication is via token in URL
     },
   });
 });
@@ -481,40 +482,6 @@ router.options('/:token/messages/:sessionId', (_req: Request, res: Response) => 
   res.sendStatus(200);
 });
 
-// Config endpoint for token-based auth (no OAuth needed)
-router.get('/:token/config', async (req: Request, res: Response) => {
-  const token = req.params.token;
-  
-  // Validate token
-  const authResult = await authService.validateToken(token);
-  if (!authResult) {
-    return res.status(404).end();
-  }
-  
-  const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
-  
-  res.json({
-    mcp: {
-      version: '1.0.0',
-      serverInfo: {
-        name: 'federated-memory',
-        version: '1.0.0',
-        description: 'Distributed memory system for LLMs with intelligent routing',
-      },
-      capabilities: {
-        tools: true,
-        resources: false,
-        prompts: true,
-        sampling: false,
-      },
-      transport: {
-        type: 'sse',
-        endpoint: `${baseUrl}/${token}/sse`,
-      }
-      // No auth section - authentication is via token in URL
-    },
-  });
-});
 
 // Simple info endpoint
 router.get('/:token', async (req: Request, res: Response) => {
