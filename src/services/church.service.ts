@@ -27,6 +27,7 @@ import { Memory } from '@/core/modules/interfaces';
 import { v4 as uuidv4 } from 'uuid';
 import RealtimeService from './realtime.service';
 import { logger } from '@/utils/logger';
+import { prisma } from '@/utils/database';
 
 /**
  * Service for managing church people, households, and related data
@@ -170,13 +171,39 @@ export class ChurchService {
 
     if (params.query && !params.filters) {
       // Natural language search using semantic search
-      results = await this.module.search(userId, params.query, {
-        limit: params.limit || 20,
-        offset: params.offset || 0
-      });
-      
-      // Filter to only person types
-      results = results.filter(m => m.metadata.type === 'person');
+      try {
+        logger.info('Attempting semantic search for people', { userId, query: params.query });
+        
+        results = await this.module.search(userId, params.query, {
+          limit: params.limit || 20,
+          offset: params.offset || 0
+        });
+        
+        logger.info('Semantic search completed', { userId, resultCount: results.length });
+        
+        // Filter to only person types
+        results = results.filter(m => m.metadata.type === 'person');
+        
+        logger.info('Filtered to person types', { userId, personCount: results.length });
+        
+      } catch (error) {
+        logger.error('Semantic search failed, falling back to structured search', { 
+          userId, 
+          query: params.query, 
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
+        });
+        
+        // Fallback to structured search using basic text matching
+        const fallbackParams: PersonSearchParams = {
+          ...params,
+          filters: {
+            ...(params.filters || {}),
+            searchTerm: params.query // Add search term as a filter
+          }
+        };
+        results = await this.searchPeopleByFilters(userId, fallbackParams);
+      }
     } else {
       // Structured search using SQL
       results = await this.searchPeopleByFilters(userId, params);
@@ -398,21 +425,29 @@ export class ChurchService {
   // ============= Custom Fields & Tags =============
 
   async defineCustomField(userId: string, field: Partial<CustomFieldDefinition>): Promise<CustomFieldDefinition> {
+    // Ensure module is specified - default to 'people' for Church service
+    const module = field.module || 'people';
+    
     const fieldDef: CustomFieldDefinition = {
       id: uuidv4(),
       name: field.name || '',
       fieldKey: field.fieldKey || field.name?.toLowerCase().replace(/\s+/g, '_') || '',
+      module,
       type: field.type || 'text',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: userId,
       ...field
     };
 
-    // Get or create custom fields registry
-    const registry = await this.module.getOrCreateRegistry(userId, 'custom_fields');
+    // Get or create module-specific custom fields registry
+    const registryName = `custom_fields_${module}`;
+    const registry = await this.module.getOrCreateRegistry(userId, registryName);
     const items = registry.metadata.items || [];
     
-    // Check for duplicate field key
+    // Check for duplicate field key within this module
     if (items.find((f: any) => f.fieldKey === fieldDef.fieldKey)) {
-      throw new Error(`Custom field with key ${fieldDef.fieldKey} already exists`);
+      throw new Error(`Custom field '${fieldDef.fieldKey}' already exists in ${module} module`);
     }
 
     items.push(fieldDef);
@@ -421,24 +456,148 @@ export class ChurchService {
       metadata: {
         ...registry.metadata,
         items,
+        module, // Track which module this registry belongs to
         updatedAt: new Date().toISOString()
       }
     });
 
-    logger.info('Custom field defined', { userId, fieldKey: fieldDef.fieldKey });
+    logger.info('Module-scoped custom field defined', { 
+      userId, 
+      module,
+      fieldKey: fieldDef.fieldKey,
+      registryName 
+    });
     return fieldDef;
   }
 
-  async setPersonCustomField(userId: string, personId: string, fieldKey: string, value: any): Promise<boolean> {
+  async getCustomFieldDefinition(userId: string, fieldKey: string, module: string): Promise<CustomFieldDefinition | null> {
+    const registryName = `custom_fields_${module}`;
+    
+    try {
+      const registry = await this.module.getOrCreateRegistry(userId, registryName);
+      const items = registry.metadata.items || [];
+      
+      return items.find((field: CustomFieldDefinition) => field.fieldKey === fieldKey) || null;
+    } catch (error) {
+      logger.warn('Failed to get custom field definition', { userId, fieldKey, module, error });
+      return null;
+    }
+  }
+
+  async getCustomFieldsForModule(userId: string, module: string): Promise<CustomFieldDefinition[]> {
+    const registryName = `custom_fields_${module}`;
+    
+    try {
+      const registry = await this.module.getOrCreateRegistry(userId, registryName);
+      return registry.metadata.items || [];
+    } catch (error) {
+      logger.warn('Failed to get custom fields for module', { userId, module, error });
+      return [];
+    }
+  }
+
+  private validateCustomFieldValue(fieldDefinition: CustomFieldDefinition, value: any): any {
+    const { type, required, validation, options } = fieldDefinition;
+
+    // Check required
+    if (required && (value === null || value === undefined || value === '')) {
+      throw new Error(`Custom field '${fieldDefinition.name}' is required`);
+    }
+
+    // If value is empty/null and not required, return as-is
+    if (!required && (value === null || value === undefined || value === '')) {
+      return value;
+    }
+
+    // Type validation
+    switch (type) {
+      case 'text':
+        if (typeof value !== 'string') {
+          throw new Error(`Field '${fieldDefinition.name}' must be text`);
+        }
+        if (validation?.pattern && !new RegExp(validation.pattern).test(value)) {
+          throw new Error(`Field '${fieldDefinition.name}' does not match required pattern`);
+        }
+        if (validation?.min && value.length < validation.min) {
+          throw new Error(`Field '${fieldDefinition.name}' must be at least ${validation.min} characters`);
+        }
+        if (validation?.max && value.length > validation.max) {
+          throw new Error(`Field '${fieldDefinition.name}' must be no more than ${validation.max} characters`);
+        }
+        break;
+
+      case 'number':
+        const numValue = Number(value);
+        if (isNaN(numValue)) {
+          throw new Error(`Field '${fieldDefinition.name}' must be a number`);
+        }
+        if (validation?.min && numValue < validation.min) {
+          throw new Error(`Field '${fieldDefinition.name}' must be at least ${validation.min}`);
+        }
+        if (validation?.max && numValue > validation.max) {
+          throw new Error(`Field '${fieldDefinition.name}' must be no more than ${validation.max}`);
+        }
+        return numValue;
+
+      case 'boolean':
+        return Boolean(value);
+
+      case 'date':
+        const date = new Date(value);
+        if (isNaN(date.getTime())) {
+          throw new Error(`Field '${fieldDefinition.name}' must be a valid date`);
+        }
+        return date.toISOString();
+
+      case 'select':
+        if (options && !options.includes(value)) {
+          throw new Error(`Field '${fieldDefinition.name}' must be one of: ${options.join(', ')}`);
+        }
+        break;
+
+      case 'multiselect':
+        if (!Array.isArray(value)) {
+          throw new Error(`Field '${fieldDefinition.name}' must be an array`);
+        }
+        if (options) {
+          const invalidValues = value.filter(v => !options.includes(v));
+          if (invalidValues.length > 0) {
+            throw new Error(`Field '${fieldDefinition.name}' contains invalid values: ${invalidValues.join(', ')}`);
+          }
+        }
+        break;
+    }
+
+    return value;
+  }
+
+  async setPersonCustomField(
+    userId: string, 
+    personId: string, 
+    fieldKey: string, 
+    value: any,
+    module: string = 'people'
+  ): Promise<boolean> {
     const person = await this.getPerson(userId, personId);
     if (!person) return false;
 
+    // Validate that the custom field exists in the specified module
+    const fieldDefinition = await this.getCustomFieldDefinition(userId, fieldKey, module);
+    if (!fieldDefinition) {
+      throw new Error(`Custom field '${fieldKey}' not found in ${module} module`);
+    }
+
+    // Validate the value against field definition
+    const validatedValue = this.validateCustomFieldValue(fieldDefinition, value);
+
     const customFields = person.customFields || {};
-    customFields[fieldKey] = value;
+    // Store with module prefix to avoid conflicts
+    const moduleFieldKey = `${module}.${fieldKey}`;
+    customFields[moduleFieldKey] = validatedValue;
 
     await this.updatePerson(userId, personId, { customFields });
     
-    logger.info('Custom field set', { userId, personId, fieldKey });
+    logger.info('Module-scoped custom field set', { userId, personId, module, fieldKey, moduleFieldKey });
     return true;
   }
 
@@ -693,8 +852,36 @@ export class ChurchService {
   }
 
   private async searchPeopleByFilters(userId: string, params: PersonSearchParams): Promise<Memory[]> {
-    // This will be implemented in church-queries.ts for optimization
-    // For now, use basic metadata search
+    // Handle text search with SQL LIKE queries for fallback
+    if (params.filters?.searchTerm) {
+      const searchTerm = params.filters.searchTerm.toLowerCase();
+      
+      try {
+        const results = await prisma.$queryRaw<Memory[]>`
+          SELECT id, "userId", content, metadata, "accessCount", "lastAccessed", "createdAt", "updatedAt"
+          FROM work_memories
+          WHERE "userId" = ${userId}
+            AND metadata->>'type' = 'person'
+            AND (
+              LOWER(metadata->>'firstName') LIKE ${`%${searchTerm}%`}
+              OR LOWER(metadata->>'lastName') LIKE ${`%${searchTerm}%`}
+              OR LOWER(metadata->>'nickname') LIKE ${`%${searchTerm}%`}
+              OR LOWER(content) LIKE ${`%${searchTerm}%`}
+            )
+          ORDER BY "updatedAt" DESC
+          LIMIT ${params.limit || 20}
+          OFFSET ${params.offset || 0}
+        `;
+        
+        logger.info('Text search fallback completed', { userId, searchTerm, resultCount: results.length });
+        return results;
+      } catch (error) {
+        logger.error('Text search fallback failed', { userId, searchTerm, error });
+        // Fall through to basic metadata search
+      }
+    }
+    
+    // Basic metadata search for other filters
     const criteria: any = { type: 'person' };
     
     if (params.filters) {

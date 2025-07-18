@@ -190,11 +190,12 @@ export interface GroupMembership {
 export interface CustomFieldDefinition {
   id: string;
   name: string;
-  fieldKey: string; // Unique identifier for the field
+  fieldKey: string; // Unique identifier within module scope
+  module: 'people' | 'calendar' | 'registrations' | 'groups' | 'giving' | 'check-ins'; // CRM module scope
   type: 'text' | 'number' | 'date' | 'boolean' | 'select' | 'multiselect';
   options?: string[]; // For select/multiselect
   required?: boolean;
-  category?: string; // Group related fields
+  category?: string; // Group related fields within module
   description?: string;
   validation?: {
     min?: number;
@@ -202,6 +203,9 @@ export interface CustomFieldDefinition {
     pattern?: string;
   };
   visibility?: 'public' | 'leaders' | 'admin';
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string; // User who created the field
 }
 
 // ============= Lists & Filters =============
@@ -235,6 +239,7 @@ export interface PeopleFilters {
   createdBefore?: string;
   lastActivityAfter?: string;
   lastActivityBefore?: string;
+  searchTerm?: string; // For text-based search fallback
 }
 
 // ============= Attendance =============

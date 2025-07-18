@@ -644,10 +644,11 @@ export function registerChurchTools(
       inputSchema: {
         name: z.string().describe('Display name of the field'),
         fieldKey: z.string().optional().describe('Unique key (auto-generated from name if not provided)'),
+        module: z.enum(['people', 'calendar', 'registrations', 'groups', 'giving', 'check-ins']).optional().default('people').describe('CRM module scope for the field'),
         type: z.enum(['text', 'number', 'date', 'boolean', 'select', 'multiselect']),
         options: z.array(z.string()).optional().describe('Options for select/multiselect fields'),
         required: z.boolean().optional(),
-        category: z.string().optional().describe('Category to group related fields'),
+        category: z.string().optional().describe('Category to group related fields within module'),
         description: z.string().optional(),
         visibility: z.enum(['public', 'leaders', 'admin']).optional()
       }
@@ -692,10 +693,11 @@ export function registerChurchTools(
       inputSchema: {
         personId: z.string().describe('ID of the person'),
         fieldKey: z.string().describe('Key of the custom field'),
-        value: z.any().describe('Value to set (type depends on field definition)')
+        value: z.any().describe('Value to set (type depends on field definition)'),
+        module: z.enum(['people', 'calendar', 'registrations', 'groups', 'giving', 'check-ins']).optional().default('people').describe('CRM module scope for the field')
       }
     },
-    async ({ personId, fieldKey, value }) => {
+    async ({ personId, fieldKey, value, module }) => {
       if (!userContext?.userId) {
         throw new Error('Authentication required');
       }
@@ -705,7 +707,8 @@ export function registerChurchTools(
           userContext.userId,
           personId,
           fieldKey,
-          value
+          value,
+          module || 'people'
         );
 
         if (!success) {
@@ -733,6 +736,49 @@ export function registerChurchTools(
           content: [{
             type: 'text',
             text: `Error setting custom field: ${error instanceof Error ? error.message : String(error)}`
+          }],
+          isError: true
+        };
+      }
+    }
+  );
+
+  // Tool 11.5: List Custom Fields for Module
+  server.registerTool(
+    'listCustomFields',
+    {
+      title: 'List Custom Fields',
+      description: 'List all custom fields for a specific module',
+      inputSchema: {
+        module: z.enum(['people', 'calendar', 'registrations', 'groups', 'giving', 'check-ins']).optional().default('people').describe('CRM module to list fields for')
+      }
+    },
+    async ({ module }) => {
+      if (!userContext?.userId) {
+        throw new Error('Authentication required');
+      }
+
+      try {
+        const fields = await churchService.getCustomFieldsForModule(userContext.userId, module || 'people');
+
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              success: true,
+              module: module || 'people',
+              fields: fields,
+              count: fields.length,
+              message: `Found ${fields.length} custom fields for ${module || 'people'} module`
+            }, null, 2)
+          }]
+        };
+      } catch (error) {
+        logger.error('List custom fields error', { error, module });
+        return {
+          content: [{
+            type: 'text',
+            text: `Error listing custom fields: ${error instanceof Error ? error.message : String(error)}`
           }],
           isError: true
         };
