@@ -43,7 +43,8 @@
     "migrate:bigmemory": "tsx scripts/migrate-bigmemory-sql.ts",
     "migrate:test": "./scripts/test-migration-local.sh",
     "migrate:backup": "./scripts/backup-databases.sh",
-    "migrate:check": "tsx scripts/check-bigmemory-db.ts"
+    "migrate:check": "tsx scripts/check-bigmemory-db.ts",
+    "postinstall": "prisma generate || echo 'Prisma generate failed, using pre-built client'"
   },
   "keywords": [
     "memory",

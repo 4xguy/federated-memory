@@ -17,8 +17,7 @@ RUN npm ci
 # Copy source code
 COPY src ./src
 
-# Generate Prisma client with proper environment
-ENV PRISMA_CLI_BINARY_TARGETS=linux-musl-openssl-3.0.x
+# Generate Prisma client
 RUN npx prisma generate
 
 # Build TypeScript
