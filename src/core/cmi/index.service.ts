@@ -1,4 +1,5 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/utils/database';
 import { Logger } from '@/utils/logger';
 import { getEmbeddingService } from '@/core/embeddings/generator.service';
 import { ModuleRegistry } from '../modules/registry.service';
@@ -49,7 +50,6 @@ export interface ModuleRouting {
 }
 
 export class CMIService {
-  private prisma: PrismaClient;
   private logger: Logger;
   private embeddingService: ReturnType<typeof getEmbeddingService>;
   private moduleRegistry: ModuleRegistry;
@@ -57,7 +57,6 @@ export class CMIService {
   private routingCache: Map<string, ModuleRouting[]> = new Map();
 
   constructor() {
-    this.prisma = new PrismaClient();
     this.logger = Logger.getInstance();
     this.embeddingService = getEmbeddingService();
     this.moduleRegistry = ModuleRegistry.getInstance();

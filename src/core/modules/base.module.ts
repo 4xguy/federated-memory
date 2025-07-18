@@ -12,6 +12,7 @@ import { getCMIService } from '../cmi/index.service';
 import { getEmbeddingService } from '../embeddings/generator.service';
 import { createModuleLogger } from '../../utils/logger';
 import { Redis } from '../../utils/redis';
+import { prisma as sharedPrisma } from '../../utils/database';
 
 export interface ModuleInfo {
   name: string;
@@ -31,7 +32,7 @@ export abstract class BaseModule implements MemoryModule {
     prisma?: PrismaClient,
     cmi?: ReturnType<typeof getCMIService>,
   ) {
-    this.prisma = prisma || new PrismaClient();
+    this.prisma = prisma || sharedPrisma;
     this.cmi = cmi || getCMIService();
     this.embeddings = getEmbeddingService();
     this.logger = createModuleLogger(config.id);

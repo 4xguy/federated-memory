@@ -5,7 +5,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
-import { PrismaClient } from '@prisma/client';
 import { logger } from './utils/logger';
 import { ModuleLoader } from './core/modules/loader.service';
 import { ModuleRegistry } from './core/modules/registry.service';
@@ -20,6 +19,7 @@ import { handleSSE } from './api/sse';
 import RealtimeService from './services/realtime.service';
 import * as fs from 'fs';
 import * as path from 'path';
+import { prisma } from './utils/database';
 
 // Prevent multiple instances when using tsx watch
 const lockFile = path.join(process.cwd(), '.server.lock');
@@ -59,10 +59,7 @@ process.on('SIGTERM', () => {
   process.exit(0);
 });
 
-// Initialize Prisma
-export const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
+// Export prisma from shared database module
 
 // Initialize services - these will be set in main()
 let moduleRegistry: ModuleRegistry;
@@ -88,7 +85,7 @@ export function getInitializedCMIService() {
   return cmiService;
 }
 
-export { moduleRegistry, cmiService, moduleLoader };
+export { moduleRegistry, cmiService, moduleLoader, prisma };
 
 async function main() {
   try {

@@ -1,7 +1,38 @@
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
-export const prisma = new PrismaClient();
+// Singleton pattern to prevent multiple connections
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
+    // Limit connection pool to prevent "too many clients" error
+    // Railway's PostgreSQL typically allows 100 connections total
+    // We'll use 20 to leave room for other services
+    pool: {
+      min: 2,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+    },
+  });
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
+
+// Graceful shutdown
+process.on('beforeExit', async () => {
+  await prisma.$disconnect();
+});
 
 /**
  * Helper functions for working with pgvector embeddings

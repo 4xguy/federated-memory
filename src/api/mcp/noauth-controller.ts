@@ -245,9 +245,16 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
       logger.info('Client initialized', { sessionId });
       return;
     } else if (method === 'tools/list') {
-      // Ensure registries exist for this user
-      const cmiService = getInitializedCMIService();
-      await ensureRegistries(cmiService, sseConnection.userId);
+      // Try to ensure registries exist, but don't fail if service isn't ready
+      try {
+        const cmiService = getInitializedCMIService();
+        if (cmiService) {
+          await ensureRegistries(cmiService, sseConnection.userId);
+        }
+      } catch (error) {
+        logger.warn('Failed to ensure registries during tools/list', { error });
+        // Continue without registries - tools can still be listed
+      }
       
       response = {
         jsonrpc: '2.0',
@@ -857,6 +864,18 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
         } else if (name === 'searchCategories') {
           // Use efficient database function to get categories with counts
           try {
+            // First check if the function exists
+            const functionExists = await prisma.$queryRaw<Array<{exists: boolean}>>`
+              SELECT EXISTS (
+                SELECT 1 FROM pg_proc 
+                WHERE proname = 'get_category_registry_with_counts'
+              ) as exists
+            `;
+            
+            if (!functionExists[0]?.exists) {
+              throw new Error('Database function not yet created');
+            }
+            
             // Query the database directly for category counts
             const categoryData = await prisma.$queryRaw<Array<{
               category_name: string;

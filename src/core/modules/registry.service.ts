@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { Logger } from '@/utils/logger';
 import { BaseModule } from './base.module';
 import { ModuleType, ModuleConfig } from './interfaces';
+import { prisma as sharedPrisma } from '@/utils/database';
 
 export interface ModuleRegistration {
   moduleId: string;
@@ -35,7 +36,7 @@ export class ModuleRegistry {
   private moduleInstances: Map<string, BaseModule> = new Map();
 
   private constructor() {
-    this.prisma = new PrismaClient();
+    this.prisma = sharedPrisma;
     this.logger = Logger.getInstance();
     // Don't initialize here - it's async and can't be awaited in constructor
   }

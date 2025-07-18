@@ -3,6 +3,7 @@ import { Logger } from '@/utils/logger';
 import { Redis } from '@/utils/redis';
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
+import { prisma as sharedPrisma } from '@/utils/database';
 
 export interface EmbeddingOptions {
   model?: string;
@@ -24,7 +25,7 @@ export class EmbeddingService {
     this.openai = new OpenAI({ apiKey });
     this.logger = Logger.getInstance();
     this.redis = Redis.getInstance();
-    this.prisma = new PrismaClient();
+    this.prisma = sharedPrisma;
 
     if (options?.model) this.defaultModel = options.model;
     if (options?.batchSize) this.batchSize = options.batchSize;
