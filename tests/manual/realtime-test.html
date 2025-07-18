@@ -363,7 +363,7 @@
             }
 
             try {
-                const response = await fetch('http://localhost:3000/api/projects', {
+                const response = await fetch('http://localhost:3000/api/projects/projects', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -399,7 +399,7 @@
             }
 
             try {
-                const response = await fetch('http://localhost:3000/api/tasks', {
+                const response = await fetch('http://localhost:3000/api/projects/tasks', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -430,7 +430,7 @@
             if (!token) return;
 
             try {
-                const response = await fetch('http://localhost:3000/api/projects', {
+                const response = await fetch('http://localhost:3000/api/projects/projects', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -450,7 +450,7 @@
             if (!token) return;
 
             try {
-                const response = await fetch('http://localhost:3000/api/tasks', {
+                const response = await fetch('http://localhost:3000/api/projects/tasks', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }

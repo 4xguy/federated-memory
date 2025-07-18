@@ -10,9 +10,9 @@ import mcpOauthRoutes from './mcp-oauth.routes';
 import configRoutes from './config.routes';
 import externalAuthRoutes from './external-auth.routes';
 import projectRoutes from '../projects';
-// New authentication controller (BigMemory pattern)
+// New authentication controller (BigMemory pattern) - PRIORITY 1
 import authController from '../auth/auth.controller';
-// TEMPORARY: Keep emergency auth for bypass
+// Emergency auth for bypass - PRIORITY 2 (fallback)
 import emergencyAuthRoutes from '../auth/emergency-auth';
 
 const router = Router();
@@ -32,15 +32,18 @@ router.use('/', mcpOauthRoutes);
 // REMOVED: Auth routes (for session management) - conflicting with new auth controller
 // router.use('/auth', authRoutes);
 
-// External auth routes (Google/GitHub OAuth)
-router.use('/auth', externalAuthRoutes);
-
-// NEW: Authentication controller (BigMemory pattern)
+// AUTH ROUTES - ORGANIZED BY PRIORITY
+// 1. BigMemory Authentication Controller (PRIMARY)
 // This provides /api/auth/login and /api/auth/register-email
 router.use('/auth', authController);
 
-// EMERGENCY AUTH ROUTES - TEMPORARY (for bypass authentication)
+// 2. Emergency Auth Routes (FALLBACK)
+// Only used when primary auth fails
 router.use('/auth', emergencyAuthRoutes);
+
+// 3. External Auth Routes (OAuth - Google/GitHub)
+// These are for web OAuth flows, not API auth
+router.use('/auth', externalAuthRoutes);
 
 // User routes (auth required only for some endpoints)
 router.use('/users', userRoutes);
@@ -48,7 +51,7 @@ router.use('/users', userRoutes);
 // Protected routes (auth required)
 router.use('/memories', authMiddleware, memoryRoutes);
 router.use('/modules', authMiddleware, moduleRoutes);
-router.use('/', projectRoutes); // Project routes have their own auth middleware
+router.use('/projects', projectRoutes); // Project routes have their own auth middleware
 
 // API key management routes - Deprecated with BigMemory auth
 // router.use('/', apiKeysRoutes);
