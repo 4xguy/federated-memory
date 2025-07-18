@@ -10,11 +10,10 @@ import mcpOauthRoutes from './mcp-oauth.routes';
 import configRoutes from './config.routes';
 import externalAuthRoutes from './external-auth.routes';
 import projectRoutes from '../projects';
-// TEMPORARY: Use temp auth until bcrypt issue is resolved
-// import emailAuthRoutes from '../auth/email-auth';
-import emailAuthRoutes from '../auth/email-auth-temp';
+// New authentication controller (BigMemory pattern)
+import authController from '../auth/auth.controller';
+// TEMPORARY: Keep emergency auth for bypass
 import emergencyAuthRoutes from '../auth/emergency-auth';
-// import { apiKeysRoutes } from '../routes/api-keys.routes'; // Deprecated with BigMemory auth
 
 const router = Router();
 
@@ -36,10 +35,11 @@ router.use('/auth', authRoutes);
 // External auth routes (Google/GitHub OAuth)
 router.use('/auth', externalAuthRoutes);
 
-// Email authentication routes (email/password)
-router.use('/auth', emailAuthRoutes);
+// NEW: Authentication controller (BigMemory pattern)
+// This provides /api/auth/login and /api/auth/register-email
+router.use('/auth', authController);
 
-// EMERGENCY AUTH ROUTES - TEMPORARY
+// EMERGENCY AUTH ROUTES - TEMPORARY (for bypass authentication)
 router.use('/auth', emergencyAuthRoutes);
 
 // User routes (auth required only for some endpoints)
