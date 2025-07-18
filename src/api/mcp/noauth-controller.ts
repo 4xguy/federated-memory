@@ -867,9 +867,22 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
           
           let categories = [];
           
-          if (registrySearch.length > 0 && registrySearch[0].metadata?.categories) {
-            // Get categories from registry
-            categories = registrySearch[0].metadata.categories;
+          if (registrySearch.length > 0) {
+            const registry = registrySearch[0];
+            // Check both 'categories' and 'items' fields for compatibility
+            const registryCategories = registry.metadata?.categories || registry.metadata?.items || [];
+            
+            // Ensure we have an array of category objects
+            if (Array.isArray(registryCategories)) {
+              categories = registryCategories;
+            } else if (typeof registryCategories === 'string') {
+              // Handle case where it might be stored as a string
+              try {
+                categories = JSON.parse(registryCategories);
+              } catch (e) {
+                categories = [];
+              }
+            }
             
             // Apply search filter if provided
             if (args.query) {
@@ -883,11 +896,18 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
             // Get memory counts for each category
             const categoriesWithCounts = await Promise.all(
               categories.map(async (cat: any) => {
-                const count = await cmiService.search(
+                // Count memories with this category
+                const searchResults = await cmiService.search(
                   userId,
-                  `category:"${cat.name}"`,
-                  { limit: 1 }
-                ).then((results: any[]) => results.length > 0 ? results[0].metadata?.totalCount || 0 : 0);
+                  `${cat.name}`, // Simple search for category name
+                  { limit: 1000 }
+                );
+                
+                // Count how many have this category in metadata
+                const count = searchResults.filter((memory: any) => 
+                  memory.metadata?.category === cat.name ||
+                  (Array.isArray(memory.metadata?.categories) && memory.metadata.categories.includes(cat.name))
+                ).length;
                 
                 return {
                   ...cat,
@@ -899,9 +919,13 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
             categories = categoriesWithCounts;
           }
           
+          // Ensure categories is a proper array of objects
+          const finalCategories = Array.isArray(categories) ? categories : [];
+          
           result = {
-            categories: categories.sort((a: any, b: any) => (b.memoryCount || 0) - (a.memoryCount || 0)),
-            count: categories.length
+            categories: finalCategories.sort((a: any, b: any) => (b.memoryCount || 0) - (a.memoryCount || 0)),
+            count: finalCategories.length,
+            message: finalCategories.length > 0 ? `Found ${finalCategories.length} categories` : 'No categories found'
           };
         } else if (name === 'createCategory') {
           // Create or update category in the registry
