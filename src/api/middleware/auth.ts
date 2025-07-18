@@ -1,85 +1,125 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '@/utils/database';
+import { AuthService } from '@/services/auth.service';
 import { Logger } from '@/utils/logger';
-import jwt from 'jsonwebtoken';
 
 const logger = Logger.getInstance();
+const authService = AuthService.getInstance();
 
 // AuthRequest now uses the Express User type defined in types/express.d.ts
 export interface AuthRequest extends Request {}
 
+/**
+ * Authentication middleware using BigMemory UUID token pattern
+ */
 export async function authMiddleware(
   req: AuthRequest,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    // Check for Authorization header
+    // Support both header and query parameter authentication
     const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      res.status(401).json({ error: 'Authorization header required' });
-      return;
-    }
-
-    // Extract token
-    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
-
+    const token = authHeader?.replace('Bearer ', '') || 
+                  (req.query.token as string);
+    
     if (!token) {
-      res.status(401).json({ error: 'Token required' });
+      res.status(401).json({
+        error: 'No authentication token provided',
+        code: 'NO_TOKEN'
+      });
       return;
     }
-
-    // Verify JWT token if JWT_SECRET is set
-    if (process.env.JWT_SECRET) {
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
-
-        // Find user by decoded info
-        const user = await prisma.user.findUnique({
-          where: { id: decoded.userId },
-        });
-
-        if (!user) {
-          res.status(401).json({ error: 'Invalid token - user not found' });
-          return;
-        }
-
-        req.user = {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          avatarUrl: user.avatarUrl,
-          oauthProvider: user.oauthProvider,
-        };
-        next();
-        return;
-      } catch (jwtError) {
-        // If JWT verification fails, fall back to token lookup
-        logger.debug('JWT verification failed, trying token lookup', { jwtError });
-      }
+    
+    // Validate token format (UUID v4)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(token)) {
+      res.status(401).json({
+        error: 'Invalid token format',
+        code: 'INVALID_TOKEN_FORMAT'
+      });
+      return;
     }
-
-    // Fall back to simple token lookup
-    const user = await prisma.user.findFirst({
-      where: { token },
-    });
-
+    
+    // Validate token and get user
+    const result = await authService.validateToken(token);
+    
+    if (!result) {
+      res.status(401).json({
+        error: 'Invalid authentication token',
+        code: 'INVALID_TOKEN'
+      });
+      return;
+    }
+    
+    // Get full user details
+    const user = await authService.getUserById(result.userId);
+    
     if (!user) {
-      res.status(401).json({ error: 'Invalid token' });
+      res.status(401).json({
+        error: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
       return;
     }
-
+    
+    // Attach user to request for downstream use
     req.user = {
       id: user.id,
       email: user.email,
       name: user.name,
       avatarUrl: user.avatarUrl,
-      oauthProvider: user.oauthProvider,
+      metadata: (user as any).metadata
     };
-
+    req.userId = user.id; // Convenience property
+    
     next();
   } catch (error) {
-    logger.error('Auth middleware error', { error });
-    res.status(500).json({ error: 'Authentication failed' });
+    logger.error('Authentication error', { error });
+    res.status(500).json({
+      error: 'Authentication failed',
+      code: 'AUTH_ERROR'
+    });
+  }
+}
+
+/**
+ * Optional auth middleware - attaches user if token is present but doesn't require it
+ */
+export async function optionalAuthMiddleware(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.replace('Bearer ', '') || 
+                  (req.query.token as string);
+    
+    if (token) {
+      // Validate token format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(token)) {
+        const result = await authService.validateToken(token);
+        if (result) {
+          const user = await authService.getUserById(result.userId);
+          if (user) {
+            req.user = {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              avatarUrl: user.avatarUrl,
+              metadata: (user as any).metadata
+            };
+            req.userId = user.id;
+          }
+        }
+      }
+    }
+    
+    next();
+  } catch (error) {
+    // Log error but continue - this is optional auth
+    logger.debug('Optional auth error', { error });
+    next();
   }
 }

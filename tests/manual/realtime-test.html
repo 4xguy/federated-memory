@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Federated Memory - Real-time Updates Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #F5F3F0;
+            color: #2B2417;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            background: #D4AE96;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff4444;
+            transition: background 0.3s;
+        }
+
+        .status-indicator.connected {
+            background: #44ff44;
+        }
+
+        .controls {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #D4CFC6;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .btn {
+            background: #000;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #333;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .panel h2 {
+            color: #2B2417;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+
+        .item {
+            background: #EBE7E2;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+
+        .item.new {
+            animation: slideIn 0.3s ease-out;
+            border-left: 4px solid #D4AE96;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .item-title {
+            font-weight: 600;
+            color: #2B2417;
+        }
+
+        .item-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-active { background: #B8D4CC; color: #2B2417; }
+        .status-planning { background: #E8D4C6; color: #2B2417; }
+        .status-todo { background: #C8C4E0; color: #2B2417; }
+        .status-in_progress { background: #E4886B; color: white; }
+        .status-done { background: #44ff44; color: #2B2417; }
+
+        .logs {
+            background: #2B2417;
+            color: #EBE7E2;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+
+        .log-entry {
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0;
+            border-bottom: 1px solid #474033;
+        }
+
+        .log-timestamp {
+            color: #9C9589;
+            font-size: 0.75rem;
+        }
+
+        .log-event {
+            color: #D4AE96;
+            font-weight: 600;
+        }
+
+        .auth-section {
+            background: #fff;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .auth-section input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #D4CFC6;
+            border-radius: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Federated Memory - Real-time Updates</h1>
+            <div class="connection-status">
+                <div class="status-indicator" id="statusIndicator"></div>
+                <span id="statusText">Disconnected</span>
+            </div>
+        </div>
+
+        <div class="auth-section">
+            <h3>Authentication</h3>
+            <input type="text" id="tokenInput" placeholder="Enter your authentication token (UUID)" />
+            <button class="btn" id="connectBtn">Connect</button>
+            <button class="btn" id="disconnectBtn">Disconnect</button>
+        </div>
+
+        <div class="controls">
+            <h3>Create Test Data</h3>
+            <div class="input-group">
+                <input type="text" id="projectName" placeholder="Project Name" />
+                <input type="text" id="projectDesc" placeholder="Project Description" />
+                <button class="btn" id="createProjectBtn">Create Project</button>
+            </div>
+            <div class="input-group">
+                <input type="text" id="taskTitle" placeholder="Task Title" />
+                <input type="text" id="taskDesc" placeholder="Task Description" />
+                <button class="btn" id="createTaskBtn">Create Task</button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="panel">
+                <h2>Projects</h2>
+                <div id="projectsList"></div>
+            </div>
+            <div class="panel">
+                <h2>Tasks</h2>
+                <div id="tasksList"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Real-time Event Log</h2>
+            <div class="logs" id="eventLogs"></div>
+        </div>
+    </div>
+
+    <script>
+        let eventSource = null;
+        let token = null;
+        let projects = [];
+        let tasks = [];
+
+        function connect() {
+            const tokenInput = document.getElementById('tokenInput');
+            token = tokenInput.value.trim();
+            
+            if (!token) {
+                alert('Please enter a valid authentication token');
+                return;
+            }
+
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            log('Connecting to SSE...', 'info');
+            eventSource = new EventSource(`http://localhost:3000/${token}/sse`);
+
+            eventSource.onopen = function() {
+                updateConnectionStatus(true);
+                log('Connected to real-time updates', 'success');
+            };
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleRealtimeMessage(data);
+                } catch (error) {
+                    log('Error parsing message: ' + error.message, 'error');
+                }
+            };
+
+            eventSource.onerror = function(error) {
+                updateConnectionStatus(false);
+                log('Connection error: ' + error.message, 'error');
+            };
+
+            // Load initial data
+            loadProjects();
+            loadTasks();
+        }
+
+        function disconnect() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            updateConnectionStatus(false);
+            log('Disconnected from real-time updates', 'info');
+        }
+
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('statusIndicator');
+            const text = document.getElementById('statusText');
+            
+            if (connected) {
+                indicator.classList.add('connected');
+                text.textContent = 'Connected';
+            } else {
+                indicator.classList.remove('connected');
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        function handleRealtimeMessage(data) {
+            log(`Received: ${data.type}`, 'info');
+            console.log('Realtime message:', data);
+
+            if (data.type === 'realtime_update') {
+                switch (data.event) {
+                    case 'project_created':
+                        addProject(data.data);
+                        log(`New project created: ${data.data.name}`, 'success');
+                        break;
+                    case 'project_updated':
+                        updateProject(data.data);
+                        log(`Project updated: ${data.data.name}`, 'info');
+                        break;
+                    case 'task_created':
+                        addTask(data.data);
+                        log(`New task created: ${data.data.title}`, 'success');
+                        break;
+                    case 'task_updated':
+                        updateTask(data.data);
+                        log(`Task updated: ${data.data.title}`, 'info');
+                        break;
+                }
+            }
+        }
+
+        async function createProject() {
+            const name = document.getElementById('projectName').value;
+            const description = document.getElementById('projectDesc').value;
+
+            if (!name || !token) {
+                alert('Please enter project name and ensure you\'re connected');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/projects', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name,
+                        description,
+                        status: 'active'
+                    })
+                });
+
+                if (response.ok) {
+                    document.getElementById('projectName').value = '';
+                    document.getElementById('projectDesc').value = '';
+                    log(`Project "${name}" created successfully`, 'success');
+                } else {
+                    const error = await response.text();
+                    log(`Error creating project: ${error}`, 'error');
+                }
+            } catch (error) {
+                log(`Error creating project: ${error.message}`, 'error');
+            }
+        }
+
+        async function createTask() {
+            const title = document.getElementById('taskTitle').value;
+            const description = document.getElementById('taskDesc').value;
+
+            if (!title || !token) {
+                alert('Please enter task title and ensure you\'re connected');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/tasks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        title,
+                        description,
+                        status: 'todo',
+                        priority: 'medium'
+                    })
+                });
+
+                if (response.ok) {
+                    document.getElementById('taskTitle').value = '';
+                    document.getElementById('taskDesc').value = '';
+                    log(`Task "${title}" created successfully`, 'success');
+                } else {
+                    const error = await response.text();
+                    log(`Error creating task: ${error}`, 'error');
+                }
+            } catch (error) {
+                log(`Error creating task: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadProjects() {
+            if (!token) return;
+
+            try {
+                const response = await fetch('http://localhost:3000/api/projects', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    projects = data.projects || [];
+                    renderProjects();
+                }
+            } catch (error) {
+                log(`Error loading projects: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadTasks() {
+            if (!token) return;
+
+            try {
+                const response = await fetch('http://localhost:3000/api/tasks', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    tasks = data.tasks || [];
+                    renderTasks();
+                }
+            } catch (error) {
+                log(`Error loading tasks: ${error.message}`, 'error');
+            }
+        }
+
+        function addProject(project) {
+            projects.unshift(project);
+            renderProjects();
+            
+            // Highlight the new project
+            setTimeout(() => {
+                const newItem = document.querySelector('.item.new');
+                if (newItem) {
+                    newItem.classList.remove('new');
+                }
+            }, 300);
+        }
+
+        function updateProject(project) {
+            const index = projects.findIndex(p => p.projectId === project.projectId);
+            if (index !== -1) {
+                projects[index] = project;
+                renderProjects();
+            }
+        }
+
+        function addTask(task) {
+            tasks.unshift(task);
+            renderTasks();
+            
+            // Highlight the new task
+            setTimeout(() => {
+                const newItem = document.querySelector('.item.new');
+                if (newItem) {
+                    newItem.classList.remove('new');
+                }
+            }, 300);
+        }
+
+        function updateTask(task) {
+            const index = tasks.findIndex(t => t.taskId === task.taskId);
+            if (index !== -1) {
+                tasks[index] = task;
+                renderTasks();
+            }
+        }
+
+        function renderProjects() {
+            const container = document.getElementById('projectsList');
+            container.innerHTML = projects.map(project => `
+                <div class="item new">
+                    <div class="item-header">
+                        <div class="item-title">${project.name}</div>
+                        <div class="item-status status-${project.status}">${project.status}</div>
+                    </div>
+                    <div class="item-description">${project.description || 'No description'}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasksList');
+            container.innerHTML = tasks.map(task => `
+                <div class="item new">
+                    <div class="item-header">
+                        <div class="item-title">${task.title}</div>
+                        <div class="item-status status-${task.status}">${task.status}</div>
+                    </div>
+                    <div class="item-description">${task.description || 'No description'}</div>
+                </div>
+            `).join('');
+        }
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('eventLogs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <div class="log-timestamp">${timestamp}</div>
+                <div class="log-event">[${type.toUpperCase()}] ${message}</div>
+            `;
+            logs.appendChild(logEntry);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Real-time test page loaded', 'info');
+            log('Enter your authentication token and click Connect', 'info');
+            
+            // Add event listeners
+            document.getElementById('connectBtn').addEventListener('click', connect);
+            document.getElementById('disconnectBtn').addEventListener('click', disconnect);
+            document.getElementById('createProjectBtn').addEventListener('click', createProject);
+            document.getElementById('createTaskBtn').addEventListener('click', createTask);
+        });
+    </script>
+</body>
+</html>

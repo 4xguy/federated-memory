@@ -52,13 +52,16 @@ router.get(
         return res.redirect(redirectUrl);
       }
       
-      // Regular web login flow
-      const token = authService.generateJWT(user.id);
+      // Regular web login flow - use UUID token
+      const userRecord = await authService.getUserById(user.id);
+      if (!userRecord) {
+        throw new Error('User not found after OAuth');
+      }
       
-      // Redirect to frontend with token
+      // Redirect to frontend with UUID token
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
       const redirectUrl = new URL(`${frontendUrl}/auth/success`);
-      redirectUrl.searchParams.append('token', token);
+      redirectUrl.searchParams.append('token', userRecord.token);
       redirectUrl.searchParams.append('provider', 'google');
       
       logger.info('Google OAuth success', { userId: user.id, email: user.email });
@@ -116,13 +119,16 @@ router.get(
         return res.redirect(redirectUrl);
       }
       
-      // Regular web login flow
-      const token = authService.generateJWT(user.id);
+      // Regular web login flow - use UUID token
+      const userRecord = await authService.getUserById(user.id);
+      if (!userRecord) {
+        throw new Error('User not found after OAuth');
+      }
       
-      // Redirect to frontend with token
+      // Redirect to frontend with UUID token
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
       const redirectUrl = new URL(`${frontendUrl}/auth/success`);
-      redirectUrl.searchParams.append('token', token);
+      redirectUrl.searchParams.append('token', userRecord.token);
       redirectUrl.searchParams.append('provider', 'github');
       
       logger.info('GitHub OAuth success', { userId: user.id, email: user.email });

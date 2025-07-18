@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
 export const prisma = new PrismaClient();
@@ -21,16 +21,24 @@ export const vectorDb = {
   ) {
     const id = randomUUID();
     const now = new Date();
+    
+    // Debug logging
+    console.log('storeWithEmbedding called with:', {
+      table,
+      metadataType: typeof data.metadata,
+      metadataStringified: JSON.stringify(data.metadata)
+    });
+    
     const result = await prisma.$queryRawUnsafe(`
       INSERT INTO "${table}" (
-        id, "userId", content, embedding, metadata, "updatedAt"
+        id, "userId", content, embedding, metadata, "updatedAt", "lastAccessed"
       ) VALUES (
-        $1, $2, $3, $4::vector, $5::jsonb, $6
+        $1, $2, $3, $4::vector, $5::jsonb, $6, $7
       )
       RETURNING id, "userId", content, metadata,
         "accessCount", "lastAccessed",
         "createdAt", "updatedAt"
-    `, id, data.userId, data.content, data.embedding, data.metadata, now);
+    `, id, data.userId, data.content, data.embedding, JSON.stringify(data.metadata), now, now);
     return (result as any[])[0];
   },
 
@@ -65,7 +73,7 @@ export const vectorDb = {
 
     if (updates.metadata !== undefined) {
       setClauses.push(`metadata = $${paramIndex}::jsonb`);
-      values.push(updates.metadata);
+      values.push(JSON.stringify(updates.metadata));
       paramIndex++;
     }
 
@@ -98,7 +106,7 @@ export const vectorDb = {
     const limit = options.limit || 10;
     const minScore = options.minScore || 0.7;
 
-    let filterClauses = [`"userId" = '${userId}'`];
+    const filterClauses = [`"userId" = '${userId}'`];
 
     // Add metadata filters
     if (options.filters) {

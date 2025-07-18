@@ -504,7 +504,7 @@ async function extractUserContextFromAuth(authHeader?: string): Promise<{ userId
     
     return {
       userId: user.id,
-      email: user.email,
+      email: user.email || 'no-email@example.com', // Default for users without email
       name: user.name || undefined
     };
   } catch (error) {

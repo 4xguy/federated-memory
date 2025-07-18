@@ -1,0 +1,100 @@
+<\!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth Test - Federated Memory</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .auth-button {
+            display: inline-block;
+            margin: 10px;
+            padding: 15px 30px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .auth-button:hover {
+            background-color: #45a049;
+        }
+        .github-button {
+            background-color: #333;
+        }
+        .github-button:hover {
+            background-color: #555;
+        }
+        .google-button {
+            background-color: #4285f4;
+        }
+        .google-button:hover {
+            background-color: #357ae8;
+        }
+        .status {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Federated Memory OAuth Test</h1>
+    <p>Click the buttons below to test OAuth authentication:</p>
+    
+    <div>
+        <a href="http://localhost:3000/api/auth/google" class="auth-button google-button">
+            Login with Google
+        </a>
+        <a href="http://localhost:3000/api/auth/github" class="auth-button github-button">
+            Login with GitHub
+        </a>
+    </div>
+    
+    <div class="status">
+        <h2>Authentication Status</h2>
+        <div id="status-message">Not authenticated</div>
+    </div>
+    
+    <script>
+        // Check authentication status
+        fetch("http://localhost:3000/api/auth/status", {
+            credentials: "include"
+        })
+        .then(res => res.json())
+        .then(data => {
+            const statusEl = document.getElementById("status-message");
+            if (data.authenticated) {
+                statusEl.innerHTML = `
+                    <p><strong>Authenticated\!</strong></p>
+                    <p>User: ${data.user.email || data.user.username}</p>
+                    <p>Provider: ${data.user.provider}</p>
+                    <p>ID: ${data.user.id}</p>
+                `;
+            } else {
+                statusEl.textContent = "Not authenticated. Click a button above to login.";
+            }
+        })
+        .catch(err => {
+            document.getElementById("status-message").textContent = "Error checking auth status: " + err.message;
+        });
+        
+        // Check for OAuth callback parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has("success")) {
+            const statusEl = document.getElementById("status-message");
+            statusEl.innerHTML = "<p style=\"color: green;\">Authentication successful\! Checking status...</p>";
+            setTimeout(() => location.reload(), 1000);
+        } else if (urlParams.has("error")) {
+            const statusEl = document.getElementById("status-message");
+            statusEl.innerHTML = `<p style="color: red;">Authentication failed: ${urlParams.get("error")}</p>`;
+        }
+    </script>
+</body>
+</html>

@@ -1,99 +1,29 @@
-# Claude Desktop MCP Configuration Guide
+# Claude Desktop Setup Guide for Federated Memory MCP Server
+
+This guide will help you connect the Federated Memory MCP server to Claude Desktop using the latest configuration methods (as of July 2025).
 
 ## Prerequisites
 
-1. Federated Memory backend deployed and running
-2. Valid API key generated from the frontend dashboard
-3. Claude Desktop installed on your system
+1. Federated Memory server running on `http://localhost:3001`
+2. Claude Desktop app installed
+3. Node.js and npm installed
 
-## Configuration File Locations
+## Important Notes
 
-### macOS
-```
-~/Library/Application Support/Claude/claude_desktop_config.json
-```
+- Claude Desktop supports both SSE and Streamable HTTP transports
+- Remote servers should be configured via Settings > Integrations in Claude Desktop
+- Local servers can use the `mcp-remote` adapter for Streamable HTTP support
 
-### Windows
-```
-%APPDATA%\Claude\claude_desktop_config.json
-```
+## Setup Methods
 
-### Linux
-```
-~/.config/claude/claude_desktop_config.json
-```
+### Method 1: Using mcp-remote Adapter (Recommended for Local Servers)
 
-## Configuration Format
+1. **Find your Claude Desktop config file:**
+   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+   - **Linux**: `~/.config/claude/claude_desktop_config.json`
 
-Since Federated Memory is a remote HTTP MCP server (not a local command), you'll need to use a proxy approach. Create a local proxy script first:
-
-### Step 1: Create a Local Proxy Script
-
-Create a file called `federated-memory-proxy.js` in a convenient location (e.g., `~/mcp-servers/`):
-
-```javascript
-const { Client } = require('@modelcontextprotocol/sdk');
-const { StdioClientTransport } = require('@modelcontextprotocol/sdk/transport/stdio');
-
-async function main() {
-  const transport = new StdioClientTransport({
-    command: 'node',
-    args: ['-e', `
-      const http = require('http');
-      const { Transform } = require('stream');
-      
-      process.stdin.pipe(new Transform({
-        transform(chunk, encoding, callback) {
-          const request = http.request({
-            hostname: 'federated-memory-production.up.railway.app',
-            path: '/mcp',
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ${process.env.FEDERATED_MEMORY_API_KEY}'
-            }
-          }, (res) => {
-            res.on('data', (data) => {
-              process.stdout.write(data);
-            });
-          });
-          
-          request.write(chunk);
-          request.end();
-          callback();
-        }
-      }));
-    `]
-  });
-
-  const client = new Client();
-  await client.connect(transport);
-}
-
-main().catch(console.error);
-```
-
-### Step 2: Configure Claude Desktop
-
-Edit your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "federated-memory": {
-      "command": "node",
-      "args": ["/path/to/federated-memory-proxy.js"],
-      "env": {
-        "FEDERATED_MEMORY_API_KEY": "YOUR_API_KEY_HERE"
-      }
-    }
-  }
-}
-```
-
-### Alternative: Using npx with a Remote HTTP Server Package
-
-If a community package exists for HTTP MCP servers, you could use:
+2. **Edit the configuration file:**
 
 ```json
 {
@@ -101,64 +31,173 @@ If a community package exists for HTTP MCP servers, you could use:
     "federated-memory": {
       "command": "npx",
       "args": [
-        "-y",
-        "@modelcontextprotocol/server-http-proxy",
-        "--url", "https://federated-memory-production.up.railway.app/mcp",
-        "--auth", "Bearer YOUR_API_KEY_HERE"
+        "mcp-remote",
+        "http://localhost:3001/mcp"
       ]
     }
   }
 }
 ```
 
-**Note**: The `@modelcontextprotocol/server-http-proxy` package may not exist yet. Check npm for available HTTP proxy packages for MCP.
+3. **Restart Claude Desktop** for the changes to take effect.
 
-## Replace YOUR_API_KEY_HERE
+### Method 2: Direct Configuration (If Claude Desktop supports it)
 
-1. Log into the frontend: https://charming-mercy-production.up.railway.app
-2. Go to "Manage API Keys"
-3. Create a new API key
-4. Copy the full key (it starts with something like `sk_live_`)
-5. Replace `YOUR_API_KEY_HERE` in the config with your actual key
+If Claude Desktop has native Streamable HTTP support in your version:
+
+```json
+{
+  "mcpServers": {
+    "federated-memory": {
+      "transport": {
+        "type": "streamable-http",
+        "url": "http://localhost:3001/mcp"
+      }
+    }
+  }
+}
+```
+
+### Method 3: Via Settings UI (For Remote Servers)
+
+If you're hosting the server remotely:
+1. Open Claude Desktop
+2. Go to Settings > Integrations
+3. Add a new MCP server
+4. Enter the URL: `http://your-server-url:port/mcp`
 
 ## Testing the Connection
 
-1. Save the configuration file
-2. Restart Claude Desktop completely (Quit and reopen)
-3. Start a new conversation
-4. Test with commands like:
-   - "Store this memory: I prefer TypeScript for backend development"
-   - "What do you remember about my programming preferences?"
-   - "Search my memories for TypeScript"
+1. **Start your Federated Memory server:**
+   ```bash
+   npm run dev
+   ```
+
+2. **Restart Claude Desktop**
+
+3. **In Claude Desktop, you should see:**
+   - The server listed in available integrations
+   - Ability to use memory commands
+
+4. **Test commands in Claude:**
+   - "Store this conversation in my memory"
+   - "Search my memories for [topic]"
+   - "What modules are available in my memory system?"
 
 ## Troubleshooting
 
-### "Server not available" error
-- Verify the backend URL is accessible: https://federated-memory-production.up.railway.app/api/health
-- Check your API key is valid
-- Ensure you've restarted Claude Desktop after configuration
+### Server Not Appearing
 
-### Authentication errors
-- Verify your API key was copied correctly
-- Check that the key hasn't been deleted in the dashboard
-- Try generating a new API key
+1. **Check logs:**
+   - macOS: `~/Library/Logs/Claude/`
+   - Look for `mcp.log` and `mcp-server-federated-memory.log`
 
-### No response from MCP commands
-- Check Claude Desktop logs (Help → Show Logs)
-- Verify the MCP server is listed in Claude's available tools
-- Try the alternative configuration format
+2. **Verify server is running:**
+   ```bash
+   curl http://localhost:3001/api/health
+   ```
 
-## Available MCP Tools
+3. **Test MCP endpoint directly:**
+   ```bash
+   curl -X POST http://localhost:3001/mcp \
+     -H "Content-Type: application/json" \
+     -d '{"jsonrpc":"2.0","id":"1","method":"initialize","params":{"protocolVersion":"1.0.0","clientInfo":{"name":"test","version":"1.0.0"},"capabilities":{"tools":true,"prompts":true}}}'
+   ```
 
-Once connected, you'll have access to these tools:
+### Connection Errors
 
-1. **searchMemories** - Search across all memory modules
-2. **storeMemory** - Store new memories with automatic categorization
-3. **getModuleStats** - View statistics for memory modules
-4. **listModules** - List all available memory modules
-5. **getMemory** - Retrieve a specific memory by ID
+1. **Install mcp-remote globally if needed:**
+   ```bash
+   npm install -g mcp-remote
+   ```
 
-## Example Usage
+2. **Check if another service is using port 3001:**
+   ```bash
+   lsof -i :3001  # macOS/Linux
+   netstat -ano | findstr :3001  # Windows
+   ```
 
+3. **Ensure CORS is properly configured** (already done in our server)
+
+### Session Issues
+
+If you see session-related errors:
+1. The server manages sessions automatically
+2. Sessions are created on first connection
+3. Check server logs for session initialization
+
+## Using the Integration
+
+Once connected, you can use natural language to interact with your memory system:
+
+### Examples:
+- **Store memories**: "Remember that I learned about MCP protocol today"
+- **Search**: "What do I know about Docker?"
+- **Module-specific**: "Store this as a technical memory: [content]"
+- **Stats**: "Show me statistics for my personal memories"
+
+### Available Tools in Claude:
+1. `searchMemories` - Search across all modules
+2. `storeMemory` - Store new memories
+3. `getMemory` - Retrieve specific memory by ID
+4. `listModules` - See available memory modules
+5. `getModuleStats` - Get statistics for a module
+
+### Available Prompts:
+1. `searchAndSummarize` - Search and get a summary of results
+
+## Advanced Configuration
+
+### Custom Environment Variables
+
+```json
+{
+  "mcpServers": {
+    "federated-memory": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://localhost:3001/mcp"],
+      "env": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "debug"
+      }
+    }
+  }
+}
 ```
-Human: Store this memory: I'm working on a React project with TypeScript and Tailwind CSS
+
+### Multiple Instances
+
+```json
+{
+  "mcpServers": {
+    "federated-memory-dev": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://localhost:3001/mcp"]
+    },
+    "federated-memory-prod": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://production-server:3001/mcp"]
+    }
+  }
+}
+```
+
+## Security Considerations
+
+1. **Local Development**: The current setup is for localhost only
+2. **Production**: Use HTTPS and proper authentication
+3. **Permissions**: The server runs with your user permissions
+4. **Data Privacy**: All memories are stored locally in your PostgreSQL database
+
+## Next Steps
+
+1. Test the connection with simple memory operations
+2. Explore different memory modules
+3. Build up your personal knowledge base
+4. Consider adding custom modules for specific use cases
+
+## Support
+
+- Check server logs in terminal where `npm run dev` is running
+- Review Claude Desktop logs for connection issues
+- Test with the interactive script: `npm run test:mcp:interactive`

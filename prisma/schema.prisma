@@ -17,24 +17,30 @@ datasource db {
 
 model User {
   id              String   @id @default(uuid())
-  email           String   @unique
-  token           String   @unique
-  passwordHash    String?
-  oauthProvider   String?
-  oauthId         String?
+  token           String   @unique @default(uuid()) // UUID token for authentication
+  email           String?  @unique // Optional for BigMemory pattern
+  emailVerified   Boolean  @default(false)
+  emailVerificationToken String? @unique // For email verification
+  emailVerificationExpires DateTime? // Token expiration
+  passwordHash    String?  // For email/password auth
+  oauthProvider   String?  // Keep for Google/GitHub login
+  oauthId         String?  // Keep for Google/GitHub login
   name            String?
   avatarUrl       String?
   isActive        Boolean  @default(true)
   lastLogin       DateTime?
+  metadata        Json     @default("{}") // Flexible JSON storage
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   // Relations
   memoryIndices   MemoryIndex[]
   relationships   MemoryRelationship[]
-  apiKeys         ApiKey[]
-  refreshTokens   RefreshToken[]
+  apiKeys         ApiKey[] // To be deprecated
+  refreshTokens   RefreshToken[] // Keep for OAuth functionality
+  sessions        Session[] // For SSE connection tracking
 
+  @@index([token]) // Critical for performance
   @@index([oauthProvider, oauthId])
   @@map("users")
 }
@@ -109,6 +115,31 @@ model MemoryModule {
 
 // ============= Module Storage Models =============
 // Each module will have its own table following this pattern
+
+model ProjectManagementMemory {
+  id            String   @id @default(uuid())
+  userId        String
+  
+  // Content and embeddings
+  content       String
+  embedding     Unsupported("vector(1536)")?
+  
+  // Flexible metadata - stores project/task data
+  metadata      Json     @default("{}")
+  
+  // Access tracking
+  accessCount   Int      @default(0)
+  lastAccessed  DateTime @default(now())
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@map("project_management_memories")
+}
 
 model TechnicalMemory {
   id            String   @id @default(uuid())
@@ -278,6 +309,22 @@ model ModuleStats {
 }
 
 // ============= Auth Models =============
+
+model Session {
+  id            String   @id @default(uuid())
+  userId        String
+  connectionId  String   @unique
+  connectionType String  // 'sse' or 'websocket'
+  lastActivity  DateTime @default(now())
+  metadata      Json     @default("{}")
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([connectionId])
+  @@map("sessions")
+}
 
 model ApiKey {
   id        String    @id @default(uuid())
