@@ -6,7 +6,9 @@ import { logger } from '@/utils/logger';
 import { getCMIService } from '../../core/cmi/index.service';
 import { ModuleRegistry } from '../../core/modules/registry.service';
 import { ProjectManagementService } from '../../services/project-management.service';
+import { ChurchService } from '../../services/church.service';
 import { getEmbeddingService } from '../../core/embeddings/generator.service';
+import { registerChurchTools } from './church-tools';
 import { 
   ProjectStatus, 
   TaskStatus, 
@@ -40,10 +42,12 @@ export function createAuthenticatedMcpServer(userContext?: UserContext) {
   const moduleRegistry = ModuleRegistry.getInstance();
   const embeddingService = getEmbeddingService();
   const projectService = new ProjectManagementService(embeddingService, cmiService);
+  const churchService = new ChurchService(embeddingService, cmiService);
 
-  // Initialize project service
+  // Initialize services
   (async () => {
     await projectService.initialize();
+    await churchService.initialize();
   })();
 
   // Always register public tools
@@ -54,6 +58,9 @@ export function createAuthenticatedMcpServer(userContext?: UserContext) {
   
   // Register project management tools
   registerProjectManagementTools(server, projectService, userContext);
+  
+  // Register church tools
+  registerChurchTools(server, churchService, userContext);
   
   return server;
 }
