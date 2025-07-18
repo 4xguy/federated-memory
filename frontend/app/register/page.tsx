@@ -1,161 +1,209 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { toast, Toaster } from 'react-hot-toast';
+import { Mail, Key, User, Brain } from 'lucide-react';
+import Link from 'next/link';
+import { authAPI } from '@/lib/api';
+import { Button, Input, Label, FormField, ErrorMessage, Heading, Text } from '@/components/ui';
+
+const registerSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string(),
+  name: z.string().optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
-  const [token, setToken] = useState('')
-  const [mcpUrl, setMcpUrl] = useState('')
-  
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://federated-memory-production.up.railway.app'
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleQuickRegister = async () => {
-    setLoading(true)
-    setError('')
-    
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+  });
+
+  const onSubmit = async (data: RegisterFormData) => {
+    setIsSubmitting(true);
     try {
-      const response = await fetch(`${backendUrl}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
-      })
+      await authAPI.registerWithEmail(data.email, data.password, data.name);
       
-      const data = await response.json()
+      toast.success('Registration successful! Please check your email to verify your account.');
       
-      if (response.ok && data.success) {
-        setSuccess(true)
-        setToken(data.data.token)
-        setMcpUrl(`${backendUrl}/${data.data.token}/sse`)
+      // Redirect to login after a delay
+      setTimeout(() => {
+        router.push('/login');
+      }, 3000);
+    } catch (error: any) {
+      if (error.response?.status === 409) {
+        toast.error('Email already registered');
       } else {
-        setError(data.error || 'Registration failed')
+        toast.error('Registration failed. Please try again.');
       }
-    } catch (err) {
-      setError('Network error: Unable to connect to server')
     } finally {
-      setLoading(false)
+      setIsSubmitting(false);
     }
-  }
-
-  const copyToClipboard = (text: string, button: 'token' | 'url') => {
-    navigator.clipboard.writeText(text)
-    // You could add a toast notification here
-  }
-
-  if (success) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-24">
-        <div className="z-10 max-w-2xl w-full space-y-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-green-600">
-              Registration Successful!
-            </h2>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Your MCP authentication credentials are ready
-            </p>
-          </div>
-          
-          <div className="space-y-6">
-            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                UUID TOKEN (save this!)
-              </h3>
-              <div className="flex items-center space-x-2">
-                <code className="flex-1 p-2 bg-white dark:bg-gray-900 rounded text-sm break-all">
-                  {token}
-                </code>
-                <button
-                  onClick={() => copyToClipboard(token, 'token')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Copy
-                </button>
-              </div>
-            </div>
-            
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-              <h3 className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">
-                MCP SERVER URL
-              </h3>
-              <div className="flex items-center space-x-2">
-                <code className="flex-1 p-2 bg-white dark:bg-gray-900 rounded text-sm break-all">
-                  {mcpUrl}
-                </code>
-                <button
-                  onClick={() => copyToClipboard(mcpUrl, 'url')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Copy
-                </button>
-              </div>
-            </div>
-            
-            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Quick Setup for Claude Desktop:</h4>
-              <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                <li>Copy the MCP URL above</li>
-                <li>Open Claude Desktop settings</li>
-                <li>Add a new MCP server with type "SSE"</li>
-                <li>Paste the URL and save</li>
-              </ol>
-            </div>
-          </div>
-        </div>
-      </main>
-    )
-  }
+  };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <div className="z-10 max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold">
-            Federated Memory
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Create an account or sign in
-          </p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <Toaster position="top-right" />
+
+      <div className="max-w-[400px] w-full px-6">
+        <div className="space-y-12">
+          {/* Logo */}
+          <div className="text-center">
+            <Link href="/" className="inline-flex items-center space-x-3">
+              <Brain className="h-12 w-12 text-blue-600" />
+              <span className="text-4xl font-bold text-gray-900 dark:text-white">Federated Memory</span>
+            </Link>
+          </div>
+          
+          {/* Heading */}
+          <div className="text-center space-y-2">
+            <Heading as="h2" variant="h2" className="text-center">
+              Create Your Account
+            </Heading>
+            <Text className="text-center">
+              Join the federated AI memory revolution.
+            </Text>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            
+            {/* Name Field (Optional) */}
+            <FormField>
+              <Input
+                {...register('name')}
+                type="text"
+                placeholder="Name (optional)"
+                disabled={isSubmitting}
+                icon={<User className="h-5 w-5" />}
+                iconPosition="left"
+              />
+            </FormField>
+            
+            {/* Email Field */}
+            <FormField>
+              <Input
+                {...register('email')}
+                type="email"
+                placeholder="Enter your email"
+                error={!!errors.email}
+                disabled={isSubmitting}
+                icon={<Mail className="h-5 w-5" />}
+                iconPosition="left"
+              />
+              {errors.email && (
+                <ErrorMessage>{errors.email.message}</ErrorMessage>
+              )}
+            </FormField>
+            
+            {/* Password Field */}
+            <FormField>
+              <Input
+                {...register('password')}
+                type="password"
+                placeholder="Create a password (min 8 characters)"
+                error={!!errors.password}
+                disabled={isSubmitting}
+                icon={<Key className="h-5 w-5" />}
+                iconPosition="left"
+              />
+              {errors.password && (
+                <ErrorMessage>{errors.password.message}</ErrorMessage>
+              )}
+            </FormField>
+            
+            {/* Confirm Password Field */}
+            <FormField>
+              <Input
+                {...register('confirmPassword')}
+                type="password"
+                placeholder="Confirm your password"
+                error={!!errors.confirmPassword}
+                disabled={isSubmitting}
+                icon={<Key className="h-5 w-5" />}
+                iconPosition="left"
+              />
+              {errors.confirmPassword && (
+                <ErrorMessage>{errors.confirmPassword.message}</ErrorMessage>
+              )}
+            </FormField>
+            
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              variant="primary"
+              fullWidth
+              loading={isSubmitting}
+            >
+              Create Account
+            </Button>
+          </form>
+
+          {/* Terms */}
+          <Text variant="caption" className="text-center">
+            By creating an account, you agree to our{' '}
+            <Link href="/terms" className="text-blue-600 hover:underline">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" className="text-blue-600 hover:underline">
+              Privacy Policy
+            </Link>
+          </Text>
+
+          {/* Footer */}
+          <div className="space-y-8">
+            <Text variant="caption" className="text-center">
+              Already have an account?{' '}
+              <Link href="/login" className="text-blue-600 font-medium hover:underline">
+                Sign in
+              </Link>
+            </Text>
+          </div>
         </div>
         
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-          </div>
-        )}
-        
-        <div className="mt-8 space-y-4">
-          <button
-            onClick={handleQuickRegister}
-            disabled={loading}
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Generating...' : 'Generate MCP URL without Email'}
-          </button>
-          
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300 dark:border-gray-700" />
+        {/* Sidebar Badge */}
+        <div className="fixed right-8 top-1/2 -translate-y-1/2 max-w-[280px] hidden lg:block">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg space-y-3">
+            <div className="flex items-center space-x-2">
+              <Brain className="h-5 w-5 text-blue-600" />
+              <Text variant="caption" className="font-semibold">
+                Why Federated Memory?
+              </Text>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">
-                or use the full registration
-              </span>
-            </div>
+            <ul className="space-y-2">
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                <Text variant="caption">Your data stays private and secure</Text>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                <Text variant="caption">Seamless integration with AI tools</Text>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                <Text variant="caption">Intelligent memory organization</Text>
+              </li>
+            </ul>
           </div>
-          
-          <button
-            onClick={() => window.location.href = `${backendUrl}/register.html`}
-            className="group relative w-full flex justify-center py-3 px-4 border border-gray-300 dark:border-gray-700 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Email & Password Registration
-          </button>
         </div>
       </div>
-    </main>
-  )
+    </div>
+  );
 }
