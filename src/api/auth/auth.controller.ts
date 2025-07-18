@@ -23,8 +23,11 @@ const registerSchema = z.object({
  */
 router.post('/login', async (req: Request, res: Response) => {
   try {
+    logger.info('Login attempt', { email: req.body.email });
+    
     const validationResult = loginSchema.safeParse(req.body);
     if (!validationResult.success) {
+      logger.warn('Login validation failed', { errors: validationResult.error.issues });
       return res.status(400).json({
         error: 'Invalid input',
         details: validationResult.error.issues
@@ -32,6 +35,18 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     const { email, password } = validationResult.data;
+
+    // Test database connectivity
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      logger.info('Database connection test successful');
+    } catch (dbError) {
+      logger.error('Database connection failed', { error: dbError });
+      return res.status(500).json({
+        error: 'Database connection failed',
+        code: 'DATABASE_ERROR'
+      });
+    }
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -47,6 +62,7 @@ router.post('/login', async (req: Request, res: Response) => {
     });
 
     if (!user || !user.passwordHash) {
+      logger.warn('Login failed - user not found or no password hash', { email });
       return res.status(401).json({
         error: 'Invalid credentials',
         code: 'INVALID_CREDENTIALS'
@@ -54,6 +70,7 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     if (!user.isActive) {
+      logger.warn('Login failed - account disabled', { email });
       return res.status(403).json({
         error: 'Account is disabled',
         code: 'ACCOUNT_DISABLED'
@@ -76,6 +93,7 @@ router.post('/login', async (req: Request, res: Response) => {
     }
     
     if (!isValidPassword) {
+      logger.warn('Login failed - invalid password', { email });
       return res.status(401).json({
         error: 'Invalid credentials',
         code: 'INVALID_CREDENTIALS'
@@ -93,7 +111,8 @@ router.post('/login', async (req: Request, res: Response) => {
 
   } catch (error) {
     logger.error('Login error', { 
-      error: error instanceof Error ? error.message : error
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined
     });
     res.status(500).json({
       error: 'Login failed',
