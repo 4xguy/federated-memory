@@ -18,6 +18,46 @@ import { createRedisSessionMiddleware, upgradeToRedisSession } from './api/middl
 import { initializePassport } from './services/oauth-strategies/passport.config';
 import { handleSSE } from './api/sse';
 import RealtimeService from './services/realtime.service';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Prevent multiple instances when using tsx watch
+const lockFile = path.join(process.cwd(), '.server.lock');
+if (fs.existsSync(lockFile)) {
+  const pid = fs.readFileSync(lockFile, 'utf-8');
+  try {
+    // Check if process is still running
+    process.kill(parseInt(pid), 0);
+    logger.warn('Server is already running with PID ' + pid + ', exiting...');
+    process.exit(0);
+  } catch (e) {
+    // Process not running, remove stale lock file
+    fs.unlinkSync(lockFile);
+  }
+}
+
+// Create lock file with current PID
+fs.writeFileSync(lockFile, process.pid.toString());
+
+// Ensure lock file is removed on exit
+const cleanupLockFile = () => {
+  if (fs.existsSync(lockFile)) {
+    const currentPid = fs.readFileSync(lockFile, 'utf-8');
+    if (currentPid === process.pid.toString()) {
+      fs.unlinkSync(lockFile);
+    }
+  }
+};
+
+process.on('exit', cleanupLockFile);
+process.on('SIGINT', () => {
+  cleanupLockFile();
+  process.exit(0);
+});
+process.on('SIGTERM', () => {
+  cleanupLockFile();
+  process.exit(0);
+});
 
 // Initialize Prisma
 export const prisma = new PrismaClient({

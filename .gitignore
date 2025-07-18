@@ -48,3 +48,6 @@ temp/
 
 # Redis dump
 dump.rdb
+
+# Server lock file
+.server.lock
