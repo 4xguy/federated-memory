@@ -352,7 +352,16 @@ export class ProjectManagementModule extends BaseModule {
 
   async searchByMetadata(userId: string, filters: Record<string, any>): Promise<Memory[]> {
     const query = `
-      SELECT * FROM project_management_memories
+      SELECT 
+        id,
+        "userId",
+        content,
+        metadata,
+        "accessCount",
+        "lastAccessed",
+        "createdAt",
+        "updatedAt"
+      FROM project_management_memories
       WHERE "userId" = $1
         AND metadata @> $2::jsonb
       ORDER BY "createdAt" DESC

@@ -458,17 +458,19 @@ export class CMIService {
         },
       });
 
-      // Delete index entry
-      await this.prisma.memoryIndex.delete({
+      // Delete index entry - use deleteMany to avoid error if not exists
+      const deleted = await this.prisma.memoryIndex.deleteMany({
         where: {
-          moduleId_remoteMemoryId: {
-            moduleId,
-            remoteMemoryId,
-          },
+          moduleId,
+          remoteMemoryId,
         },
       });
 
-      this.logger.info('Memory deleted from index', { moduleId, remoteMemoryId });
+      if (deleted.count > 0) {
+        this.logger.info('Memory deleted from index', { moduleId, remoteMemoryId });
+      } else {
+        this.logger.warn('Memory index entry not found for deletion', { moduleId, remoteMemoryId });
+      }
     } catch (error) {
       this.logger.error('Failed to delete memory', { error, moduleId, remoteMemoryId });
       throw new Error(`Memory deletion failed: ${error}`);

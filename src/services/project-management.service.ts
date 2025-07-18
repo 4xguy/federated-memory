@@ -82,7 +82,7 @@ export class ProjectManagementService {
     const memoryId = await this.module.store(userId, content, metadata);
     
     // Register with CMI for routing
-    await this.cmiService.registerMemory(userId, 'project-management', memoryId, content, metadata);
+    await this.cmiService.indexMemory(userId, 'project-management', memoryId, content, metadata);
 
     // Send real-time notification
     await this.realtimeService.notifyProjectChange(userId, 'created', fullProject);
@@ -130,7 +130,7 @@ export class ProjectManagementService {
     await this.module.update(userId, memory.id, { content, metadata });
     
     // Update CMI entry
-    await this.cmiService.updateMemory(userId, 'project-management', memory.id, content, metadata);
+    await this.cmiService.update(userId, memory.id, { content, metadata });
 
     return updatedProject;
   }
@@ -151,7 +151,7 @@ export class ProjectManagementService {
     await this.module.delete(userId, memory.id);
     
     // Remove from CMI
-    await this.cmiService.deleteMemory(userId, 'project-management', memory.id);
+    await this.cmiService.deleteMemory('project-management', memory.id);
 
     return true;
   }
@@ -205,7 +205,7 @@ export class ProjectManagementService {
     const memoryId = await this.module.store(userId, content, metadata);
     
     // Register with CMI for routing
-    await this.cmiService.registerMemory(userId, 'project-management', memoryId, content, metadata);
+    await this.cmiService.indexMemory(userId, 'project-management', memoryId, content, metadata);
 
     return fullTask;
   }
@@ -250,7 +250,7 @@ export class ProjectManagementService {
     await this.module.update(userId, memory.id, { content, metadata });
     
     // Update CMI entry
-    await this.cmiService.updateMemory(userId, 'project-management', memory.id, content, metadata);
+    await this.cmiService.update(userId, memory.id, { content, metadata });
 
     return updatedTask;
   }
@@ -263,7 +263,7 @@ export class ProjectManagementService {
     await this.module.delete(userId, memory.id);
     
     // Remove from CMI
-    await this.cmiService.deleteMemory(userId, 'project-management', memory.id);
+    await this.cmiService.deleteMemory('project-management', memory.id);
 
     // Clean up dependencies
     await this.removeTaskDependencies(userId, taskId);
