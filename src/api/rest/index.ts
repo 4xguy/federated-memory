@@ -5,7 +5,7 @@ import moduleRoutes from './module.routes';
 import userRoutes from './user.routes';
 import healthRoutes from './health.routes';
 import oauthRoutes from './oauth.routes';
-import authRoutes from './auth.routes';
+// REMOVED: authRoutes import (conflicting with new auth controller)
 import mcpOauthRoutes from './mcp-oauth.routes';
 import configRoutes from './config.routes';
 import externalAuthRoutes from './external-auth.routes';
@@ -29,8 +29,8 @@ router.use('/oauth', oauthRoutes);
 // MCP-specific OAuth discovery routes
 router.use('/', mcpOauthRoutes);
 
-// Auth routes (for session management)
-router.use('/auth', authRoutes);
+// REMOVED: Auth routes (for session management) - conflicting with new auth controller
+// router.use('/auth', authRoutes);
 
 // External auth routes (Google/GitHub OAuth)
 router.use('/auth', externalAuthRoutes);
