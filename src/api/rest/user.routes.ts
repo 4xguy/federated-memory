@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '@/utils/database';
-import { AuthRequest } from '@/api/middleware/auth';
+import { AuthRequest, authMiddleware } from '@/api/middleware/auth';
 import { Logger } from '@/utils/logger';
 import { z } from 'zod';
 import jwt from 'jsonwebtoken';
@@ -125,7 +125,7 @@ router.post('/login', async (req: Request, res: Response) => {
 });
 
 // GET /api/users/me - Get current user info
-router.get('/me', async (req: AuthRequest, res: Response) => {
+router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
@@ -153,7 +153,7 @@ router.get('/me', async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/users/stats - Get user statistics across all modules
-router.get('/stats', async (req: AuthRequest, res: Response) => {
+router.get('/stats', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
 
@@ -203,7 +203,7 @@ router.get('/stats', async (req: AuthRequest, res: Response) => {
 });
 
 // DELETE /api/users/me - Delete current user and all their data
-router.delete('/me', async (req: AuthRequest, res: Response) => {
+router.delete('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.id;
 

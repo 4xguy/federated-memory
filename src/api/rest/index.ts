@@ -11,7 +11,7 @@ import configRoutes from './config.routes';
 import externalAuthRoutes from './external-auth.routes';
 import projectRoutes from '../projects';
 // New authentication controller (BigMemory pattern) - PRIORITY 1
-import authController from '../auth/auth.controller';
+import authController from '../auth/bigmemory-auth.controller';
 // Emergency auth for bypass - PRIORITY 2 (fallback)
 import emergencyAuthRoutes from '../auth/emergency-auth';
 
