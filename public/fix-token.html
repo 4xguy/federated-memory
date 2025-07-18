@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix Token Issue</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; }
+        .field { margin: 15px 0; }
+        .label { font-weight: bold; margin-bottom: 5px; }
+        .value { background: #f0f0f0; padding: 10px; border-radius: 5px; word-break: break-all; }
+        .error { color: red; }
+        .success { color: green; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .btn-primary { background: #000; color: white; border: none; border-radius: 5px; }
+        .btn-danger { background: #dc3545; color: white; border: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fix Authentication Token</h1>
+        
+        <div class="field">
+            <div class="label">Current Stored Values:</div>
+            <div class="value">
+                Token: <span id="currentToken"></span><br>
+                User ID: <span id="currentUserId"></span><br>
+                Email: <span id="currentEmail"></span>
+            </div>
+        </div>
+        
+        <div class="field">
+            <div class="label">Issue Detected:</div>
+            <div id="issue" class="value"></div>
+        </div>
+        
+        <div class="field">
+            <button class="btn-primary" onclick="getCorrectToken()">Get Correct Token</button>
+            <button class="btn-danger" onclick="clearAndRelogin()">Clear & Re-login</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+    
+    <script>
+        // Display current values
+        const token = localStorage.getItem('token');
+        const userId = localStorage.getItem('userId');
+        const email = localStorage.getItem('userEmail');
+        
+        document.getElementById('currentToken').textContent = token || 'None';
+        document.getElementById('currentUserId').textContent = userId || 'None';
+        document.getElementById('currentEmail').textContent = email || 'None';
+        
+        // Check for issues
+        if (token && token.startsWith('usr_')) {
+            document.getElementById('issue').innerHTML = '<span class="error">Token contains user ID instead of authentication token!</span>';
+        } else if (!token) {
+            document.getElementById('issue').innerHTML = '<span class="error">No token found!</span>';
+        } else if (token.match(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/)) {
+            document.getElementById('issue').innerHTML = '<span class="success">Token format looks correct (UUID)</span>';
+        } else {
+            document.getElementById('issue').innerHTML = '<span class="error">Token format is invalid!</span>';
+        }
+        
+        async function getCorrectToken() {
+            if (!email) {
+                document.getElementById('result').innerHTML = '<div class="error">No email found. Please clear and re-login.</div>';
+                return;
+            }
+            
+            document.getElementById('result').innerHTML = '<div>Fetching correct token...</div>';
+            
+            try {
+                // Try emergency login to get correct token
+                const response = await fetch('/api/auth/emergency-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.user && data.user.token) {
+                    // Fix the token
+                    localStorage.setItem('token', data.user.token);
+                    localStorage.setItem('userId', data.user.id);
+                    
+                    document.getElementById('result').innerHTML = `
+                        <div class="success">
+                            Token fixed successfully!<br>
+                            New token: ${data.user.token}<br>
+                            MCP URL: ${window.location.origin}/${data.user.token}<br>
+                            <button onclick="window.location.href='/dashboard.html'">Go to Dashboard</button>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('result').innerHTML = `<div class="error">Failed to get token: ${data.error || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        function clearAndRelogin() {
+            localStorage.clear();
+            window.location.href = '/register.html';
+        }
+    </script>
+</body>
+</html>
