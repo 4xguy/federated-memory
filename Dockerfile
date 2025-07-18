@@ -1,7 +1,7 @@
 FROM node:20-alpine AS builder
 
-# Install dependencies for building native modules
-RUN apk add --no-cache python3 make g++ postgresql-client
+# Install dependencies for building native modules and OpenSSL
+RUN apk add --no-cache python3 make g++ postgresql-client openssl1.1-compat
 
 # Create app directory
 WORKDIR /app
@@ -17,9 +17,8 @@ RUN npm ci
 # Copy source code
 COPY src ./src
 
-# Generate Prisma client with correct binary target
-# Skip checksum verification to avoid S3 403 errors
-ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+# Generate Prisma client with proper environment
+ENV PRISMA_CLI_BINARY_TARGETS=linux-musl-openssl-3.0.x
 RUN npx prisma generate
 
 # Build TypeScript
