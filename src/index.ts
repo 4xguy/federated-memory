@@ -384,6 +384,11 @@ async function main() {
       }
     });
 
+    // Serve register.html in all environments
+    app.get('/register.html', (_req, res) => {
+      res.sendFile('register.html', { root: process.cwd() });
+    });
+    
     // Serve test pages in development
     if (process.env.NODE_ENV === 'development') {
       app.get('/test-oauth.html', (_req, res) => {
@@ -392,10 +397,6 @@ async function main() {
       
       app.get('/realtime-test.html', (_req, res) => {
         res.sendFile('realtime-test.html', { root: process.cwd() });
-      });
-      
-      app.get('/register.html', (_req, res) => {
-        res.sendFile('register.html', { root: process.cwd() });
       });
     }
     
