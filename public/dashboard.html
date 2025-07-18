@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Federated Memory - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #F5F3F0;
+            color: #2B2417;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            color: #D4AE96;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            color: #2B2417;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .info-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .label {
+            font-weight: 600;
+            color: #635C4F;
+            margin-bottom: 0.5rem;
+        }
+
+        .value {
+            background: #F5F3F0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            word-break: break-all;
+            margin-bottom: 0.5rem;
+        }
+
+        .copy-btn {
+            background: #D4AE96;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #C09B80;
+        }
+
+        .logout-btn {
+            background: #635C4F;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #4A453B;
+        }
+
+        .alert {
+            background: #FEF3E2;
+            border: 1px solid #F6D55C;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Federated Memory Dashboard</h1>
+            <p id="userEmail" style="color: #635C4F; margin-bottom: 2rem;">Loading...</p>
+        </div>
+
+        <div class="card">
+            <h2>Your API Credentials</h2>
+            
+            <div class="info-group">
+                <div class="label">User Token</div>
+                <div class="value" id="tokenValue">Loading...</div>
+                <button class="copy-btn" onclick="copyToClipboard('tokenValue')">Copy Token</button>
+            </div>
+
+            <div class="info-group">
+                <div class="label">API Base URL</div>
+                <div class="value" id="apiUrl">Loading...</div>
+                <button class="copy-btn" onclick="copyToClipboard('apiUrl')">Copy URL</button>
+            </div>
+
+            <div class="info-group">
+                <div class="label">MCP URL</div>
+                <div class="value" id="mcpUrl">Loading...</div>
+                <button class="copy-btn" onclick="copyToClipboard('mcpUrl')">Copy MCP URL</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Quick Start</h2>
+            <p style="margin-bottom: 1rem;">Use your MCP URL in Claude Desktop or any MCP-compatible client:</p>
+            <div class="value">
+                {
+                  "mcpServers": {
+                    "federated-memory": {
+                      "command": "npx",
+                      "args": [
+                        "-y",
+                        "@modelcontextprotocol/server-bigmemory@latest",
+                        "<span id="mcpUrlShort">YOUR_MCP_URL</span>"
+                      ]
+                    }
+                  }
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is logged in
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token') || localStorage.getItem('token');
+        const userId = localStorage.getItem('userId');
+        const userEmail = localStorage.getItem('userEmail');
+
+        if (!token) {
+            // Not logged in, redirect to register page
+            window.location.href = '/register.html';
+        } else {
+            // Store token if it came from URL
+            if (urlParams.get('token')) {
+                localStorage.setItem('token', token);
+            }
+
+            // Display user info
+            document.getElementById('userEmail').textContent = userEmail || 'Logged in';
+            document.getElementById('tokenValue').textContent = token;
+            
+            const apiUrl = window.location.origin;
+            document.getElementById('apiUrl').textContent = apiUrl;
+            
+            const mcpUrl = `${apiUrl}/${token}`;
+            document.getElementById('mcpUrl').textContent = mcpUrl;
+            document.getElementById('mcpUrlShort').textContent = mcpUrl;
+        }
+
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userEmail');
+            window.location.href = '/register.html';
+        }
+    </script>
+</body>
+</html>

@@ -59,7 +59,7 @@ async function handleSubmit(event) {
         
         if (response.ok) {
             // Success
-            currentToken = data.user?.token || data.data?.token || data.token;
+            currentToken = data.token || data.user?.token || data.data?.token;
             messageDiv.innerHTML = `<div class="message success">${data.message || 'Success!'}</div>`;
             
             // Show token and MCP URL
@@ -67,6 +67,18 @@ async function handleSubmit(event) {
             const mcpUrl = `${window.location.origin}/${currentToken}/sse`;
             document.getElementById('mcpUrlValue').textContent = mcpUrl;
             document.getElementById('tokenDisplay').style.display = 'block';
+            
+            // Store user info for dashboard
+            if (currentMode === 'login') {
+                localStorage.setItem('token', currentToken);
+                localStorage.setItem('userId', data.userId);
+                localStorage.setItem('userEmail', data.user?.email || formData.email);
+                
+                // Redirect to dashboard after 2 seconds
+                setTimeout(() => {
+                    window.location.href = '/dashboard.html';
+                }, 2000);
+            }
             
             // Clear form
             form.reset();
