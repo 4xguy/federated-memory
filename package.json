@@ -8,6 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node -r module-alias/register dist/index.js",
+    "stop": "pkill -f 'tsx watch src/index.ts' || pkill -f 'node.*dist/index.js' || echo 'No server process found'",
     "start:prod": "NODE_ENV=production node -r module-alias/register dist/index.js",
     "start:railway": "(npx prisma migrate deploy || npx prisma db push) && (node -r module-alias/register dist/scripts/init-db.js || true) && npm run start:prod",
     "start:minimal": "node dist/minimal-health.js",

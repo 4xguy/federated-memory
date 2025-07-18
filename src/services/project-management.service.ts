@@ -27,10 +27,10 @@ export class ProjectManagementService {
   ) {
     this.realtimeService = RealtimeService.getInstance();
     this.module = new ProjectManagementModule({
-      id: 'project-management',
-      name: 'Project Management',
-      description: 'Manages projects, tasks, subtasks, and todo lists with ministry tracking',
-      tableName: 'project_management_memories',
+      id: 'work',
+      name: 'Work Management',
+      description: 'Manages work-related data including projects, tasks, and people',
+      tableName: 'work_memories',
       metadata: {
         searchableFields: ['type', 'status', 'priority', 'assignee', 'ministry', 'projectId'],
         requiredFields: ['type'],
@@ -82,7 +82,7 @@ export class ProjectManagementService {
     const memoryId = await this.module.store(userId, content, metadata);
     
     // Register with CMI for routing
-    await this.cmiService.indexMemory(userId, 'project-management', memoryId, content, metadata);
+    await this.cmiService.indexMemory(userId, 'work', memoryId, content, metadata);
 
     // Send real-time notification
     await this.realtimeService.notifyProjectChange(userId, 'created', fullProject);
@@ -205,7 +205,7 @@ export class ProjectManagementService {
     const memoryId = await this.module.store(userId, content, metadata);
     
     // Register with CMI for routing
-    await this.cmiService.indexMemory(userId, 'project-management', memoryId, content, metadata);
+    await this.cmiService.indexMemory(userId, 'work', memoryId, content, metadata);
 
     return fullTask;
   }
