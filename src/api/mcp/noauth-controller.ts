@@ -5,6 +5,7 @@ import { logger } from '@/utils/logger';
 import { prisma } from '@/utils/database';
 import { getInitializedCMIService } from '@/index';
 import { ModuleRegistry } from '@/core/modules/registry.service';
+import { OptimizedQueries } from './query-optimizations';
 
 const router = Router();
 const authService = AuthService.getInstance();
@@ -916,15 +917,15 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
             
             // Simple fallback - just return categories without counts
             const cmiService = getInitializedCMIService();
-            const registrySearch = await cmiService.search(
+            const registrySearch = await OptimizedQueries.getRegistry(
               userId,
-              'type:list name:category_registry',
-              { moduleId: 'personal', limit: 1 }
+              'categories',
+              'personal'
             );
             
             let categories = [];
-            if (registrySearch.length > 0 && registrySearch[0].metadata?.categories) {
-              categories = registrySearch[0].metadata.categories.map((cat: any) => ({
+            if (registrySearch && registrySearch.metadata?.categories) {
+              categories = registrySearch.metadata.categories.map((cat: any) => ({
                 ...cat,
                 memoryCount: 0
               }));
@@ -942,17 +943,17 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
           const categoryId = randomUUID();
           
           // First, get or create the category registry
-          const registrySearch = await cmiService.search(
+          const registrySearch = await OptimizedQueries.getRegistry(
             userId,
-            'type:list name:category_registry',
-            { moduleId: 'personal', limit: 1 }
+            'categories',
+            'personal'
           );
           
           let registryMemory;
           let categories = [];
           
-          if (registrySearch.length > 0) {
-            registryMemory = registrySearch[0];
+          if (registrySearch) {
+            registryMemory = registrySearch;
             categories = registryMemory.metadata?.categories || [];
           }
           
@@ -1047,98 +1048,62 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
             memoryId: memoryId
           };
         } else if (name === 'listProjects') {
-          // List projects by searching memories with project metadata
-          const cmiService = getInitializedCMIService();
-          
-          // Search for all project memories
-          const projectMemories = await cmiService.search(
-            userId,
-            'type:project',
-            {
-              moduleId: 'work',
-              limit: 100
-            }
+          // Use optimized SQL query for listing projects
+          const projectsWithCounts = await OptimizedQueries.listProjects(
+            userId, 
+            args.includeCompleted || false
           );
           
-          // Filter based on arguments
-          let filteredProjects = projectMemories.filter((memory: any) => {
-            const metadata = memory.metadata || {};
-            
-            // Check if it's a project type
-            if (metadata.type !== 'project') return false;
+          // Apply additional filters if provided
+          let filteredProjects = projectsWithCounts.filter((project: any) => {
+            const metadata = project.metadata || {};
             
             // Apply filters
             if (args.status && metadata.status !== args.status) return false;
             if (args.owner && metadata.owner !== args.owner) return false;
             if (args.ministry && metadata.ministry !== args.ministry) return false;
-            if (args.includeCompleted === false) {
-              if (metadata.status === 'completed' || metadata.status === 'cancelled') {
-                return false;
-              }
-            }
             
             return true;
           });
           
-          // Count tasks for each project
-          const projectsWithCounts = await Promise.all(
-            filteredProjects.map(async (memory: any) => {
-              const taskCount = await cmiService.search(
-                userId,
-                `projectId:${memory.metadata.id}`,
-                { moduleId: 'work', limit: 1000 }
-              ).then((tasks: any[]) => tasks.filter((t: any) => t.metadata?.type === 'task').length);
-              
-              return {
-                id: memory.metadata.id || memory.id,
-                name: memory.metadata.name,
-                description: memory.metadata.description,
-                status: memory.metadata.status,
-                dueDate: memory.metadata.dueDate,
-                owner: memory.metadata.owner,
-                team: memory.metadata.team || [],
-                ministry: memory.metadata.ministry,
-                taskCount: taskCount,
-                createdAt: memory.createdAt,
-                updatedAt: memory.updatedAt
-              };
-            })
-          );
+          // Format the response
+          const formattedProjects = filteredProjects.map((project: any) => ({
+            id: project.metadata.id || project.id,
+            name: project.metadata.name,
+            description: project.metadata.description,
+            status: project.metadata.status,
+            dueDate: project.metadata.dueDate,
+            owner: project.metadata.owner,
+            team: project.metadata.team || [],
+            ministry: project.metadata.ministry,
+            taskCount: project.taskCount,
+            createdAt: project.createdAt,
+            updatedAt: project.updatedAt
+          }));
           
           result = {
-            projects: projectsWithCounts,
-            count: projectsWithCounts.length
+            projects: formattedProjects,
+            count: formattedProjects.length
           };
         } else if (name === 'getProjectTasks') {
-          // Get tasks for a project by searching memories
-          const cmiService = getInitializedCMIService();
+          // Use optimized SQL query for getting project tasks
+          const taskMemories = await OptimizedQueries.getProjectTasks(userId, args.projectId);
           
-          const taskMemories = await cmiService.search(
-            userId,
-            `projectId:${args.projectId} type:task`,
-            {
-              moduleId: 'work',
-              limit: 1000
-            }
-          );
-          
-          const tasks = taskMemories
-            .filter((memory: any) => memory.metadata?.type === 'task' && memory.metadata?.projectId === args.projectId)
-            .map((memory: any) => ({
-              id: memory.metadata.id || memory.id,
-              title: memory.metadata.title,
-              description: memory.metadata.description,
-              projectId: memory.metadata.projectId,
-              assignee: memory.metadata.assignee,
-              priority: memory.metadata.priority || 'medium',
-              status: memory.metadata.status || 'todo',
-              dueDate: memory.metadata.dueDate,
-              estimatedHours: memory.metadata.estimatedHours,
-              completedAt: memory.metadata.completedAt,
-              ministry: memory.metadata.ministry,
-              createdAt: memory.createdAt,
-              updatedAt: memory.updatedAt
-            }));
+          const tasks = (taskMemories as any[]).map((memory: any) => ({
+            id: memory.metadata.id || memory.id,
+            title: memory.metadata.title,
+            description: memory.metadata.description,
+            projectId: memory.metadata.projectId,
+            assignee: memory.metadata.assignee,
+            priority: memory.metadata.priority || 'medium',
+            status: memory.metadata.status || 'todo',
+            dueDate: memory.metadata.dueDate,
+            estimatedHours: memory.metadata.estimatedHours,
+            completedAt: memory.metadata.completedAt,
+            ministry: memory.metadata.ministry,
+            createdAt: memory.createdAt,
+            updatedAt: memory.updatedAt
+          }));
           
           result = {
             tasks: tasks,
@@ -1279,56 +1244,46 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
             memoryId: memoryId
           };
         } else if (name === 'listTasks') {
-          // List tasks by searching memories with task metadata
-          const cmiService = getInitializedCMIService();
-          
-          // Build search query
-          let searchQuery = 'type:task';
-          if (args.projectId) searchQuery += ` projectId:${args.projectId}`;
-          if (args.assignee) searchQuery += ` assignee:${args.assignee}`;
-          if (args.status) searchQuery += ` status:${args.status}`;
-          if (args.priority) searchQuery += ` priority:${args.priority}`;
-          
-          const taskMemories = await cmiService.search(
-            userId,
-            searchQuery,
-            {
-              moduleId: 'work',
-              limit: 1000
-            }
-          );
-          
-          // Filter tasks
-          let filteredTasks = taskMemories.filter((memory: any) => {
-            const metadata = memory.metadata || {};
-            
-            // Check if it's a task type
-            if (metadata.type !== 'task') return false;
-            
-            // Apply filters
-            if (args.includeCompleted === false) {
-              if (metadata.status === 'done' || metadata.status === 'cancelled') {
-                return false;
-              }
-            }
-            
-            return true;
+          // Use optimized SQL query for listing tasks
+          const taskMemories = await OptimizedQueries.listTasks(userId, {
+            projectId: args.projectId,
+            status: args.status,
+            assignee: args.assignee,
+            includeCompleted: args.includeCompleted
           });
           
-          // Get project names if needed
-          const tasksWithDetails = await Promise.all(
-            filteredTasks.map(async (memory: any) => {
-              let projectName = null;
-              if (memory.metadata.projectId) {
-                const projectMemory = await cmiService.get(userId, memory.metadata.projectId);
-                if (projectMemory && projectMemory.metadata?.type === 'project') {
-                  projectName = projectMemory.metadata.name;
-                }
+          // Get project names if needed using batch query
+          const projectIds = [...new Set((taskMemories as any[])
+            .map((t: any) => t.metadata.projectId)
+            .filter(Boolean))];
+          
+          const projectMap = new Map();
+          if (projectIds.length > 0) {
+            const projects = await prisma.$queryRaw<any[]>`
+              SELECT id, metadata
+              FROM work_memories
+              WHERE "userId" = ${userId}
+                AND metadata->>'type' = 'project'
+                AND (id = ANY(${projectIds}) OR metadata->>'id' = ANY(${projectIds}))
+            `;
+            
+            projects.forEach(p => {
+              projectMap.set(p.id, p.metadata.name);
+              if (p.metadata.id) {
+                projectMap.set(p.metadata.id, p.metadata.name);
               }
+            });
+          }
+          
+          // Format tasks with project names
+          const tasksWithDetails = (taskMemories as any[]).map((memory: any) => {
+            const projectName = memory.metadata.projectId 
+              ? projectMap.get(memory.metadata.projectId) || null
+              : null;
               
-              return {
-                id: memory.metadata.id || memory.id,
-                title: memory.metadata.title,
+            return {
+              id: memory.metadata.id || memory.id,
+              title: memory.metadata.title,
                 description: memory.metadata.description,
                 projectId: memory.metadata.projectId,
                 projectName: projectName,
@@ -1342,8 +1297,7 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
                 createdAt: memory.createdAt,
                 updatedAt: memory.updatedAt
               };
-            })
-          );
+            });
           
           result = {
             tasks: tasksWithDetails,
