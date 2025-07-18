@@ -18,6 +18,7 @@ RUN npm ci
 COPY src ./src
 
 # Generate Prisma client
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 RUN npx prisma generate
 
 # Build TypeScript
@@ -54,6 +55,7 @@ COPY public ./public
 
 # Generate Prisma client again for production with correct binary target
 ENV PRISMA_BINARIES_MIRROR=https://prisma-builds.s3.eu-west-1.amazonaws.com
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 RUN npx prisma generate
 
 # Create logs directory
