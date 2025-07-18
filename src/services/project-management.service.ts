@@ -277,7 +277,7 @@ export class ProjectManagementService {
   }
 
   async getProjectTasks(userId: string, projectId: string): Promise<Task[]> {
-    return this.searchTasks(userId, { projectId });
+    return this.searchTasks(userId, { projectId, includeCompleted: true });
   }
 
   // ============= Task Dependencies =============
@@ -291,10 +291,8 @@ export class ProjectManagementService {
     // Add to CMI relationships
     await this.cmiService.createRelationship(
       userId,
-      'project-management',
-      taskMemory.id,
-      'project-management',
-      dependsOnMemory.id,
+      { moduleId: 'project-management', memoryId: taskMemory.id },
+      { moduleId: 'project-management', memoryId: dependsOnMemory.id },
       type
     );
 
