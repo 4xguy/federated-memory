@@ -2,7 +2,7 @@
   "name": "federated-memory",
   "version": "0.1.0",
   "description": "Federated memory system with Central Memory Index for LLMs",
-  "deploy": "2025-01-18-bcrypt-fix",
+  "deploy": "2025-01-18-crypto-password-fix",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

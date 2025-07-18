@@ -1,9 +1,17 @@
 import { Router } from 'express';
-import bcrypt from 'bcrypt';
 import { z } from 'zod';
 import { prisma } from '@/utils/database';
 import { logger } from '@/utils/logger';
 import { randomUUID } from 'crypto';
+import { CryptoHash } from '@/utils/crypto-hash';
+
+// Try to import bcrypt, but don't fail if it's not available
+let bcrypt: any;
+try {
+  bcrypt = require('bcrypt');
+} catch (error) {
+  logger.warn('bcrypt not available, using built-in crypto module');
+}
 
 const router = Router();
 
@@ -44,8 +52,8 @@ router.post('/register-email', async (req, res) => {
       });
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    // Hash password using crypto (no native dependencies)
+    const passwordHash = await CryptoHash.hash(password);
 
     // Create user with UUID token
     const user = await prisma.user.create({
@@ -144,8 +152,35 @@ router.post('/login-email', async (req, res) => {
       });
     }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    // Verify password - try crypto first, then bcrypt if available
+    let isValidPassword = false;
+    
+    try {
+      // Check if it's a bcrypt hash
+      if (CryptoHash.isBcryptHash(user.passwordHash)) {
+        // It's a bcrypt hash, try bcrypt if available
+        if (bcrypt) {
+          isValidPassword = await bcrypt.compare(password, user.passwordHash);
+        } else {
+          // bcrypt not available, can't verify old passwords
+          logger.error('Cannot verify bcrypt password - bcrypt module not available');
+          return res.status(500).json({
+            error: 'Password verification unavailable',
+            code: 'BCRYPT_NOT_AVAILABLE'
+          });
+        }
+      } else {
+        // It's a crypto hash, use our crypto module
+        isValidPassword = await CryptoHash.compare(password, user.passwordHash);
+      }
+    } catch (error) {
+      logger.error('Password verification error', { error });
+      return res.status(500).json({
+        error: 'Password verification failed',
+        code: 'VERIFICATION_ERROR'
+      });
+    }
+    
     if (!isValidPassword) {
       return res.status(401).json({
         error: 'Invalid credentials',
@@ -167,10 +202,15 @@ router.post('/login-email', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Login error', { error });
+    logger.error('Login error', { 
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      type: error instanceof Error ? error.constructor.name : typeof error
+    });
     res.status(500).json({
       error: 'Login failed',
-      code: 'LOGIN_ERROR'
+      code: 'LOGIN_ERROR',
+      details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : undefined
     });
   }
 });
