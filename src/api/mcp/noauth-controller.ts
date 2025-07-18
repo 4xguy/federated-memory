@@ -885,38 +885,20 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
             }
             
             // Apply search filter if provided
-            if (args.query) {
+            if (args.query && typeof args.query === 'string') {
               const query = args.query.toLowerCase();
               categories = categories.filter((cat: any) => 
-                cat.name.toLowerCase().includes(query) ||
-                (cat.description && cat.description.toLowerCase().includes(query))
+                (cat.name && typeof cat.name === 'string' && cat.name.toLowerCase().includes(query)) ||
+                (cat.description && typeof cat.description === 'string' && cat.description.toLowerCase().includes(query))
               );
             }
             
-            // Get memory counts for each category
-            const categoriesWithCounts = await Promise.all(
-              categories.map(async (cat: any) => {
-                // Count memories with this category
-                const searchResults = await cmiService.search(
-                  userId,
-                  `${cat.name}`, // Simple search for category name
-                  { limit: 1000 }
-                );
-                
-                // Count how many have this category in metadata
-                const count = searchResults.filter((memory: any) => 
-                  memory.metadata?.category === cat.name ||
-                  (Array.isArray(memory.metadata?.categories) && memory.metadata.categories.includes(cat.name))
-                ).length;
-                
-                return {
-                  ...cat,
-                  memoryCount: count
-                };
-              })
-            );
-            
-            categories = categoriesWithCounts;
+            // For now, skip memory counting to avoid database connection issues
+            // In production, this should use a more efficient counting method
+            categories = categories.map((cat: any) => ({
+              ...cat,
+              memoryCount: 0 // Placeholder - would need efficient counting
+            }));
           }
           
           // Ensure categories is a proper array of objects
