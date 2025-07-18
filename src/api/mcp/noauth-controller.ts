@@ -851,60 +851,96 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
             }
           }
         } else if (name === 'searchCategories') {
-          // Search or list categories
-          const categories = await prisma.category.findMany({
-            where: {
-              userId: userId,
-              ...(args.query ? {
-                OR: [
-                  { name: { contains: args.query, mode: 'insensitive' } },
-                  { description: { contains: args.query, mode: 'insensitive' } }
-                ]
-              } : {})
-            },
-            include: {
-              _count: {
-                select: { memories: true }
+          // Search or list categories from memory metadata
+          const cmiService = getInitializedCMIService();
+          
+          // Search all memories to extract unique categories
+          const allMemories = await cmiService.search(userId, '', { limit: 10000 });
+          
+          // Extract categories from metadata
+          const categoryMap = new Map<string, { count: number, description?: string, icon?: string, parentCategory?: string }>();
+          
+          for (const memory of allMemories) {
+            if (memory.metadata?.category) {
+              const cat = memory.metadata.category;
+              if (!categoryMap.has(cat)) {
+                categoryMap.set(cat, { 
+                  count: 0,
+                  description: memory.metadata.categoryDescription,
+                  icon: memory.metadata.categoryIcon,
+                  parentCategory: memory.metadata.parentCategory
+                });
+              }
+              categoryMap.get(cat)!.count++;
+            }
+            
+            // Also check for categories array (BigMemory style)
+            if (Array.isArray(memory.metadata?.categories)) {
+              for (const cat of memory.metadata.categories) {
+                if (!categoryMap.has(cat)) {
+                  categoryMap.set(cat, { count: 0 });
+                }
+                categoryMap.get(cat)!.count++;
               }
             }
-          });
+          }
+          
+          // Convert to array and filter by query
+          let categories = Array.from(categoryMap.entries()).map(([name, data]) => ({
+            name,
+            description: data.description,
+            icon: data.icon,
+            parentCategory: data.parentCategory,
+            memoryCount: data.count
+          }));
+          
+          // Apply search filter if provided
+          if (args.query) {
+            const query = args.query.toLowerCase();
+            categories = categories.filter(cat => 
+              cat.name.toLowerCase().includes(query) ||
+              (cat.description && cat.description.toLowerCase().includes(query))
+            );
+          }
           
           result = {
-            categories: categories.map(cat => ({
-              id: cat.id,
-              name: cat.name,
-              description: cat.description,
-              icon: cat.icon,
-              parentId: cat.parentId,
-              memoryCount: cat._count.memories
-            })),
+            categories: categories.sort((a, b) => b.memoryCount - a.memoryCount),
             count: categories.length
           };
         } else if (name === 'createCategory') {
-          // Create a new category
-          const category = await prisma.category.create({
-            data: {
-              name: args.name,
-              description: args.description,
-              icon: args.icon,
-              userId: userId,
-              parentId: args.parentCategory ? 
-                (await prisma.category.findFirst({
-                  where: { userId, name: args.parentCategory }
-                }))?.id : undefined
-            }
-          });
+          // Create a category as a special memory that defines the category
+          const cmiService = getInitializedCMIService();
+          const categoryId = randomUUID();
+          
+          const categoryData = {
+            id: categoryId,
+            name: args.name,
+            description: args.description,
+            icon: args.icon,
+            parentCategory: args.parentCategory,
+            type: 'category_definition',
+            category: 'system' // System category for category definitions
+          };
+          
+          const content = `Category: ${args.name}\n${args.description || 'No description'}`;
+          const memoryId = await cmiService.store(
+            userId,
+            content,
+            categoryData,
+            'personal' // Store category definitions in personal module
+          );
           
           result = {
             success: true,
             message: 'Category created successfully',
             category: {
-              id: category.id,
-              name: category.name,
-              description: category.description,
-              icon: category.icon,
-              parentId: category.parentId
-            }
+              id: categoryId,
+              name: args.name,
+              description: args.description,
+              icon: args.icon,
+              parentCategory: args.parentCategory
+            },
+            memoryId: memoryId
           };
         } else if (name === 'createProject') {
           // Create a new project as a memory with project metadata
@@ -1080,8 +1116,21 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
           // Update task status by finding and updating the memory
           const cmiService = getInitializedCMIService();
           
-          // First find the task
-          const taskMemory = await cmiService.get(userId, args.taskId);
+          // First try to find the task by the provided ID
+          let taskMemory = await cmiService.get(userId, args.taskId);
+          
+          // If not found directly, search for it by metadata.id
+          if (!taskMemory) {
+            const searchResult = await cmiService.search(
+              userId,
+              `type:task id:${args.taskId}`,
+              { moduleId: 'work', limit: 1 }
+            );
+            
+            if (searchResult.length > 0 && searchResult[0].metadata?.type === 'task') {
+              taskMemory = searchResult[0];
+            }
+          }
           
           if (!taskMemory || taskMemory.metadata?.type !== 'task') {
             response = {
@@ -1100,9 +1149,11 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
               completedAt: args.status === 'done' ? new Date().toISOString() : taskMemory.metadata.completedAt
             };
             
+            // Use the actual memory ID for the update
+            const memoryId = taskMemory.id || args.taskId;
             const success = await cmiService.update(
               userId,
-              args.taskId,
+              memoryId,
               { metadata: updatedMetadata }
             );
             
@@ -1110,7 +1161,7 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
               success: success,
               message: success ? 'Task status updated successfully' : 'Failed to update task status',
               task: {
-                id: taskMemory.metadata.id || args.taskId,
+                id: taskMemory.metadata.id || memoryId,
                 title: taskMemory.metadata.title,
                 status: args.status,
                 completedAt: updatedMetadata.completedAt
