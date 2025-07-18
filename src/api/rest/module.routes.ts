@@ -27,14 +27,12 @@ router.get('/', async (req: AuthRequest, res: Response) => {
       moduleIds: modules.map(m => m.id)
     });
 
-    return res.json({
-      modules: modules.map((module: any) => ({
-        id: module.id,
-        name: module.name,
-        description: module.description,
-        type: module.type,
-      })),
-    });
+    return res.json(modules.map((module: any) => ({
+      id: module.id,
+      name: module.name,
+      description: module.description,
+      type: module.type,
+    })));
   } catch (error) {
     logger.error('Failed to list modules', { error });
     return res.status(500).json({

@@ -64,6 +64,33 @@ router.post('/', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// GET /api/memories - List all memories
+router.get('/', async (req: AuthRequest, res: Response) => {
+  try {
+    const cmiService = getCMIService();
+    if (!cmiService) {
+      return res.status(503).json({ error: 'Service temporarily unavailable' });
+    }
+
+    // Get all memories for user with a reasonable limit
+    const memories = await cmiService.search(req.user!.id, '', {
+      limit: 100, // Default limit
+      minScore: 0 // Accept all matches
+    });
+
+    return res.json({
+      memories,
+      count: memories.length,
+    });
+  } catch (error) {
+    logger.error('Failed to list memories', { error });
+    return res.status(500).json({
+      error: 'Failed to list memories',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
 // GET /api/memories/search - Search memories
 router.get('/search', async (req: AuthRequest, res: Response) => {
   try {
