@@ -1185,19 +1185,30 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
           // Update task status by finding and updating the memory
           const cmiService = getInitializedCMIService();
           
-          // First try to find the task by the provided ID
+          // First try to find the task by the provided ID (could be memory ID)
           let taskMemory = await cmiService.get(userId, args.taskId);
           
-          // If not found directly, search for it by metadata.id
+          // If not found directly, search using raw SQL to find by metadata.id
           if (!taskMemory) {
-            const searchResult = await cmiService.search(
-              userId,
-              `type:task id:${args.taskId}`,
-              { moduleId: 'work', limit: 1 }
-            );
+            const workMemories = await prisma.$queryRaw<any[]>`
+              SELECT id, "userId", content, metadata, "createdAt", "updatedAt"
+              FROM work_memories
+              WHERE "userId" = ${userId}
+                AND metadata->>'type' = 'task'
+                AND (metadata->>'id' = ${args.taskId} OR id = ${args.taskId})
+              LIMIT 1
+            `;
             
-            if (searchResult.length > 0 && searchResult[0].metadata?.type === 'task') {
-              taskMemory = searchResult[0];
+            if (workMemories.length > 0) {
+              taskMemory = {
+                id: workMemories[0].id,
+                userId: workMemories[0].userId,
+                content: workMemories[0].content,
+                metadata: workMemories[0].metadata,
+                createdAt: workMemories[0].createdAt,
+                updatedAt: workMemories[0].updatedAt,
+                moduleId: 'work'
+              };
             }
           }
           
@@ -1206,7 +1217,7 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
               jsonrpc: '2.0',
               error: {
                 code: -32602,
-                message: 'Task not found'
+                message: `Task not found with ID: ${args.taskId}`
               },
               id
             };
@@ -1339,25 +1350,28 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
             count: tasksWithDetails.length
           };
         } else if (name === 'getTaskDependencies') {
-          // Get dependencies for a task by searching dependency memories
+          // Get dependencies for a task using raw SQL query
           const cmiService = getInitializedCMIService();
           
-          // Search for dependencies where this task is involved
-          const dependencyMemories = await cmiService.search(
-            userId,
-            `type:task_dependency`,
-            {
-              moduleId: 'work',
-              limit: 1000
-            }
-          );
+          // Search for dependencies where this task is involved using SQL
+          const dependencyMemories = await prisma.$queryRaw<any[]>`
+            SELECT id, "userId", content, metadata, "createdAt", "updatedAt"
+            FROM work_memories
+            WHERE "userId" = ${userId}
+              AND metadata->>'type' = 'task_dependency'
+              AND (metadata->>'taskId' = ${args.taskId} 
+                   OR metadata->>'dependsOnTaskId' = ${args.taskId})
+          `;
           
-          // Filter dependencies involving this task
-          const relevantDeps = dependencyMemories.filter((memory: any) => {
-            const metadata = memory.metadata || {};
-            return metadata.type === 'task_dependency' && 
-                   (metadata.taskId === args.taskId || metadata.dependsOnTaskId === args.taskId);
-          });
+          // Convert to standard format
+          const relevantDeps = dependencyMemories.map(mem => ({
+            id: mem.id,
+            userId: mem.userId,
+            content: mem.content,
+            metadata: mem.metadata,
+            createdAt: mem.createdAt,
+            updatedAt: mem.updatedAt
+          }));
           
           // Get task details for dependencies
           const dependencies = [];
@@ -1365,9 +1379,18 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
           
           for (const dep of relevantDeps) {
             if (dep.metadata.taskId === args.taskId) {
-              // This is a dependency
-              const dependsOnTask = await cmiService.get(userId, dep.metadata.dependsOnTaskId);
-              if (dependsOnTask && dependsOnTask.metadata?.type === 'task') {
+              // This is a dependency - find the task it depends on
+              const [dependsOnTask] = await prisma.$queryRaw<any[]>`
+                SELECT id, metadata
+                FROM work_memories
+                WHERE "userId" = ${userId}
+                  AND metadata->>'type' = 'task'
+                  AND (metadata->>'id' = ${dep.metadata.dependsOnTaskId} 
+                       OR id = ${dep.metadata.dependsOnTaskId})
+                LIMIT 1
+              `;
+              
+              if (dependsOnTask) {
                 dependencies.push({
                   id: dep.metadata.id || dep.id,
                   dependsOnTaskId: dep.metadata.dependsOnTaskId,
@@ -1377,9 +1400,18 @@ router.post('/:token/messages/:sessionId', async (req: Request, res: Response) =
                 });
               }
             } else if (dep.metadata.dependsOnTaskId === args.taskId) {
-              // This is a dependent
-              const task = await cmiService.get(userId, dep.metadata.taskId);
-              if (task && task.metadata?.type === 'task') {
+              // This is a dependent - find the task that depends on this one
+              const [task] = await prisma.$queryRaw<any[]>`
+                SELECT id, metadata
+                FROM work_memories
+                WHERE "userId" = ${userId}
+                  AND metadata->>'type' = 'task'
+                  AND (metadata->>'id' = ${dep.metadata.taskId} 
+                       OR id = ${dep.metadata.taskId})
+                LIMIT 1
+              `;
+              
+              if (task) {
                 dependents.push({
                   id: dep.metadata.id || dep.id,
                   taskId: dep.metadata.taskId,
