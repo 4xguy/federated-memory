@@ -34,7 +34,7 @@ router.post('/emergency-login', async (req, res) => {
 
     if (!user) {
       // Create user without password
-      user = await prisma.user.create({
+      const newUser = await prisma.user.create({
         data: {
           email,
           passwordHash: 'EMERGENCY_USER',
@@ -50,25 +50,38 @@ router.post('/emergency-login', async (req, res) => {
           id: true,
           email: true,
           name: true,
-          token: true
+          token: true,
+          isActive: true
         }
       });
-      logger.info('Emergency user created', { userId: user.id, email });
+      logger.info('Emergency user created', { userId: newUser.id, email });
+      
+      // Return user data with token
+      res.json({
+        message: 'Emergency login successful',
+        warning: 'This is a temporary endpoint - do not use in production',
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+          token: newUser.token
+        }
+      });
     } else {
       logger.info('Emergency login', { userId: user.id, email });
+      
+      // Return user data with token
+      res.json({
+        message: 'Emergency login successful',
+        warning: 'This is a temporary endpoint - do not use in production',
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          token: user.token
+        }
+      });
     }
-
-    // Return user data with token
-    res.json({
-      message: 'Emergency login successful',
-      warning: 'This is a temporary endpoint - do not use in production',
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        token: user.token
-      }
-    });
 
   } catch (error) {
     logger.error('Emergency login error', { error });
