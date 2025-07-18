@@ -18,7 +18,8 @@ RUN npm ci
 COPY src ./src
 
 # Generate Prisma client with correct binary target
-ENV PRISMA_BINARIES_MIRROR=https://prisma-builds.s3.eu-west-1.amazonaws.com
+# Skip checksum verification to avoid S3 403 errors
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 RUN npx prisma generate
 
 # Build TypeScript
