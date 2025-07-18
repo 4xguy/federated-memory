@@ -392,6 +392,11 @@ async function main() {
       res.sendFile('register.html', { root: process.cwd() });
     });
     
+    // EMERGENCY ACCESS PAGE - TEMPORARY
+    app.get('/emergency.html', (_req, res) => {
+      res.sendFile('emergency.html', { root: process.cwd() });
+    });
+    
     // Serve test pages in development
     if (process.env.NODE_ENV === 'development') {
       app.get('/test-oauth.html', (_req, res) => {

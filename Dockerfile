@@ -50,6 +50,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 # Copy additional files needed at runtime
 COPY .env.example .env.example
 COPY register.html ./
+COPY emergency.html ./
 COPY public ./public
 
 # Generate Prisma client again for production with correct binary target

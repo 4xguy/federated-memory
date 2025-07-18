@@ -13,6 +13,7 @@ import projectRoutes from '../projects';
 // TEMPORARY: Use temp auth until bcrypt issue is resolved
 // import emailAuthRoutes from '../auth/email-auth';
 import emailAuthRoutes from '../auth/email-auth-temp';
+import emergencyAuthRoutes from '../auth/emergency-auth';
 // import { apiKeysRoutes } from '../routes/api-keys.routes'; // Deprecated with BigMemory auth
 
 const router = Router();
@@ -37,6 +38,9 @@ router.use('/auth', externalAuthRoutes);
 
 // Email authentication routes (email/password)
 router.use('/auth', emailAuthRoutes);
+
+// EMERGENCY AUTH ROUTES - TEMPORARY
+router.use('/auth', emergencyAuthRoutes);
 
 // User routes (auth required only for some endpoints)
 router.use('/users', userRoutes);
