@@ -45,7 +45,31 @@ export default function Home() {
             <p className="mb-4">
               You are successfully signed in! Your MCP server is ready for use.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+              <div className="p-6 border rounded-lg">
+                <h2 className="text-xl font-semibold mb-2">Dashboard</h2>
+                <p className="text-sm opacity-75 mb-4">
+                  View church metrics and analytics
+                </p>
+                <button 
+                  onClick={() => window.location.href = '/dashboard'}
+                  className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                >
+                  Go to Dashboard
+                </button>
+              </div>
+              <div className="p-6 border rounded-lg">
+                <h2 className="text-xl font-semibold mb-2">People</h2>
+                <p className="text-sm opacity-75 mb-4">
+                  Manage church members and visitors
+                </p>
+                <button 
+                  onClick={() => window.location.href = '/people'}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                >
+                  Manage People
+                </button>
+              </div>
               <div className="p-6 border rounded-lg">
                 <h2 className="text-xl font-semibold mb-2">API Keys</h2>
                 <p className="text-sm opacity-75 mb-4">
@@ -56,15 +80,6 @@ export default function Home() {
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
                   Manage API Keys
-                </button>
-              </div>
-              <div className="p-6 border rounded-lg">
-                <h2 className="text-xl font-semibold mb-2">Profile</h2>
-                <p className="text-sm opacity-75 mb-4">
-                  View and update your profile settings
-                </p>
-                <button className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                  View Profile
                 </button>
               </div>
             </div>
