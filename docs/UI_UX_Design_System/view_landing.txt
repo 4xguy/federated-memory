@@ -1,0 +1,352 @@
+{
+  "metadata": {
+    "name": "Landing Page View",
+    "description": "Marketing landing page with hero sections and feature highlights",
+    "extends": "GLOBAL_DESIGN.json",
+    "viewType": "marketing",
+    "lastUpdated": "2025-07-18"
+  },
+  "layout": {
+    "structure": "marketing",
+    "sections": ["header", "hero", "features", "benefits", "cta", "footer"],
+    "maxWidth": "1280px",
+    "spacing": "responsive"
+  },
+  "components": {
+    "hero": {
+      "name": "Hero Section",
+      "description": "Primary landing section with value proposition",
+      "props": {
+        "variant": ["default", "centered", "split"],
+        "backgroundPattern": "boolean",
+        "ctaButtons": "array"
+      },
+      "structure": {
+        "container": {
+          "padding": "{spacing.4xl} {spacing.xl}",
+          "textAlign": "center",
+          "background": "linear-gradient(135deg, {colors.primary.50} 0%, {colors.secondary.50} 100%)",
+          "position": "relative",
+          "overflow": "hidden"
+        },
+        "content": {
+          "maxWidth": "800px",
+          "margin": "0 auto",
+          "zIndex": 1,
+          "position": "relative"
+        },
+        "title": {
+          "fontSize": "{typography.fontSize.5xl}",
+          "fontWeight": "{typography.fontWeight.bold}",
+          "color": "{colors.neutral.gray.900}",
+          "marginBottom": "{spacing.lg}",
+          "lineHeight": "{typography.lineHeight.tight}"
+        },
+        "subtitle": {
+          "fontSize": "{typography.fontSize.xl}",
+          "color": "{colors.neutral.gray.600}",
+          "marginBottom": "{spacing.2xl}",
+          "lineHeight": "{typography.lineHeight.relaxed}"
+        },
+        "actions": {
+          "display": "flex",
+          "gap": "{spacing.md}",
+          "justifyContent": "center",
+          "flexWrap": "wrap"
+        }
+      },
+      "responsive": {
+        "mobile": {
+          "title": {
+            "fontSize": "{typography.fontSize.3xl}"
+          },
+          "subtitle": {
+            "fontSize": "{typography.fontSize.lg}"
+          },
+          "container": {
+            "padding": "{spacing.2xl} {spacing.md}"
+          }
+        }
+      }
+    },
+    "featureGrid": {
+      "name": "Feature Grid",
+      "description": "Grid layout showcasing key features with icons",
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/components/card"
+      },
+      "props": {
+        "columns": ["2", "3", "4"],
+        "iconStyle": ["filled", "outlined"],
+        "layout": ["grid", "masonry"]
+      },
+      "structure": {
+        "container": {
+          "padding": "{spacing.3xl} {spacing.xl}",
+          "background": "{colors.neutral.white}"
+        },
+        "grid": {
+          "display": "grid",
+          "gridTemplateColumns": "repeat(auto-fit, minmax(300px, 1fr))",
+          "gap": "{spacing.xl}",
+          "maxWidth": "1200px",
+          "margin": "0 auto"
+        },
+        "featureCard": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/card"
+          },
+          "padding": "{spacing.xl}",
+          "textAlign": "center",
+          "border": "1px solid {colors.neutral.gray.200}",
+          "borderRadius": "{borderRadius.xl}",
+          "transition": "all 0.3s ease-in-out"
+        },
+        "icon": {
+          "width": "48px",
+          "height": "48px",
+          "margin": "0 auto {spacing.lg}",
+          "padding": "{spacing.md}",
+          "borderRadius": "{borderRadius.lg}",
+          "background": "{colors.primary.100}",
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "center"
+        },
+        "title": {
+          "fontSize": "{typography.fontSize.xl}",
+          "fontWeight": "{typography.fontWeight.semibold}",
+          "color": "{colors.neutral.gray.900}",
+          "marginBottom": "{spacing.md}"
+        },
+        "description": {
+          "fontSize": "{typography.fontSize.base}",
+          "color": "{colors.neutral.gray.600}",
+          "lineHeight": "{typography.lineHeight.relaxed}"
+        }
+      },
+      "states": {
+        "hover": {
+          "featureCard": {
+            "transform": "translateY(-4px)",
+            "boxShadow": "{shadows.lg}",
+            "borderColor": "{colors.primary.300}"
+          }
+        }
+      },
+      "responsive": {
+        "mobile": {
+          "grid": {
+            "gridTemplateColumns": "1fr",
+            "gap": "{spacing.lg}"
+          },
+          "container": {
+            "padding": "{spacing.2xl} {spacing.md}"
+          }
+        }
+      }
+    },
+    "ctaSection": {
+      "name": "Call to Action Section",
+      "description": "Conversion-focused section with primary action",
+      "props": {
+        "variant": ["primary", "secondary"],
+        "backgroundImage": "string",
+        "centered": "boolean"
+      },
+      "structure": {
+        "container": {
+          "padding": "{spacing.4xl} {spacing.xl}",
+          "background": "{colors.primary.600}",
+          "color": "{colors.neutral.white}",
+          "textAlign": "center"
+        },
+        "content": {
+          "maxWidth": "600px",
+          "margin": "0 auto"
+        },
+        "title": {
+          "fontSize": "{typography.fontSize.3xl}",
+          "fontWeight": "{typography.fontWeight.bold}",
+          "marginBottom": "{spacing.lg}"
+        },
+        "description": {
+          "fontSize": "{typography.fontSize.lg}",
+          "marginBottom": "{spacing.xl}",
+          "opacity": 0.9
+        },
+        "actions": {
+          "display": "flex",
+          "gap": "{spacing.md}",
+          "justifyContent": "center",
+          "flexWrap": "wrap"
+        }
+      }
+    },
+    "benefitsSection": {
+      "name": "Benefits Section",
+      "description": "Detailed benefits with statistics and proof points",
+      "props": {
+        "layout": ["horizontal", "vertical"],
+        "showStats": "boolean"
+      },
+      "structure": {
+        "container": {
+          "padding": "{spacing.3xl} {spacing.xl}",
+          "background": "{colors.neutral.gray.50}"
+        },
+        "content": {
+          "maxWidth": "1200px",
+          "margin": "0 auto"
+        },
+        "header": {
+          "textAlign": "center",
+          "marginBottom": "{spacing.3xl}"
+        },
+        "title": {
+          "fontSize": "{typography.fontSize.3xl}",
+          "fontWeight": "{typography.fontWeight.bold}",
+          "color": "{colors.neutral.gray.900}",
+          "marginBottom": "{spacing.lg}"
+        },
+        "subtitle": {
+          "fontSize": "{typography.fontSize.lg}",
+          "color": "{colors.neutral.gray.600}"
+        },
+        "benefits": {
+          "display": "grid",
+          "gridTemplateColumns": "repeat(auto-fit, minmax(250px, 1fr))",
+          "gap": "{spacing.xl}"
+        },
+        "benefit": {
+          "display": "flex",
+          "alignItems": "flex-start",
+          "gap": "{spacing.md}"
+        },
+        "benefitIcon": {
+          "width": "24px",
+          "height": "24px",
+          "color": "{colors.primary.600}",
+          "flexShrink": 0,
+          "marginTop": "2px"
+        },
+        "benefitContent": {
+          "flex": 1
+        },
+        "benefitTitle": {
+          "fontSize": "{typography.fontSize.lg}",
+          "fontWeight": "{typography.fontWeight.semibold}",
+          "color": "{colors.neutral.gray.900}",
+          "marginBottom": "{spacing.sm}"
+        },
+        "benefitDescription": {
+          "fontSize": "{typography.fontSize.base}",
+          "color": "{colors.neutral.gray.600}",
+          "lineHeight": "{typography.lineHeight.relaxed}"
+        }
+      }
+    }
+  },
+  "overrides": {
+    "header": {
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/components/header"
+      },
+      "modifications": {
+        "variant": "minimal",
+        "background": "transparent",
+        "position": "absolute",
+        "top": 0,
+        "left": 0,
+        "right": 0,
+        "zIndex": 10
+      }
+    },
+    "button": {
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/components/button"
+      },
+      "modifications": {
+        "ctaPrimary": {
+          "size": "lg",
+          "variant": "primary",
+          "shadow": "{shadows.lg}"
+        },
+        "ctaSecondary": {
+          "size": "lg",
+          "variant": "outline",
+          "background": "rgba(255, 255, 255, 0.1)",
+          "color": "{colors.neutral.white}",
+          "border": "1px solid rgba(255, 255, 255, 0.3)",
+          "hover": {
+            "background": "rgba(255, 255, 255, 0.2)"
+          }
+        }
+      }
+    }
+  },
+  "references": [
+    {
+      "component": "header",
+      "source": "GLOBAL_DESIGN.json#/components/header"
+    },
+    {
+      "component": "button", 
+      "source": "GLOBAL_DESIGN.json#/components/button"
+    },
+    {
+      "component": "card",
+      "source": "GLOBAL_DESIGN.json#/components/card"
+    }
+  ],
+  "content": {
+    "hero": {
+      "title": "Persistent Memory for AI Assistants",
+      "subtitle": "Give your AI assistants long-term memory with Clauvin Memory. Compatible with Claude Desktop, ChatGPT, and any MCP-enabled AI.",
+      "ctaButtons": [
+        {
+          "text": "Start Free Trial",
+          "variant": "ctaPrimary",
+          "action": "signup"
+        },
+        {
+          "text": "View Documentation", 
+          "variant": "ctaSecondary",
+          "action": "docs"
+        }
+      ]
+    },
+    "features": [
+      {
+        "icon": "search",
+        "title": "Semantic Search",
+        "description": "AI-powered memory retrieval using vector embeddings for intelligent context recall."
+      },
+      {
+        "icon": "shield",
+        "title": "Secure & Private",
+        "description": "Each user gets isolated memory space with token-based authentication."
+      },
+      {
+        "icon": "zap",
+        "title": "Easy Integration",
+        "description": "Simple setup process for Claude Desktop, ChatGPT and other AI assistants."
+      },
+      {
+        "icon": "database",
+        "title": "Powerful Search Capabilities",
+        "description": "Explainable AI enhances search features and you find exactly what you need in conversations."
+      },
+      {
+        "icon": "globe",
+        "title": "Multi-Language Support",
+        "description": "Search in your preferred language. Support for natural language queries."
+      },
+      {
+        "icon": "trending-up",
+        "title": "AI-Powered Relevance",
+        "description": "Our AI understands and surfaces the right info based on your current conversation."
+      }
+    ]
+  }
+}

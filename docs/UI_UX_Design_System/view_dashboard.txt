@@ -1,0 +1,450 @@
+{
+  "metadata": {
+    "name": "Dashboard Overview View",
+    "description": "Analytics dashboard with metrics, project overview, and system status",
+    "extends": "GLOBAL_DESIGN.json",
+    "viewType": "dashboard",
+    "lastUpdated": "2025-07-18"
+  },
+  "layout": {
+    "structure": "dashboard",
+    "sections": ["header", "metrics", "quickStart", "overview"],
+    "grid": "responsive",
+    "spacing": "comfortable"
+  },
+  "components": {
+    "metricsGrid": {
+      "name": "Metrics Grid",
+      "description": "Grid of key performance indicators and statistics",
+      "props": {
+        "columns": ["auto", "2", "3", "4", "6"],
+        "variant": ["default", "compact"]
+      },
+      "structure": {
+        "container": {
+          "display": "grid",
+          "gridTemplateColumns": "repeat(auto-fit, minmax(200px, 1fr))",
+          "gap": "{spacing.lg}",
+          "marginBottom": "{spacing.2xl}"
+        },
+        "metricCard": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/card"
+          },
+          "padding": "{spacing.lg}",
+          "background": "{colors.neutral.white}",
+          "border": "1px solid {colors.neutral.gray.200}",
+          "borderRadius": "{borderRadius.xl}",
+          "position": "relative",
+          "overflow": "hidden"
+        },
+        "icon": {
+          "position": "absolute",
+          "top": "{spacing.lg}",
+          "right": "{spacing.lg}",
+          "width": "32px",
+          "height": "32px",
+          "padding": "{spacing.sm}",
+          "borderRadius": "{borderRadius.lg}",
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "center"
+        },
+        "value": {
+          "fontSize": "{typography.fontSize.3xl}",
+          "fontWeight": "{typography.fontWeight.bold}",
+          "color": "{colors.neutral.gray.900}",
+          "lineHeight": "1",
+          "marginBottom": "{spacing.sm}"
+        },
+        "label": {
+          "fontSize": "{typography.fontSize.sm}",
+          "color": "{colors.neutral.gray.600}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "marginBottom": "{spacing.xs}"
+        },
+        "description": {
+          "fontSize": "{typography.fontSize.xs}",
+          "color": "{colors.neutral.gray.500}",
+          "lineHeight": "{typography.lineHeight.relaxed}"
+        }
+      },
+      "variants": {
+        "primary": {
+          "icon": {
+            "background": "{colors.primary.100}",
+            "color": "{colors.primary.600}"
+          }
+        },
+        "success": {
+          "icon": {
+            "background": "rgba(34, 197, 94, 0.1)",
+            "color": "{colors.semantic.success}"
+          }
+        },
+        "warning": {
+          "icon": {
+            "background": "rgba(245, 158, 11, 0.1)",
+            "color": "{colors.semantic.warning}"
+          }
+        },
+        "info": {
+          "icon": {
+            "background": "rgba(59, 130, 246, 0.1)",
+            "color": "{colors.semantic.info}"
+          }
+        }
+      },
+      "responsive": {
+        "mobile": {
+          "container": {
+            "gridTemplateColumns": "repeat(2, 1fr)",
+            "gap": "{spacing.md}"
+          },
+          "metricCard": {
+            "padding": "{spacing.md}"
+          },
+          "value": {
+            "fontSize": "{typography.fontSize.2xl}"
+          }
+        }
+      }
+    },
+    "quickStart": {
+      "name": "Quick Start Widget",
+      "description": "API configuration and quick access panel",
+      "props": {
+        "collapsible": "boolean",
+        "showCopy": "boolean"
+      },
+      "structure": {
+        "container": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/card"
+          },
+          "padding": "{spacing.lg}",
+          "marginBottom": "{spacing.xl}"
+        },
+        "header": {
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "marginBottom": "{spacing.lg}"
+        },
+        "title": {
+          "fontSize": "{typography.fontSize.lg}",
+          "fontWeight": "{typography.fontWeight.semibold}",
+          "color": "{colors.neutral.gray.900}"
+        },
+        "tokenContainer": {
+          "marginBottom": "{spacing.lg}"
+        },
+        "tokenLabel": {
+          "fontSize": "{typography.fontSize.sm}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "color": "{colors.neutral.gray.700}",
+          "marginBottom": "{spacing.sm}"
+        },
+        "tokenField": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.sm}",
+          "padding": "{spacing.md}",
+          "background": "{colors.neutral.gray.900}",
+          "borderRadius": "{borderRadius.lg}",
+          "fontFamily": "{typography.fontFamily.mono}",
+          "fontSize": "{typography.fontSize.sm}",
+          "color": "{colors.neutral.white}"
+        },
+        "urlContainer": {
+          "marginBottom": "{spacing.lg}"
+        },
+        "urlLabel": {
+          "fontSize": "{typography.fontSize.sm}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "color": "{colors.neutral.gray.700}",
+          "marginBottom": "{spacing.sm}"
+        },
+        "urlField": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.sm}",
+          "padding": "{spacing.md}",
+          "background": "{colors.neutral.gray.50}",
+          "border": "1px solid {colors.neutral.gray.200}",
+          "borderRadius": "{borderRadius.lg}",
+          "fontSize": "{typography.fontSize.sm}",
+          "color": "{colors.neutral.gray.700}"
+        },
+        "actions": {
+          "display": "flex",
+          "gap": "{spacing.md}",
+          "flexWrap": "wrap"
+        }
+      }
+    },
+    "overviewTable": {
+      "name": "Overview Table",
+      "description": "Tabular overview of projects/ministries with progress tracking",
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/components/table"
+      },
+      "props": {
+        "showProgress": "boolean",
+        "groupBy": "string",
+        "sortable": "boolean"
+      },
+      "structure": {
+        "container": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/card"
+          },
+          "padding": "0",
+          "overflow": "hidden"
+        },
+        "header": {
+          "padding": "{spacing.lg}",
+          "borderBottom": "1px solid {colors.neutral.gray.200}",
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "space-between"
+        },
+        "title": {
+          "fontSize": "{typography.fontSize.lg}",
+          "fontWeight": "{typography.fontWeight.semibold}",
+          "color": "{colors.neutral.gray.900}"
+        },
+        "tableContainer": {
+          "overflow": "auto"
+        },
+        "progressCell": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.sm}"
+        },
+        "progressBar": {
+          "flex": 1,
+          "height": "8px",
+          "background": "{colors.neutral.gray.200}",
+          "borderRadius": "{borderRadius.full}",
+          "overflow": "hidden"
+        },
+        "progressFill": {
+          "height": "100%",
+          "background": "{colors.primary.500}",
+          "borderRadius": "{borderRadius.full}",
+          "transition": "width 0.3s ease-in-out"
+        },
+        "progressText": {
+          "fontSize": "{typography.fontSize.xs}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "color": "{colors.neutral.gray.600}",
+          "minWidth": "30px",
+          "textAlign": "right"
+        }
+      },
+      "variants": {
+        "success": {
+          "progressFill": {
+            "background": "{colors.semantic.success}"
+          }
+        },
+        "warning": {
+          "progressFill": {
+            "background": "{colors.semantic.warning}"
+          }
+        },
+        "error": {
+          "progressFill": {
+            "background": "{colors.semantic.error}"
+          }
+        }
+      }
+    },
+    "statusGrid": {
+      "name": "Status Grid",
+      "description": "Grid showing system status and health metrics",
+      "props": {
+        "refreshInterval": "number",
+        "showDetails": "boolean"
+      },
+      "structure": {
+        "container": {
+          "display": "grid",
+          "gridTemplateColumns": "repeat(auto-fit, minmax(250px, 1fr))",
+          "gap": "{spacing.lg}"
+        },
+        "statusCard": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/card"
+          },
+          "padding": "{spacing.lg}",
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.md}"
+        },
+        "statusIndicator": {
+          "width": "12px",
+          "height": "12px",
+          "borderRadius": "{borderRadius.full}",
+          "flexShrink": 0
+        },
+        "statusContent": {
+          "flex": 1
+        },
+        "statusTitle": {
+          "fontSize": "{typography.fontSize.sm}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "color": "{colors.neutral.gray.900}",
+          "marginBottom": "2px"
+        },
+        "statusDescription": {
+          "fontSize": "{typography.fontSize.xs}",
+          "color": "{colors.neutral.gray.600}"
+        }
+      },
+      "states": {
+        "online": {
+          "statusIndicator": {
+            "background": "{colors.semantic.success}"
+          }
+        },
+        "warning": {
+          "statusIndicator": {
+            "background": "{colors.semantic.warning}"
+          }
+        },
+        "offline": {
+          "statusIndicator": {
+            "background": "{colors.semantic.error}"
+          }
+        }
+      }
+    }
+  },
+  "overrides": {
+    "header": {
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/components/header"
+      },
+      "modifications": {
+        "variant": "default",
+        "showUser": true,
+        "background": "{colors.neutral.white}",
+        "borderBottom": "1px solid {colors.neutral.gray.200}"
+      }
+    },
+    "navigation": {
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/patterns/navigation"
+      },
+      "modifications": {
+        "container": {
+          "marginBottom": "{spacing.xl}",
+          "background": "{colors.neutral.white}",
+          "borderBottom": "1px solid {colors.neutral.gray.200}"
+        }
+      }
+    }
+  },
+  "pageStructure": {
+    "container": {
+      "maxWidth": "1280px",
+      "margin": "0 auto",
+      "padding": "{spacing.xl}"
+    },
+    "header": {
+      "marginBottom": "{spacing.xl}"
+    },
+    "title": {
+      "fontSize": "{typography.fontSize.2xl}",
+      "fontWeight": "{typography.fontWeight.bold}",
+      "color": "{colors.neutral.gray.900}",
+      "marginBottom": "{spacing.sm}"
+    },
+    "subtitle": {
+      "fontSize": "{typography.fontSize.base}",
+      "color": "{colors.neutral.gray.600}",
+      "marginBottom": "{spacing.xl}"
+    },
+    "content": {
+      "display": "flex",
+      "flexDirection": "column",
+      "gap": "{spacing.xl}"
+    }
+  },
+  "references": [
+    {
+      "component": "header",
+      "source": "GLOBAL_DESIGN.json#/components/header"
+    },
+    {
+      "component": "card",
+      "source": "GLOBAL_DESIGN.json#/components/card"
+    },
+    {
+      "component": "table",
+      "source": "GLOBAL_DESIGN.json#/components/table"
+    },
+    {
+      "component": "button",
+      "source": "GLOBAL_DESIGN.json#/components/button"
+    },
+    {
+      "component": "navigation",
+      "source": "GLOBAL_DESIGN.json#/patterns/navigation"
+    }
+  ],
+  "data": {
+    "metrics": [
+      {
+        "id": "totalMemories",
+        "label": "Total Memories",
+        "value": 288,
+        "description": "Stored in your knowledge base",
+        "icon": "database",
+        "variant": "primary"
+      },
+      {
+        "id": "apiCalls",
+        "label": "API Calls Today", 
+        "value": 30,
+        "description": "Requests processed",
+        "icon": "activity",
+        "variant": "success"
+      },
+      {
+        "id": "activeSessions",
+        "label": "Active Sessions",
+        "value": 2,
+        "description": "Connected AI assistants",
+        "icon": "users",
+        "variant": "info"
+      },
+      {
+        "id": "storageUsed",
+        "label": "Storage Used",
+        "value": "0.09 MB",
+        "description": "Of your available quota",
+        "icon": "hard-drive",
+        "variant": "warning"
+      },
+      {
+        "id": "activeProjects",
+        "label": "Active Projects", 
+        "value": 9,
+        "description": "Currently in progress",
+        "icon": "folder",
+        "variant": "primary"
+      },
+      {
+        "id": "tasksDue",
+        "label": "Tasks Due Today",
+        "value": 0,
+        "description": "Items requiring attention",
+        "icon": "check-circle",
+        "variant": "success"
+      }
+    ]
+  }
+}

@@ -14,6 +14,8 @@ import projectRoutes from '../projects';
 import authController from '../auth/bigmemory-auth.controller';
 // Emergency auth for bypass - PRIORITY 2 (fallback)
 import emergencyAuthRoutes from '../auth/emergency-auth';
+// V1 API routes for frontend
+import v1Routes from './v1';
 
 const router = Router();
 
@@ -55,5 +57,8 @@ router.use('/projects', projectRoutes); // Project routes have their own auth mi
 
 // API key management routes - Deprecated with BigMemory auth
 // router.use('/', apiKeysRoutes);
+
+// V1 API routes for frontend (mounted at /api/v1)
+router.use('/v1', v1Routes);
 
 export default router;

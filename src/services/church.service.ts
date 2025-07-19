@@ -821,11 +821,13 @@ export class ChurchService {
   // ============= Helper Methods =============
 
   private metadataToPerson(metadata: PersonMetadata): Person {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { type, createdAt, updatedAt, version, ...person } = metadata;
     return person as Person;
   }
 
   private metadataToHousehold(metadata: HouseholdMetadata): Household {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { type, createdAt, updatedAt, version, ...household } = metadata;
     return household as Household;
   }
@@ -943,18 +945,21 @@ export class ChurchService {
 
   private async initializeRegistries(): Promise<void> {
     // Initialize default registries if they don't exist
-    const defaultMinistries: Ministry[] = [
-      { name: 'Worship', description: 'Music and worship team', icon: '🎵', isActive: true },
-      { name: 'Children', description: "Children's ministry", icon: '👶', isActive: true },
-      { name: 'Youth', description: 'Youth ministry', icon: '🎓', isActive: true },
-      { name: 'Administration', description: 'Church administration', icon: '💼', isActive: true }
-    ];
+    // Default ministries and tags are defined here for future implementation
+    // when we add system-level defaults or template creation
+    
+    // const defaultMinistries: Ministry[] = [
+    //   { name: 'Worship', description: 'Music and worship team', icon: '🎵', isActive: true },
+    //   { name: 'Children', description: "Children's ministry", icon: '👶', isActive: true },
+    //   { name: 'Youth', description: 'Youth ministry', icon: '🎓', isActive: true },
+    //   { name: 'Administration', description: 'Church administration', icon: '💼', isActive: true }
+    // ];
 
-    const defaultTags: Tag[] = [
-      { name: 'volunteer', category: 'involvement', color: '#4CAF50' },
-      { name: 'new-member', category: 'status', color: '#2196F3' },
-      { name: 'leadership', category: 'role', color: '#FF9800' }
-    ];
+    // const defaultTags: Tag[] = [
+    //   { name: 'volunteer', category: 'involvement', color: '#4CAF50' },
+    //   { name: 'new-member', category: 'status', color: '#2196F3' },
+    //   { name: 'leadership', category: 'role', color: '#FF9800' }
+    // ];
 
     // These would be created for the system user or first user
     // Registries are user-specific in our architecture

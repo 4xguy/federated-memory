@@ -458,6 +458,102 @@ export const ChurchQueries = {
     `;
 
     return updated;
+  },
+
+  /**
+   * Get people statistics for dashboard
+   */
+  async getPeopleStats(userId: string) {
+    const stats = await prisma.$queryRaw<any[]>`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN metadata->>'membershipStatus' = 'member' THEN 1 END) as members,
+        COUNT(CASE WHEN metadata->>'membershipStatus' = 'regular' THEN 1 END) as regulars,
+        COUNT(CASE WHEN metadata->>'membershipStatus' = 'visitor' THEN 1 END) as visitors,
+        COUNT(CASE WHEN metadata->'contact'->>'emails' IS NOT NULL THEN 1 END) as withEmail,
+        COUNT(CASE WHEN metadata->'contact'->>'phones' IS NOT NULL THEN 1 END) as withPhone
+      FROM work_memories
+      WHERE "userId" = ${userId}
+        AND metadata->>'type' = 'person'
+    `;
+
+    return stats[0] || { total: 0, members: 0, regulars: 0, visitors: 0 };
+  },
+
+  /**
+   * Get project statistics for dashboard
+   */
+  async getProjectStats(userId: string) {
+    const stats = await prisma.$queryRaw<any[]>`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN metadata->>'status' = 'active' THEN 1 END) as active,
+        COUNT(CASE WHEN metadata->>'status' = 'completed' THEN 1 END) as completed,
+        COUNT(CASE WHEN metadata->>'status' = 'on_hold' THEN 1 END) as onHold,
+        COUNT(CASE WHEN metadata->>'status' = 'planning' THEN 1 END) as planning
+      FROM work_memories
+      WHERE "userId" = ${userId}
+        AND metadata->>'type' = 'project'
+    `;
+
+    return stats[0] || { total: 0, active: 0, completed: 0, onHold: 0, planning: 0 };
+  },
+
+  /**
+   * Get task statistics for dashboard
+   */
+  async getTaskStats(userId: string) {
+    const stats = await prisma.$queryRaw<any[]>`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN metadata->>'status' = 'todo' THEN 1 END) as todo,
+        COUNT(CASE WHEN metadata->>'status' = 'in_progress' THEN 1 END) as inProgress,
+        COUNT(CASE WHEN metadata->>'status' = 'done' THEN 1 END) as completed,
+        COUNT(CASE WHEN metadata->>'status' = 'blocked' THEN 1 END) as blocked,
+        COUNT(CASE WHEN metadata->>'priority' = 'urgent' THEN 1 END) as urgent,
+        COUNT(CASE WHEN metadata->>'priority' = 'high' THEN 1 END) as highPriority,
+        COUNT(CASE WHEN metadata->>'dueDate' < NOW()::text AND metadata->>'status' != 'done' THEN 1 END) as overdue
+      FROM work_memories
+      WHERE "userId" = ${userId}
+        AND metadata->>'type' = 'task'
+    `;
+
+    return stats[0] || { 
+      total: 0, 
+      todo: 0, 
+      inProgress: 0, 
+      completed: 0, 
+      blocked: 0,
+      urgent: 0,
+      highPriority: 0,
+      overdue: 0
+    };
+  },
+
+  /**
+   * Get ministry statistics
+   */
+  async getMinistryStats(userId: string) {
+    const stats = await prisma.$queryRaw<any[]>`
+      WITH ministry_counts AS (
+        SELECT 
+          metadata->'customFields'->>'ministry' as ministry,
+          COUNT(*) as count
+        FROM work_memories
+        WHERE "userId" = ${userId}
+          AND metadata->>'type' = 'person'
+          AND metadata->'customFields'->>'ministry' IS NOT NULL
+        GROUP BY metadata->'customFields'->>'ministry'
+      )
+      SELECT 
+        ministry,
+        count,
+        ROUND((count::numeric / SUM(count) OVER ()) * 100, 1) as percentage
+      FROM ministry_counts
+      ORDER BY count DESC
+    `;
+
+    return stats;
   }
 };
 

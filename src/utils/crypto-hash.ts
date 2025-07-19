@@ -1,4 +1,4 @@
-import { createHash, randomBytes, pbkdf2Sync } from 'crypto';
+import { randomBytes, pbkdf2Sync } from 'crypto';
 
 /**
  * Cross-platform password hashing utility that doesn't require native bindings

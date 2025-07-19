@@ -1,7 +1,6 @@
 import { Client } from 'pg';
 import { logger } from '@/utils/logger';
 import { broadcastToUser } from '@/api/sse';
-import { prisma } from '@/utils/database';
 
 interface RealtimeMessage {
   userId: string;

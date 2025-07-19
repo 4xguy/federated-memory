@@ -1,297 +1,238 @@
 {
   "metadata": {
+    "name": "Clauvin Memory Design System Reference Map",
     "version": "1.0.0",
-    "description": "Reference map documenting all cross-references between GLOBAL_DESIGN.json and VIEW files",
-    "generated": "2025-01-24",
-    "totalReferences": 87
+    "description": "Complete reference guide for implementing the Clauvin Memory design system",
+    "lastUpdated": "2025-07-18",
+    "implementationTarget": "Claude Code Website Generation"
   },
-  "globalComponents": {
-    "navigation.primary": {
-      "description": "Main navigation bar component",
-      "usedIn": [
-        "VIEW_HOMEPAGE.json#/layout/navigation",
-        "VIEW_RESEARCH.json#/layout/navigation",
-        "VIEW_BIGMEMORY_PRODUCT.json#/layout/navigation"
-      ],
-      "subComponents": ["logo", "links", "cta"]
+  "fileStructure": {
+    "global": {
+      "file": "GLOBAL_DESIGN.json",
+      "description": "Core design tokens, shared components, and reusable patterns",
+      "priority": "CRITICAL - Implement first",
+      "contains": [
+        "Design tokens (colors, typography, spacing)",
+        "Global components (header, buttons, inputs, cards, modals)",
+        "Shared patterns (navigation, sidebar, forms)",
+        "Accessibility and responsive standards"
+      ]
     },
-    "buttons": {
-      "primary": {
-        "description": "Primary action button style",
-        "usedIn": [
-          "VIEW_HOMEPAGE.json#/layout/hero/content/left/elements/[2]/items/[0]/cta/style",
-          "VIEW_LOGIN.json#/layout/container/content/form/elements/[4]/style",
-          "VIEW_RESEARCH.json#/layout/ctaSection/content/buttons/items/[0]/style",
-          "VIEW_BIGMEMORY_PRODUCT.json#/layout/hero/content/left/elements/[3]/style",
-          "VIEW_BIGMEMORY_PRODUCT.json#/layout/usageSection/content/usageGrid/items/[1]/demoButton/style",
-          "VIEW_BIGMEMORY_PRODUCT.json#/layout/ctaSection/content/cta/style"
-        ]
+    "views": {
+      "VIEW_LANDING.json": {
+        "description": "Marketing landing page with hero sections and feature highlights",
+        "extends": "GLOBAL_DESIGN.json",
+        "priority": "HIGH - Primary marketing presence",
+        "routes": ["/", "/home", "/landing"],
+        "components": ["hero", "featureGrid", "ctaSection", "benefitsSection"],
+        "uniqueFeatures": ["Gradient backgrounds", "Interactive feature cards", "Conversion CTAs"]
       },
-      "secondary": {
-        "description": "Secondary action button style",
-        "usedIn": [
-          "VIEW_HOMEPAGE.json#/layout/hero/content/left/elements/[2]/items/[1]/cta/style",
-          "VIEW_LOGIN.json#/layout/container/content/form/elements/[0]/style",
-          "VIEW_RESEARCH.json#/layout/ctaSection/content/buttons/items/[1]/style"
-        ]
+      "VIEW_DASHBOARD.json": {
+        "description": "Analytics dashboard with metrics and project overview",
+        "extends": "GLOBAL_DESIGN.json", 
+        "priority": "HIGH - Core user interface",
+        "routes": ["/dashboard", "/overview"],
+        "components": ["metricsGrid", "quickStart", "overviewTable", "statusGrid"],
+        "uniqueFeatures": ["Real-time metrics", "Progress tracking", "API configuration"]
       },
-      "ghost": {
-        "description": "Ghost button style",
-        "usedIn": [
-          "VIEW_HOMEPAGE.json#/layout/modelComparison/content/cta/style"
-        ]
-      }
-    },
-    "cards": {
-      "base": {
-        "description": "Base card component",
-        "extendedBy": [
-          "cards.interactive",
-          "cards.feature",
-          "VIEW_HOMEPAGE.json#/components/heroCard"
-        ]
+      "VIEW_PROJECTS.json": {
+        "description": "Project management with task tracking and team collaboration",
+        "extends": "GLOBAL_DESIGN.json",
+        "priority": "MEDIUM - Advanced functionality",
+        "routes": ["/projects", "/projects/:id", "/tasks"],
+        "components": ["projectHeader", "filterBar", "projectTable", "taskPanel"],
+        "uniqueFeatures": ["Sortable tables", "Task management", "Team assignments", "Progress bars"]
       },
-      "interactive": {
-        "description": "Interactive card with hover effects",
-        "usedIn": [
-          "VIEW_HOMEPAGE.json#/layout/modelComparison/content/modelCards/items"
-        ]
+      "VIEW_AUTH.json": {
+        "description": "Authentication flows (login, signup, password reset)",
+        "extends": "GLOBAL_DESIGN.json",
+        "priority": "CRITICAL - User access",
+        "routes": ["/login", "/signup", "/reset-password"],
+        "components": ["authContainer", "authCard", "authForm", "socialAuth"],
+        "uniqueFeatures": ["Centered layouts", "Form validation", "Social authentication"]
       },
-      "feature": {
-        "description": "Feature showcase card",
-        "extendedBy": [
-          "VIEW_RESEARCH.json#/components/featureCard"
-        ]
-      }
-    },
-    "typography": {
-      "heading1": {
-        "description": "Primary heading style",
-        "usedIn": [
-          "VIEW_HOMEPAGE.json#/layout/hero/content/left/elements/[0]/style",
-          "VIEW_HOMEPAGE.json#/layout/hero/content/left/elements/[1]/style",
-          "VIEW_HOMEPAGE.json#/layout/videoSection/content/overlay/content/title/style",
-          "VIEW_RESEARCH.json#/layout/hero/content/heading/style"
-        ]
-      },
-      "heading2": {
-        "description": "Secondary heading style",
-        "usedIn": [
-          "VIEW_HOMEPAGE.json#/layout/modelComparison/content/heading/style",
-          "VIEW_LOGIN.json#/layout/container/content/heading/style",
-          "VIEW_RESEARCH.json#/layout/publicationsSection/content/heading/style",
-          "VIEW_RESEARCH.json#/layout/ctaSection/content/heading/style"
-        ]
-      },
-      "heading3": {
-        "description": "Tertiary heading style",
-        "usedIn": [
-          "VIEW_RESEARCH.json#/components/featureCard/title"
-        ]
-      },
-      "body": {
-        "description": "Body text style",
-        "usedIn": [
-          "VIEW_HOMEPAGE.json#/layout/modelComparison/content/description/style",
-          "VIEW_HOMEPAGE.json#/layout/videoSection/content/overlay/content/quote/style",
-          "VIEW_LOGIN.json#/layout/container/content/tagline/style",
-          "VIEW_RESEARCH.json#/layout/hero/content/description/style",
-          "VIEW_RESEARCH.json#/components/publicationRow/title"
-        ]
-      },
-      "caption": {
-        "description": "Caption text style",
-        "usedIn": [
-          "VIEW_HOMEPAGE.json#/layout/videoSection/content/overlay/content/attribution/style",
-          "VIEW_LOGIN.json#/layout/container/content/footer/content/[0]/style",
-          "VIEW_LOGIN.json#/components/divider/text",
-          "VIEW_RESEARCH.json#/components/publicationRow/category",
-          "VIEW_RESEARCH.json#/components/publicationRow/date"
-        ]
-      }
-    },
-    "forms": {
-      "input": {
-        "description": "Form input field style",
-        "usedIn": [
-          "VIEW_LOGIN.json#/layout/container/content/form/elements/[2]/style"
-        ]
-      }
-    },
-    "footer": {
-      "description": "Global footer component",
-      "usedIn": [
-        "VIEW_HOMEPAGE.json#/layout/footer",
-        "VIEW_RESEARCH.json#/layout/footer",
-        "VIEW_BIGMEMORY_PRODUCT.json#/layout/footer"
-      ],
-      "subComponents": ["container", "wrapper", "column", "heading", "link", "copyright"]
-    },
-    "icons": {
-      "play": {
-        "description": "Play button icon style",
-        "usedIn": [
-          "VIEW_HOMEPAGE.json#/layout/videoSection/content/video/playButton"
-        ]
-      }
-    },
-    "patterns": {
-      "featureGrid": {
-        "description": "Feature grid layout pattern",
-        "usedIn": [
-          "VIEW_RESEARCH.json#/layout/featuresGrid/content"
-        ]
+      "VIEW_SETTINGS.json": {
+        "description": "Account settings and system configuration",
+        "extends": "GLOBAL_DESIGN.json",
+        "priority": "MEDIUM - User management",
+        "routes": ["/settings", "/settings/:section"],
+        "components": ["settingsLayout", "settingsSidebar", "accountInfo", "usageMetrics", "dangerZone"],
+        "uniqueFeatures": ["Two-column layout", "Settings navigation", "Usage tracking", "Destructive actions"]
       }
     }
   },
-  "tokenReferences": {
-    "colors": {
-      "totalReferences": 142,
-      "mostUsed": [
-        "colors.background.primary",
-        "colors.text.primary",
-        "colors.neutral.black",
-        "colors.neutral.white",
-        "colors.border.light"
-      ]
+  "componentHierarchy": {
+    "global": {
+      "tokens": ["colors", "typography", "spacing", "shadows", "borderRadius"],
+      "components": ["header", "button", "input", "card", "modal", "badge", "table"],
+      "patterns": ["navigation", "sidebar", "form"]
     },
-    "typography": {
-      "totalReferences": 68,
-      "mostUsed": [
-        "typography.fontSizes.base",
-        "typography.fontWeights.semibold",
-        "typography.lineHeights.relaxed"
-      ]
-    },
-    "spacing": {
-      "totalReferences": 93,
-      "mostUsed": [
-        "spacing.4",
-        "spacing.6",
-        "spacing.8",
-        "spacing.12",
-        "spacing.16"
-      ]
-    },
-    "borderRadius": {
-      "totalReferences": 24,
-      "mostUsed": [
-        "borderRadius.lg",
-        "borderRadius.2xl",
-        "borderRadius.3xl"
-      ]
-    },
-    "shadows": {
-      "totalReferences": 8,
-      "mostUsed": [
-        "shadows.md",
-        "shadows.lg"
-      ]
-    },
-    "transitions": {
-      "totalReferences": 15,
-      "mostUsed": [
-        "transitions.base",
-        "transitions.fast"
-      ]
-    }
-  },
-  "viewSpecificComponents": {
-    "VIEW_HOMEPAGE": {
-      "heroCard": {
-        "extends": "GLOBAL_DESIGN.json#/components/cards/base",
-        "description": "Homepage hero section card variant"
-      }
-    },
-    "VIEW_RESEARCH": {
-      "featureCard": {
-        "extends": "GLOBAL_DESIGN.json#/components/cards/feature",
-        "description": "Research page feature card variant"
+    "inheritance": {
+      "VIEW_LANDING.json": {
+        "extends": ["header", "button", "card"],
+        "overrides": ["header.variant=minimal", "button.ctaPrimary", "button.ctaSecondary"],
+        "newComponents": ["hero", "featureGrid", "ctaSection", "benefitsSection"]
       },
-      "publicationRow": {
-        "description": "Publication list row component"
-      }
-    },
-    "VIEW_LOGIN": {
-      "divider": {
-        "description": "OR divider component for login form"
+      "VIEW_DASHBOARD.json": {
+        "extends": ["header", "card", "table", "button", "navigation"],
+        "overrides": ["header.showUser=true", "navigation.marginBottom"],
+        "newComponents": ["metricsGrid", "quickStart", "overviewTable", "statusGrid"]
       },
-      "oauthButton": {
-        "extends": "GLOBAL_DESIGN.json#/components/buttons/secondary",
-        "description": "OAuth provider button variant"
-      }
-    },
-    "VIEW_BIGMEMORY_PRODUCT": {
-      "benefitCard": {
-        "description": "Three-column benefit showcase cards"
+      "VIEW_PROJECTS.json": {
+        "extends": ["header", "table", "card", "button", "input", "badge", "modal"],
+        "overrides": ["modal.taskEdit", "header.activeSection=projects"],
+        "newComponents": ["projectHeader", "filterBar", "projectTable", "taskPanel", "projectCard"]
       },
-      "usageCard": {
-        "extends": "GLOBAL_DESIGN.json#/components/cards/base",
-        "description": "Usage scenario card with categories"
+      "VIEW_AUTH.json": {
+        "extends": ["card", "input", "button", "form"],
+        "overrides": ["input.authField", "button.authPrimary"],
+        "newComponents": ["authContainer", "authCard", "authForm", "authFooter", "socialAuth"]
       },
-      "projectDemo": {
-        "extends": "GLOBAL_DESIGN.json#/components/cards/base",
-        "description": "Interactive project creation demo"
-      },
-      "releaseRow": {
-        "description": "Release announcement table row"
-      },
-      "testimonialCard": {
-        "description": "User testimonial carousel card"
-      },
-      "articleCard": {
-        "extends": "GLOBAL_DESIGN.json#/components/cards/base",
-        "description": "Blog/article preview card"
-      },
-      "searchBar": {
-        "description": "Interactive search with example suggestions"
+      "VIEW_SETTINGS.json": {
+        "extends": ["header", "card", "button", "input", "sidebar", "form"],
+        "overrides": ["header.activeSection=settings", "form.settingsForm"],
+        "newComponents": ["settingsLayout", "settingsSidebar", "settingsSection", "accountInfo", "usageMetrics", "dangerZone"]
       }
     }
   },
-  "responsiveOverrides": {
-    "mobile": {
-      "VIEW_HOMEPAGE": [
-        "hero.content",
-        "modelComparison.modelCards"
+  "implementationGuide": {
+    "phase1_foundation": {
+      "priority": "CRITICAL",
+      "description": "Implement core design system and authentication",
+      "files": ["GLOBAL_DESIGN.json", "VIEW_AUTH.json"],
+      "deliverables": [
+        "Design token system (CSS custom properties)",
+        "Core component library",
+        "Authentication pages (login, signup)",
+        "Responsive layout foundation"
       ],
-      "VIEW_RESEARCH": [
-        "publicationRow",
-        "ctaSection.buttons"
+      "estimatedEffort": "2-3 days"
+    },
+    "phase2_marketing": {
+      "priority": "HIGH", 
+      "description": "Build marketing presence and user onboarding",
+      "files": ["VIEW_LANDING.json"],
+      "deliverables": [
+        "Landing page with hero section",
+        "Feature showcase grid",
+        "Call-to-action sections",
+        "Marketing site structure"
       ],
-      "VIEW_LOGIN": [
-        "sidebar",
-        "container"
-      ]
+      "estimatedEffort": "1-2 days"
+    },
+    "phase3_dashboard": {
+      "priority": "HIGH",
+      "description": "Core user interface and analytics",
+      "files": ["VIEW_DASHBOARD.json"],
+      "deliverables": [
+        "Dashboard overview page", 
+        "Metrics and statistics display",
+        "Quick start onboarding",
+        "Project/ministry overview"
+      ],
+      "estimatedEffort": "2-3 days"
+    },
+    "phase4_management": {
+      "priority": "MEDIUM",
+      "description": "Advanced project and task management",
+      "files": ["VIEW_PROJECTS.json"],
+      "deliverables": [
+        "Project listing and management",
+        "Task tracking interface",
+        "Filtering and search",
+        "Team collaboration features"
+      ],
+      "estimatedEffort": "3-4 days"
+    },
+    "phase5_settings": {
+      "priority": "MEDIUM",
+      "description": "User account and system configuration",
+      "files": ["VIEW_SETTINGS.json"],
+      "deliverables": [
+        "Account settings interface",
+        "Usage monitoring",
+        "API key management",
+        "Security configurations"
+      ],
+      "estimatedEffort": "2-3 days"
     }
   },
-  "assumptions": {
-    "colorExtraction": [
-      "Brand colors extracted from visual hierarchy and prominence",
-      "Semantic colors (coral, mint, lavender) derived from feature cards",
-      "Background beige tone approximated as #F5F3F0"
-    ],
-    "spacing": [
-      "Spacing scale follows 4px base unit system",
-      "Larger spacing values extrapolated from visual proportions"
-    ],
-    "typography": [
-      "Font family assumed as Inter based on modern web standards",
-      "Font sizes scaled proportionally from base 16px"
-    ],
-    "interactions": [
-      "Hover states inferred from modern web patterns",
-      "Transition timings standardized for consistency"
-    ],
-    "accessibility": [
-      "WCAG AA compliance assumed for all interactive elements",
-      "Focus states follow standard accessibility patterns"
+  "technicalRequirements": {
+    "framework": "React/Next.js recommended",
+    "styling": "Tailwind CSS or CSS-in-JS with design tokens",
+    "icons": "Lucide React or similar icon library",
+    "responsive": "Mobile-first approach with breakpoints: sm(640px), md(768px), lg(1024px), xl(1280px)",
+    "accessibility": "WCAG AA compliance required",
+    "browser": "Modern browsers (Chrome 90+, Firefox 88+, Safari 14+)"
+  },
+  "keyPatterns": {
+    "referencePattern": {
+      "syntax": "\"$ref\": \"GLOBAL_DESIGN.json#/components/[componentName]\"",
+      "description": "References shared components from global design system",
+      "example": "\"$ref\": \"GLOBAL_DESIGN.json#/components/button\""
+    },
+    "overridePattern": {
+      "syntax": "\"extends\": { \"$ref\": \"...\", \"modifications\": {...} }",
+      "description": "Extends global component with view-specific modifications",
+      "example": {
+        "extends": { "$ref": "GLOBAL_DESIGN.json#/components/button" },
+        "modifications": { "variant": "primary", "size": "lg" }
+      }
+    },
+    "tokenUsage": {
+      "syntax": "\"{tokens.category.property}\"",
+      "description": "References design tokens for consistent styling",
+      "example": "\"color\": \"{colors.primary.600}\""
+    }
+  },
+  "qualityGates": {
+    "componentCoverage": "100% - All UI elements must be defined",
+    "referenceIntegrity": "All $ref patterns must resolve correctly",
+    "responsiveDesign": "Mobile-first implementation required",
+    "accessibilityCompliance": "WCAG AA standards must be met",
+    "performanceTargets": "< 3s first contentful paint, < 100ms interaction response",
+    "browserCompatibility": "95% compatibility with modern browsers"
+  },
+  "brandingUpdates": {
+    "oldBrand": "BigMemory",
+    "newBrand": "Clauvin Memory", 
+    "updates": [
+      "All references to 'BigMemory' should be replaced with 'Clauvin Memory'",
+      "Logo and branding elements updated throughout",
+      "Maintain existing color scheme and visual identity",
+      "Update taglines and marketing copy to reflect new branding"
     ]
   },
-  "implementationNotes": {
-    "referenceFormat": "All $ref values use JSON Pointer format (RFC 6901)",
-    "overridePattern": "Component overrides use 'extends' key followed by property modifications",
-    "responsiveStrategy": "Mobile-first with progressive enhancement for larger screens",
-    "stateManagement": "Component states defined separately from base styles",
-    "tokenResolution": "Token references use $ prefix for dynamic value resolution"
+  "assumptions": {
+    "dataIntegration": "Components assume backend API for dynamic data",
+    "authentication": "JWT-based authentication system expected", 
+    "stateManagement": "React Context or Redux for application state",
+    "apiEndpoints": "RESTful API with standard CRUD operations",
+    "realTimeUpdates": "WebSocket connections for live data updates",
+    "fileHandling": "Support for document uploads and management"
+  },
+  "nextSteps": {
+    "immediate": [
+      "Implement GLOBAL_DESIGN.json token system",
+      "Build core component library",
+      "Create authentication flow (VIEW_AUTH.json)",
+      "Establish responsive layout foundation"
+    ],
+    "shortTerm": [
+      "Complete landing page (VIEW_LANDING.json)",
+      "Build dashboard interface (VIEW_DASHBOARD.json)",
+      "Implement basic navigation and routing"
+    ],
+    "mediumTerm": [
+      "Add project management features (VIEW_PROJECTS.json)",
+      "Complete settings interface (VIEW_SETTINGS.json)",
+      "Optimize performance and accessibility"
+    ],
+    "longTerm": [
+      "Advanced features and integrations",
+      "Analytics and monitoring",
+      "Mobile app considerations",
+      "Internationalization support"
+    ]
   }
 }

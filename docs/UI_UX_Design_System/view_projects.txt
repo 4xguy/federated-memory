@@ -1,0 +1,579 @@
+{
+  "metadata": {
+    "name": "Project Management View",
+    "description": "Project listing, task management, and team collaboration interface",
+    "extends": "GLOBAL_DESIGN.json",
+    "viewType": "management",
+    "lastUpdated": "2025-07-18"
+  },
+  "layout": {
+    "structure": "management",
+    "sections": ["header", "filters", "projectList", "taskDetails"],
+    "sidebar": "conditional",
+    "spacing": "efficient"
+  },
+  "components": {
+    "projectHeader": {
+      "name": "Project Header",
+      "description": "Page header with actions and filters for project management",
+      "props": {
+        "showFilters": "boolean",
+        "showActions": "boolean",
+        "viewMode": ["list", "kanban", "calendar"]
+      },
+      "structure": {
+        "container": {
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "marginBottom": "{spacing.xl}",
+          "padding": "{spacing.lg}",
+          "background": "{colors.neutral.white}",
+          "borderRadius": "{borderRadius.xl}",
+          "border": "1px solid {colors.neutral.gray.200}"
+        },
+        "titleSection": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.md}"
+        },
+        "title": {
+          "fontSize": "{typography.fontSize.2xl}",
+          "fontWeight": "{typography.fontWeight.bold}",
+          "color": "{colors.neutral.gray.900}"
+        },
+        "subtitle": {
+          "fontSize": "{typography.fontSize.base}",
+          "color": "{colors.neutral.gray.600}"
+        },
+        "actionsSection": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.md}"
+        },
+        "viewToggle": {
+          "display": "flex",
+          "background": "{colors.neutral.gray.100}",
+          "borderRadius": "{borderRadius.lg}",
+          "padding": "2px",
+          "gap": "2px"
+        },
+        "viewButton": {
+          "padding": "{spacing.sm} {spacing.md}",
+          "fontSize": "{typography.fontSize.sm}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "border": "none",
+          "background": "transparent",
+          "color": "{colors.neutral.gray.600}",
+          "borderRadius": "{borderRadius.md}",
+          "cursor": "pointer",
+          "transition": "all 0.2s ease-in-out"
+        }
+      },
+      "states": {
+        "activeView": {
+          "viewButton": {
+            "background": "{colors.neutral.white}",
+            "color": "{colors.neutral.gray.900}",
+            "boxShadow": "{shadows.sm}"
+          }
+        }
+      },
+      "responsive": {
+        "mobile": {
+          "container": {
+            "flexDirection": "column",
+            "alignItems": "stretch",
+            "gap": "{spacing.md}"
+          },
+          "actionsSection": {
+            "justifyContent": "space-between"
+          }
+        }
+      }
+    },
+    "filterBar": {
+      "name": "Filter Bar",
+      "description": "Filtering and search controls for project list",
+      "props": {
+        "searchable": "boolean",
+        "sortable": "boolean",
+        "groupable": "boolean"
+      },
+      "structure": {
+        "container": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.md}",
+          "marginBottom": "{spacing.lg}",
+          "padding": "{spacing.md}",
+          "background": "{colors.neutral.gray.50}",
+          "borderRadius": "{borderRadius.lg}",
+          "border": "1px solid {colors.neutral.gray.200}"
+        },
+        "searchField": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/input"
+          },
+          "flex": 1,
+          "maxWidth": "400px"
+        },
+        "filterGroup": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.sm}"
+        },
+        "filterSelect": {
+          "minWidth": "120px",
+          "fontSize": "{typography.fontSize.sm}"
+        },
+        "clearFilters": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/button"
+          },
+          "variant": "ghost",
+          "size": "sm"
+        }
+      },
+      "responsive": {
+        "mobile": {
+          "container": {
+            "flexDirection": "column",
+            "alignItems": "stretch"
+          },
+          "searchField": {
+            "maxWidth": "none"
+          },
+          "filterGroup": {
+            "justifyContent": "space-between"
+          }
+        }
+      }
+    },
+    "projectTable": {
+      "name": "Project Table",
+      "description": "Sortable table displaying project information with status indicators",
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/components/table"
+      },
+      "props": {
+        "selectable": "boolean",
+        "expandable": "boolean",
+        "actionable": "boolean"
+      },
+      "structure": {
+        "container": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/card"
+          },
+          "padding": "0",
+          "overflow": "hidden"
+        },
+        "statusCell": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.sm}"
+        },
+        "statusBadge": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/badge"
+          },
+          "size": "sm"
+        },
+        "progressCell": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.sm}",
+          "minWidth": "120px"
+        },
+        "progressBar": {
+          "flex": 1,
+          "height": "6px",
+          "background": "{colors.neutral.gray.200}",
+          "borderRadius": "{borderRadius.full}",
+          "overflow": "hidden"
+        },
+        "progressFill": {
+          "height": "100%",
+          "borderRadius": "{borderRadius.full}",
+          "transition": "width 0.3s ease-in-out"
+        },
+        "progressText": {
+          "fontSize": "{typography.fontSize.xs}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "color": "{colors.neutral.gray.600}",
+          "minWidth": "30px"
+        },
+        "actionCell": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.xs}",
+          "justifyContent": "flex-end"
+        },
+        "actionButton": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/button"
+          },
+          "variant": "ghost",
+          "size": "sm",
+          "padding": "{spacing.sm}",
+          "minWidth": "auto"
+        },
+        "titleCell": {
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "2px"
+        },
+        "projectTitle": {
+          "fontSize": "{typography.fontSize.sm}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "color": "{colors.neutral.gray.900}",
+          "lineHeight": "{typography.lineHeight.tight}"
+        },
+        "projectDescription": {
+          "fontSize": "{typography.fontSize.xs}",
+          "color": "{colors.neutral.gray.500}",
+          "lineHeight": "{typography.lineHeight.normal}",
+          "overflow": "hidden",
+          "textOverflow": "ellipsis",
+          "whiteSpace": "nowrap",
+          "maxWidth": "200px"
+        },
+        "teamCell": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.xs}"
+        },
+        "avatar": {
+          "width": "24px",
+          "height": "24px",
+          "borderRadius": "{borderRadius.full}",
+          "background": "{colors.primary.100}",
+          "color": "{colors.primary.600}",
+          "fontSize": "{typography.fontSize.xs}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "center"
+        },
+        "avatarGroup": {
+          "display": "flex",
+          "marginLeft": "-4px"
+        },
+        "avatarGroupItem": {
+          "marginLeft": "-4px",
+          "border": "2px solid {colors.neutral.white}"
+        }
+      },
+      "statusVariants": {
+        "planning": {
+          "statusBadge": {
+            "variant": "default"
+          },
+          "progressFill": {
+            "background": "{colors.neutral.gray.400}"
+          }
+        },
+        "active": {
+          "statusBadge": {
+            "variant": "success"
+          },
+          "progressFill": {
+            "background": "{colors.semantic.success}"
+          }
+        },
+        "on_hold": {
+          "statusBadge": {
+            "variant": "warning"
+          },
+          "progressFill": {
+            "background": "{colors.semantic.warning}"
+          }
+        },
+        "completed": {
+          "statusBadge": {
+            "variant": "info"
+          },
+          "progressFill": {
+            "background": "{colors.primary.500}"
+          }
+        }
+      }
+    },
+    "taskPanel": {
+      "name": "Task Panel", 
+      "description": "Sidebar or modal panel for task management within projects",
+      "props": {
+        "mode": ["sidebar", "modal", "inline"],
+        "editable": "boolean",
+        "showDependencies": "boolean"
+      },
+      "structure": {
+        "container": {
+          "background": "{colors.neutral.white}",
+          "border": "1px solid {colors.neutral.gray.200}",
+          "borderRadius": "{borderRadius.xl}",
+          "overflow": "hidden"
+        },
+        "header": {
+          "padding": "{spacing.lg}",
+          "borderBottom": "1px solid {colors.neutral.gray.200}",
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "space-between"
+        },
+        "headerTitle": {
+          "fontSize": "{typography.fontSize.lg}",
+          "fontWeight": "{typography.fontWeight.semibold}",
+          "color": "{colors.neutral.gray.900}"
+        },
+        "headerActions": {
+          "display": "flex",
+          "gap": "{spacing.sm}"
+        },
+        "content": {
+          "padding": "{spacing.lg}"
+        },
+        "taskList": {
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "{spacing.md}"
+        },
+        "taskItem": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.md}",
+          "padding": "{spacing.md}",
+          "border": "1px solid {colors.neutral.gray.200}",
+          "borderRadius": "{borderRadius.lg}",
+          "transition": "all 0.2s ease-in-out"
+        },
+        "taskCheckbox": {
+          "width": "16px",
+          "height": "16px",
+          "border": "2px solid {colors.neutral.gray.300}",
+          "borderRadius": "{borderRadius.sm}",
+          "cursor": "pointer"
+        },
+        "taskContent": {
+          "flex": 1,
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "2px"
+        },
+        "taskTitle": {
+          "fontSize": "{typography.fontSize.sm}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "color": "{colors.neutral.gray.900}"
+        },
+        "taskMeta": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.sm}",
+          "fontSize": "{typography.fontSize.xs}",
+          "color": "{colors.neutral.gray.500}"
+        },
+        "taskActions": {
+          "display": "flex",
+          "gap": "{spacing.xs}",
+          "opacity": 0,
+          "transition": "opacity 0.2s ease-in-out"
+        }
+      },
+      "states": {
+        "hover": {
+          "taskItem": {
+            "borderColor": "{colors.primary.300}",
+            "background": "{colors.primary.25}"
+          },
+          "taskActions": {
+            "opacity": 1
+          }
+        },
+        "completed": {
+          "taskCheckbox": {
+            "background": "{colors.semantic.success}",
+            "borderColor": "{colors.semantic.success}"
+          },
+          "taskTitle": {
+            "textDecoration": "line-through",
+            "color": "{colors.neutral.gray.500}"
+          }
+        }
+      }
+    },
+    "projectCard": {
+      "name": "Project Card",
+      "description": "Card view alternative for project display",
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/components/card"
+      },
+      "props": {
+        "size": ["sm", "md", "lg"],
+        "interactive": "boolean",
+        "showProgress": "boolean"
+      },
+      "structure": {
+        "container": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/card"
+          },
+          "padding": "{spacing.lg}",
+          "interactive": true
+        },
+        "header": {
+          "display": "flex",
+          "alignItems": "flex-start",
+          "justifyContent": "space-between",
+          "marginBottom": "{spacing.md}"
+        },
+        "title": {
+          "fontSize": "{typography.fontSize.lg}",
+          "fontWeight": "{typography.fontWeight.semibold}",
+          "color": "{colors.neutral.gray.900}",
+          "marginBottom": "{spacing.xs}"
+        },
+        "description": {
+          "fontSize": "{typography.fontSize.sm}",
+          "color": "{colors.neutral.gray.600}",
+          "lineHeight": "{typography.lineHeight.relaxed}",
+          "marginBottom": "{spacing.md}"
+        },
+        "meta": {
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "fontSize": "{typography.fontSize.xs}",
+          "color": "{colors.neutral.gray.500}"
+        },
+        "progress": {
+          "marginTop": "{spacing.md}"
+        }
+      }
+    }
+  },
+  "overrides": {
+    "header": {
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/components/header"
+      },
+      "modifications": {
+        "variant": "default",
+        "activeSection": "projects"
+      }
+    },
+    "modal": {
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/components/modal"
+      },
+      "modifications": {
+        "taskEdit": {
+          "size": "lg",
+          "centered": true
+        }
+      }
+    }
+  },
+  "pageStructure": {
+    "container": {
+      "maxWidth": "1400px",
+      "margin": "0 auto",
+      "padding": "{spacing.xl}"
+    },
+    "content": {
+      "display": "flex",
+      "flexDirection": "column",
+      "gap": "{spacing.lg}"
+    },
+    "mainArea": {
+      "flex": 1
+    },
+    "sidebar": {
+      "width": "320px",
+      "flexShrink": 0
+    }
+  },
+  "references": [
+    {
+      "component": "header",
+      "source": "GLOBAL_DESIGN.json#/components/header"
+    },
+    {
+      "component": "table",
+      "source": "GLOBAL_DESIGN.json#/components/table"
+    },
+    {
+      "component": "card",
+      "source": "GLOBAL_DESIGN.json#/components/card"
+    },
+    {
+      "component": "button",
+      "source": "GLOBAL_DESIGN.json#/components/button"
+    },
+    {
+      "component": "input",
+      "source": "GLOBAL_DESIGN.json#/components/input"
+    },
+    {
+      "component": "badge",
+      "source": "GLOBAL_DESIGN.json#/components/badge"
+    },
+    {
+      "component": "modal",
+      "source": "GLOBAL_DESIGN.json#/components/modal"
+    }
+  ],
+  "content": {
+    "tableColumns": [
+      {
+        "key": "name",
+        "label": "Name",
+        "sortable": true,
+        "width": "30%"
+      },
+      {
+        "key": "status", 
+        "label": "Status",
+        "sortable": true,
+        "width": "15%"
+      },
+      {
+        "key": "ministry",
+        "label": "Ministry",
+        "sortable": true,
+        "width": "15%"
+      },
+      {
+        "key": "owner",
+        "label": "Owner", 
+        "sortable": true,
+        "width": "15%"
+      },
+      {
+        "key": "dueDate",
+        "label": "Due Date",
+        "sortable": true,
+        "width": "15%"
+      },
+      {
+        "key": "progress",
+        "label": "Progress",
+        "sortable": false,
+        "width": "10%"
+      },
+      {
+        "key": "actions",
+        "label": "Actions",
+        "sortable": false,
+        "width": "auto"
+      }
+    ],
+    "statusOptions": [
+      { "value": "planning", "label": "Planning", "color": "default" },
+      { "value": "active", "label": "Active", "color": "success" },
+      { "value": "on_hold", "label": "On Hold", "color": "warning" },
+      { "value": "completed", "label": "Completed", "color": "info" },
+      { "value": "cancelled", "label": "Cancelled", "color": "error" }
+    ]
+  }
+}

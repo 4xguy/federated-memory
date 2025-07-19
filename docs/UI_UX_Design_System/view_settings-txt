@@ -1,0 +1,590 @@
+{
+  "metadata": {
+    "name": "Settings View",
+    "description": "Account settings, preferences, and system configuration",
+    "extends": "GLOBAL_DESIGN.json",
+    "viewType": "settings",
+    "lastUpdated": "2025-07-18"
+  },
+  "layout": {
+    "structure": "split",
+    "sections": ["sidebar", "content"],
+    "spacing": "comfortable",
+    "responsive": "stack"
+  },
+  "components": {
+    "settingsLayout": {
+      "name": "Settings Layout",
+      "description": "Two-column layout with navigation sidebar",
+      "props": {
+        "sidebarWidth": "string",
+        "responsive": "boolean"
+      },
+      "structure": {
+        "container": {
+          "display": "flex",
+          "gap": "{spacing.2xl}",
+          "maxWidth": "1200px",
+          "margin": "0 auto",
+          "padding": "{spacing.xl}"
+        },
+        "sidebar": {
+          "width": "280px",
+          "flexShrink": 0
+        },
+        "content": {
+          "flex": 1,
+          "minWidth": 0
+        }
+      },
+      "responsive": {
+        "mobile": {
+          "container": {
+            "flexDirection": "column",
+            "gap": "{spacing.lg}"
+          },
+          "sidebar": {
+            "width": "100%"
+          }
+        }
+      }
+    },
+    "settingsSidebar": {
+      "name": "Settings Sidebar",
+      "description": "Navigation sidebar for settings sections",
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/patterns/sidebar"
+      },
+      "props": {
+        "activeSection": "string",
+        "collapsible": "boolean"
+      },
+      "structure": {
+        "container": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/patterns/sidebar/container"
+          },
+          "background": "{colors.neutral.white}",
+          "border": "1px solid {colors.neutral.gray.200}",
+          "borderRadius": "{borderRadius.xl}",
+          "padding": "{spacing.lg}",
+          "height": "fit-content",
+          "position": "sticky",
+          "top": "{spacing.xl}"
+        },
+        "header": {
+          "marginBottom": "{spacing.lg}",
+          "paddingBottom": "{spacing.lg}",
+          "borderBottom": "1px solid {colors.neutral.gray.200}"
+        },
+        "title": {
+          "fontSize": "{typography.fontSize.lg}",
+          "fontWeight": "{typography.fontWeight.semibold}",
+          "color": "{colors.neutral.gray.900}"
+        },
+        "navigation": {
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "{spacing.xs}"
+        },
+        "navItem": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/patterns/sidebar/item"
+          },
+          "padding": "{spacing.md}",
+          "borderRadius": "{borderRadius.lg}",
+          "fontSize": "{typography.fontSize.sm}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "color": "{colors.neutral.gray.600}",
+          "textDecoration": "none",
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.sm}",
+          "transition": "all 0.2s ease-in-out"
+        },
+        "navIcon": {
+          "width": "20px",
+          "height": "20px",
+          "flexShrink": 0
+        }
+      },
+      "states": {
+        "active": {
+          "navItem": {
+            "background": "{colors.primary.100}",
+            "color": "{colors.primary.700}"
+          }
+        },
+        "hover": {
+          "navItem": {
+            "background": "{colors.neutral.gray.100}",
+            "color": "{colors.neutral.gray.900}"
+          }
+        }
+      }
+    },
+    "settingsSection": {
+      "name": "Settings Section",
+      "description": "Individual settings section with form fields",
+      "props": {
+        "title": "string",
+        "description": "string",
+        "collapsible": "boolean"
+      },
+      "structure": {
+        "container": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/card"
+          },
+          "padding": "0",
+          "marginBottom": "{spacing.xl}",
+          "overflow": "hidden"
+        },
+        "header": {
+          "padding": "{spacing.xl}",
+          "borderBottom": "1px solid {colors.neutral.gray.200}"
+        },
+        "title": {
+          "fontSize": "{typography.fontSize.xl}",
+          "fontWeight": "{typography.fontWeight.semibold}",
+          "color": "{colors.neutral.gray.900}",
+          "marginBottom": "{spacing.sm}"
+        },
+        "description": {
+          "fontSize": "{typography.fontSize.base}",
+          "color": "{colors.neutral.gray.600}",
+          "lineHeight": "{typography.lineHeight.relaxed}"
+        },
+        "content": {
+          "padding": "{spacing.xl}"
+        },
+        "footer": {
+          "padding": "{spacing.xl}",
+          "borderTop": "1px solid {colors.neutral.gray.200}",
+          "background": "{colors.neutral.gray.50}",
+          "display": "flex",
+          "justifyContent": "flex-end",
+          "gap": "{spacing.md}"
+        }
+      }
+    },
+    "accountInfo": {
+      "name": "Account Information",
+      "description": "Display and edit account details",
+      "props": {
+        "editable": "boolean",
+        "showAvatar": "boolean"
+      },
+      "structure": {
+        "container": {
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "{spacing.lg}"
+        },
+        "profileSection": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.lg}",
+          "padding": "{spacing.lg}",
+          "background": "{colors.neutral.gray.50}",
+          "borderRadius": "{borderRadius.lg}",
+          "marginBottom": "{spacing.lg}"
+        },
+        "avatar": {
+          "width": "80px",
+          "height": "80px",
+          "borderRadius": "{borderRadius.full}",
+          "background": "{colors.primary.100}",
+          "color": "{colors.primary.600}",
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "fontSize": "{typography.fontSize.2xl}",
+          "fontWeight": "{typography.fontWeight.bold}",
+          "flexShrink": 0
+        },
+        "profileInfo": {
+          "flex": 1
+        },
+        "userName": {
+          "fontSize": "{typography.fontSize.lg}",
+          "fontWeight": "{typography.fontWeight.semibold}",
+          "color": "{colors.neutral.gray.900}",
+          "marginBottom": "{spacing.xs}"
+        },
+        "userEmail": {
+          "fontSize": "{typography.fontSize.base}",
+          "color": "{colors.neutral.gray.600}",
+          "marginBottom": "{spacing.sm}"
+        },
+        "userMeta": {
+          "fontSize": "{typography.fontSize.sm}",
+          "color": "{colors.neutral.gray.500}"
+        },
+        "formGrid": {
+          "display": "grid",
+          "gridTemplateColumns": "repeat(auto-fit, minmax(250px, 1fr))",
+          "gap": "{spacing.lg}"
+        },
+        "infoGrid": {
+          "display": "grid",
+          "gridTemplateColumns": "120px 1fr",
+          "gap": "{spacing.lg} {spacing.xl}",
+          "alignItems": "center"
+        },
+        "infoLabel": {
+          "fontSize": "{typography.fontSize.sm}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "color": "{colors.neutral.gray.700}"
+        },
+        "infoValue": {
+          "fontSize": "{typography.fontSize.sm}",
+          "color": "{colors.neutral.gray.900}"
+        }
+      }
+    },
+    "usageMetrics": {
+      "name": "Usage Metrics",
+      "description": "Display usage statistics and limits",
+      "props": {
+        "showDetails": "boolean",
+        "interactive": "boolean"
+      },
+      "structure": {
+        "container": {
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "{spacing.lg}"
+        },
+        "metricItem": {
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "padding": "{spacing.lg}",
+          "background": "{colors.neutral.gray.50}",
+          "borderRadius": "{borderRadius.lg}",
+          "border": "1px solid {colors.neutral.gray.200}"
+        },
+        "metricInfo": {
+          "flex": 1
+        },
+        "metricLabel": {
+          "fontSize": "{typography.fontSize.sm}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "color": "{colors.neutral.gray.700}",
+          "marginBottom": "{spacing.xs}"
+        },
+        "metricDescription": {
+          "fontSize": "{typography.fontSize.xs}",
+          "color": "{colors.neutral.gray.500}",
+          "lineHeight": "{typography.lineHeight.relaxed}"
+        },
+        "metricValue": {
+          "fontSize": "{typography.fontSize.lg}",
+          "fontWeight": "{typography.fontWeight.semibold}",
+          "color": "{colors.neutral.gray.900}",
+          "textAlign": "right"
+        },
+        "metricProgress": {
+          "marginTop": "{spacing.sm}",
+          "width": "100%"
+        },
+        "progressBar": {
+          "width": "100%",
+          "height": "8px",
+          "background": "{colors.neutral.gray.200}",
+          "borderRadius": "{borderRadius.full}",
+          "overflow": "hidden"
+        },
+        "progressFill": {
+          "height": "100%",
+          "borderRadius": "{borderRadius.full}",
+          "transition": "width 0.3s ease-in-out"
+        },
+        "progressText": {
+          "display": "flex",
+          "justifyContent": "space-between",
+          "marginTop": "{spacing.xs}",
+          "fontSize": "{typography.fontSize.xs}",
+          "color": "{colors.neutral.gray.500}"
+        }
+      },
+      "variants": {
+        "normal": {
+          "progressFill": {
+            "background": "{colors.primary.500}"
+          }
+        },
+        "warning": {
+          "progressFill": {
+            "background": "{colors.semantic.warning}"
+          },
+          "metricItem": {
+            "borderColor": "{colors.semantic.warning}",
+            "background": "rgba(245, 158, 11, 0.05)"
+          }
+        },
+        "danger": {
+          "progressFill": {
+            "background": "{colors.semantic.error}"
+          },
+          "metricItem": {
+            "borderColor": "{colors.semantic.error}",
+            "background": "rgba(239, 68, 68, 0.05)"
+          }
+        }
+      }
+    },
+    "dangerZone": {
+      "name": "Danger Zone",
+      "description": "Destructive actions section with warnings",
+      "props": {
+        "actions": "array"
+      },
+      "structure": {
+        "container": {
+          "padding": "{spacing.xl}",
+          "border": "2px solid {colors.semantic.error}",
+          "borderRadius": "{borderRadius.lg}",
+          "background": "rgba(239, 68, 68, 0.05)"
+        },
+        "header": {
+          "marginBottom": "{spacing.lg}"
+        },
+        "title": {
+          "fontSize": "{typography.fontSize.lg}",
+          "fontWeight": "{typography.fontWeight.semibold}",
+          "color": "{colors.semantic.error}",
+          "marginBottom": "{spacing.sm}"
+        },
+        "warning": {
+          "fontSize": "{typography.fontSize.sm}",
+          "color": "{colors.neutral.gray.700}",
+          "lineHeight": "{typography.lineHeight.relaxed}",
+          "marginBottom": "{spacing.lg}"
+        },
+        "actions": {
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "{spacing.md}"
+        },
+        "actionItem": {
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "padding": "{spacing.lg}",
+          "background": "{colors.neutral.white}",
+          "border": "1px solid {colors.neutral.gray.200}",
+          "borderRadius": "{borderRadius.lg}"
+        },
+        "actionInfo": {
+          "flex": 1
+        },
+        "actionTitle": {
+          "fontSize": "{typography.fontSize.base}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "color": "{colors.neutral.gray.900}",
+          "marginBottom": "{spacing.xs}"
+        },
+        "actionDescription": {
+          "fontSize": "{typography.fontSize.sm}",
+          "color": "{colors.neutral.gray.600}",
+          "lineHeight": "{typography.lineHeight.relaxed}"
+        },
+        "actionButton": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/button"
+          },
+          "variant": "danger",
+          "size": "sm"
+        }
+      }
+    },
+    "integrationSettings": {
+      "name": "Integration Settings",
+      "description": "API keys, webhooks, and external service configuration",
+      "props": {
+        "showTokens": "boolean",
+        "maskSensitive": "boolean"
+      },
+      "structure": {
+        "container": {
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "{spacing.lg}"
+        },
+        "apiSection": {
+          "padding": "{spacing.lg}",
+          "background": "{colors.neutral.gray.50}",
+          "borderRadius": "{borderRadius.lg}",
+          "border": "1px solid {colors.neutral.gray.200}"
+        },
+        "apiHeader": {
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "marginBottom": "{spacing.md}"
+        },
+        "apiTitle": {
+          "fontSize": "{typography.fontSize.base}",
+          "fontWeight": "{typography.fontWeight.semibold}",
+          "color": "{colors.neutral.gray.900}"
+        },
+        "tokenField": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.sm}",
+          "padding": "{spacing.md}",
+          "background": "{colors.neutral.gray.900}",
+          "borderRadius": "{borderRadius.lg}",
+          "fontFamily": "{typography.fontFamily.mono}",
+          "fontSize": "{typography.fontSize.sm}",
+          "color": "{colors.neutral.white}",
+          "marginBottom": "{spacing.md}"
+        },
+        "tokenText": {
+          "flex": 1,
+          "fontFamily": "inherit"
+        },
+        "copyButton": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/button"
+          },
+          "variant": "ghost",
+          "size": "sm",
+          "color": "{colors.neutral.white}",
+          "padding": "{spacing.sm}",
+          "minWidth": "auto"
+        },
+        "regenerateButton": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/button"
+          },
+          "variant": "outline",
+          "size": "sm"
+        }
+      }
+    }
+  },
+  "overrides": {
+    "header": {
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/components/header"
+      },
+      "modifications": {
+        "variant": "default",
+        "activeSection": "settings"
+      }
+    },
+    "form": {
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/patterns/form"
+      },
+      "modifications": {
+        "settingsForm": {
+          "gap": "{spacing.lg}",
+          "maxWidth": "none"
+        }
+      }
+    },
+    "button": {
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/components/button"
+      },
+      "modifications": {
+        "saveButton": {
+          "variant": "primary",
+          "size": "md"
+        },
+        "cancelButton": {
+          "variant": "ghost",
+          "size": "md"
+        }
+      }
+    }
+  },
+  "pageStructure": {
+    "title": "Account Settings",
+    "subtitle": "Manage your account and preferences",
+    "breadcrumb": ["Settings"]
+  },
+  "references": [
+    {
+      "component": "header",
+      "source": "GLOBAL_DESIGN.json#/components/header"
+    },
+    {
+      "component": "card",
+      "source": "GLOBAL_DESIGN.json#/components/card"
+    },
+    {
+      "component": "button",
+      "source": "GLOBAL_DESIGN.json#/components/button"
+    },
+    {
+      "component": "input",
+      "source": "GLOBAL_DESIGN.json#/components/input"
+    },
+    {
+      "component": "sidebar",
+      "source": "GLOBAL_DESIGN.json#/patterns/sidebar"
+    },
+    {
+      "component": "form",
+      "source": "GLOBAL_DESIGN.json#/patterns/form"
+    }
+  ],
+  "content": {
+    "navigation": [
+      {
+        "id": "account",
+        "label": "Account Information",
+        "icon": "user",
+        "active": true
+      },
+      {
+        "id": "usage",
+        "label": "Usage & Limits", 
+        "icon": "bar-chart"
+      },
+      {
+        "id": "integrations",
+        "label": "API & Integrations",
+        "icon": "settings"
+      },
+      {
+        "id": "security",
+        "label": "Security",
+        "icon": "shield"
+      },
+      {
+        "id": "billing",
+        "label": "Billing",
+        "icon": "credit-card"
+      },
+      {
+        "id": "danger",
+        "label": "Danger Zone",
+        "icon": "alert-triangle"
+      }
+    ],
+    "sections": {
+      "account": {
+        "title": "Account Information",
+        "description": "Update your personal information and account preferences"
+      },
+      "usage": {
+        "title": "Usage & Limits",
+        "description": "Monitor your usage and upgrade your plan if needed"
+      },
+      "integrations": {
+        "title": "API & Integrations",
+        "description": "Manage API keys and external service connections"
+      },
+      "danger": {
+        "title": "Danger Zone",
+        "description": "Permanent actions that cannot be undone"
+      }
+    }
+  }
+}

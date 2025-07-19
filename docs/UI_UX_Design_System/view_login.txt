@@ -1,245 +1,476 @@
 {
   "metadata": {
-    "viewName": "BigMemory Login",
-    "route": "/login",
-    "title": "BigMemory - Login",
-    "description": "Sign in to BigMemory",
-    "globalDesignRef": "GLOBAL_DESIGN.json"
+    "name": "Authentication View",
+    "description": "Login, signup, and authentication flow interfaces",
+    "extends": "GLOBAL_DESIGN.json",
+    "viewType": "authentication",
+    "lastUpdated": "2025-07-18"
   },
   "layout": {
-    "type": "centered",
-    "background": "$colors.background.primary",
-    "minHeight": "100vh",
-    "display": "flex",
-    "alignItems": "center",
-    "justifyContent": "center",
-    "container": {
-      "maxWidth": "400px",
-      "width": "100%",
-      "padding": "$spacing.6",
-      "content": {
-        "logo": {
-          "type": "brand",
-          "name": "BigMemory",
-          "size": "48px",
-          "marginBottom": "$spacing.12",
-          "textAlign": "center"
-        },
-        "heading": {
-          "text": "Your memories, persisted",
-          "style": {
-            "$ref": "GLOBAL_DESIGN.json#/components/typography/heading2",
-            "textAlign": "center",
-            "marginBottom": "$spacing.2"
-          }
-        },
-        "tagline": {
-          "text": "Privacy-first memory system that helps you remember with confidence.",
-          "style": {
-            "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
-            "textAlign": "center",
-            "marginBottom": "$spacing.8"
-          }
-        },
-        "form": {
-          "type": "loginForm",
-          "elements": [
-            {
-              "type": "button",
-              "variant": "oauth",
-              "provider": "google",
-              "text": "Continue with Google",
-              "icon": "google",
-              "style": {
-                "$ref": "GLOBAL_DESIGN.json#/components/buttons/secondary",
-                "width": "100%",
-                "marginBottom": "$spacing.4",
-                "justifyContent": "center",
-                "gap": "$spacing.2"
-              }
-            },
-            {
-              "type": "divider",
-              "text": "OR",
-              "style": {
-                "margin": {
-                  "y": "$spacing.6"
-                }
-              }
-            },
-            {
-              "type": "input",
-              "placeholder": "Enter your personal or work email",
-              "inputType": "email",
-              "style": {
-                "$ref": "GLOBAL_DESIGN.json#/components/forms/input",
-                "width": "100%",
-                "marginBottom": "$spacing.6"
-              }
-            },
-            {
-              "type": "button",
-              "text": "Continue with email",
-              "style": {
-                "$ref": "GLOBAL_DESIGN.json#/components/buttons/primary",
-                "width": "100%"
-              }
-            }
-          ]
-        },
-        "footer": {
-          "type": "text",
-          "content": [
-            {
-              "text": "By continuing, you agree to BigMemory's ",
-              "style": {
-                "$ref": "GLOBAL_DESIGN.json#/components/typography/caption",
-                "textAlign": "center"
-              }
-            },
-            {
-              "text": "Consumer Terms",
-              "type": "link",
-              "href": "/terms",
-              "style": {
-                "color": "$colors.text.primary",
-                "textDecoration": "underline"
-              }
-            },
-            {
-              "text": " and acknowledge our ",
-              "style": {
-                "$ref": "GLOBAL_DESIGN.json#/components/typography/caption"
-              }
-            },
-            {
-              "text": "Privacy Policy",
-              "type": "link",
-              "href": "/privacy",
-              "style": {
-                "color": "$colors.text.primary",
-                "textDecoration": "underline"
-              }
-            },
-            {
-              "text": ".",
-              "style": {
-                "$ref": "GLOBAL_DESIGN.json#/components/typography/caption"
-              }
-            }
-          ],
-          "marginTop": "$spacing.8"
-        },
-        "cta": {
-          "type": "link",
-          "text": "Learn more →",
-          "href": "/about",
-          "style": {
-            "$ref": "GLOBAL_DESIGN.json#/components/typography/body",
-            "color": "$colors.text.primary",
-            "textAlign": "center",
-            "display": "block",
-            "marginTop": "$spacing.12",
-            "textDecoration": "none",
-            "hover": {
-              "textDecoration": "underline"
-            }
-          }
-        }
-      }
-    },
-    "sidebar": {
-      "type": "feature",
-      "position": "fixed",
-      "right": "$spacing.8",
-      "top": "50%",
-      "transform": "translateY(-50%)",
-      "content": {
-        "badge": {
-          "text": "Identify code optimizations and performance improvements",
-          "style": {
-            "background": "$colors.brand.primaryLight",
-            "padding": "$spacing.3",
-            "borderRadius": "$borderRadius.lg",
-            "fontSize": "$typography.fontSizes.sm",
-            "maxWidth": "280px"
-          }
-        }
-      }
-    }
+    "structure": "centered",
+    "sections": ["authCard"],
+    "background": "gradient",
+    "spacing": "minimal"
   },
   "components": {
-    "divider": {
-      "display": "flex",
-      "alignItems": "center",
-      "gap": "$spacing.4",
-      "line": {
-        "flex": 1,
-        "height": "1px",
-        "background": "$colors.border.light"
+    "authContainer": {
+      "name": "Authentication Container",
+      "description": "Centered container for authentication forms",
+      "props": {
+        "variant": ["login", "signup", "reset"],
+        "showLogo": "boolean",
+        "showBackground": "boolean"
       },
-      "text": {
-        "$ref": "GLOBAL_DESIGN.json#/components/typography/caption",
-        "textTransform": "uppercase",
-        "letterSpacing": "$typography.letterSpacing.wider"
+      "structure": {
+        "wrapper": {
+          "minHeight": "100vh",
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": "{spacing.lg}",
+          "background": "linear-gradient(135deg, {colors.primary.50} 0%, {colors.secondary.50} 100%)",
+          "position": "relative"
+        },
+        "backgroundPattern": {
+          "position": "absolute",
+          "top": 0,
+          "left": 0,
+          "right": 0,
+          "bottom": 0,
+          "opacity": 0.1,
+          "backgroundImage": "radial-gradient(circle at 1px 1px, {colors.primary.300} 1px, transparent 0)",
+          "backgroundSize": "40px 40px"
+        },
+        "container": {
+          "width": "100%",
+          "maxWidth": "400px",
+          "position": "relative",
+          "zIndex": 1
+        }
       }
     },
-    "oauthButton": {
-      "extends": "GLOBAL_DESIGN.json#/components/buttons/secondary",
-      "display": "flex",
-      "alignItems": "center",
-      "justifyContent": "center",
-      "gap": "$spacing.3",
-      "icon": {
-        "size": "20px"
+    "authCard": {
+      "name": "Authentication Card",
+      "description": "Card containing authentication form",
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/components/card"
+      },
+      "props": {
+        "shadow": "boolean",
+        "rounded": "boolean"
+      },
+      "structure": {
+        "container": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/card"
+          },
+          "background": "{colors.neutral.white}",
+          "borderRadius": "{borderRadius.2xl}",
+          "boxShadow": "{shadows.xl}",
+          "border": "1px solid {colors.neutral.gray.200}",
+          "padding": "{spacing.2xl}",
+          "position": "relative",
+          "overflow": "hidden"
+        },
+        "header": {
+          "textAlign": "center",
+          "marginBottom": "{spacing.2xl}"
+        },
+        "logo": {
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "gap": "{spacing.sm}",
+          "marginBottom": "{spacing.xl}"
+        },
+        "logoIcon": {
+          "width": "40px",
+          "height": "40px",
+          "color": "{colors.primary.600}"
+        },
+        "logoText": {
+          "fontSize": "{typography.fontSize.xl}",
+          "fontWeight": "{typography.fontWeight.bold}",
+          "color": "{colors.primary.600}"
+        },
+        "title": {
+          "fontSize": "{typography.fontSize.2xl}",
+          "fontWeight": "{typography.fontWeight.bold}",
+          "color": "{colors.neutral.gray.900}",
+          "marginBottom": "{spacing.sm}"
+        },
+        "subtitle": {
+          "fontSize": "{typography.fontSize.base}",
+          "color": "{colors.neutral.gray.600}",
+          "lineHeight": "{typography.lineHeight.relaxed}"
+        }
+      }
+    },
+    "authForm": {
+      "name": "Authentication Form",
+      "description": "Form for login, signup, and password reset",
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/patterns/form"
+      },
+      "props": {
+        "type": ["login", "signup", "reset"],
+        "loading": "boolean",
+        "validation": "boolean"
+      },
+      "structure": {
+        "container": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/patterns/form"
+          },
+          "gap": "{spacing.lg}"
+        },
+        "fieldGroup": {
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "{spacing.md}"
+        },
+        "field": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/patterns/form/field"
+          }
+        },
+        "label": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/patterns/form/label"
+          },
+          "fontSize": "{typography.fontSize.sm}",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "color": "{colors.neutral.gray.700}"
+        },
+        "input": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/input"
+          },
+          "size": "lg"
+        },
+        "passwordField": {
+          "position": "relative"
+        },
+        "passwordToggle": {
+          "position": "absolute",
+          "right": "{spacing.md}",
+          "top": "50%",
+          "transform": "translateY(-50%)",
+          "background": "none",
+          "border": "none",
+          "color": "{colors.neutral.gray.400}",
+          "cursor": "pointer",
+          "padding": "{spacing.sm}",
+          "borderRadius": "{borderRadius.md}"
+        },
+        "rememberField": {
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.sm}",
+          "marginTop": "{spacing.md}"
+        },
+        "checkbox": {
+          "width": "16px",
+          "height": "16px",
+          "border": "2px solid {colors.neutral.gray.300}",
+          "borderRadius": "{borderRadius.sm}",
+          "cursor": "pointer"
+        },
+        "checkboxLabel": {
+          "fontSize": "{typography.fontSize.sm}",
+          "color": "{colors.neutral.gray.600}",
+          "cursor": "pointer"
+        },
+        "submitButton": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/button"
+          },
+          "variant": "primary",
+          "size": "lg",
+          "fullWidth": true,
+          "marginTop": "{spacing.lg}"
+        },
+        "errorMessage": {
+          "padding": "{spacing.md}",
+          "background": "rgba(239, 68, 68, 0.1)",
+          "border": "1px solid rgba(239, 68, 68, 0.2)",
+          "borderRadius": "{borderRadius.lg}",
+          "color": "{colors.semantic.error}",
+          "fontSize": "{typography.fontSize.sm}",
+          "marginBottom": "{spacing.lg}"
+        },
+        "successMessage": {
+          "padding": "{spacing.md}",
+          "background": "rgba(34, 197, 94, 0.1)",
+          "border": "1px solid rgba(34, 197, 94, 0.2)",
+          "borderRadius": "{borderRadius.lg}",
+          "color": "{colors.semantic.success}",
+          "fontSize": "{typography.fontSize.sm}",
+          "marginBottom": "{spacing.lg}"
+        }
+      },
+      "states": {
+        "loading": {
+          "submitButton": {
+            "opacity": 0.8,
+            "cursor": "wait"
+          },
+          "input": {
+            "opacity": 0.7
+          }
+        },
+        "error": {
+          "input": {
+            "borderColor": "{colors.semantic.error}",
+            "focus": {
+              "borderColor": "{colors.semantic.error}",
+              "boxShadow": "0 0 0 3px rgba(239, 68, 68, 0.1)"
+            }
+          }
+        }
+      }
+    },
+    "authFooter": {
+      "name": "Authentication Footer",
+      "description": "Footer with additional links and actions",
+      "props": {
+        "showDivider": "boolean",
+        "showSocial": "boolean"
+      },
+      "structure": {
+        "container": {
+          "marginTop": "{spacing.xl}",
+          "textAlign": "center"
+        },
+        "divider": {
+          "display": "flex",
+          "alignItems": "center",
+          "marginBottom": "{spacing.lg}",
+          "gap": "{spacing.md}"
+        },
+        "dividerLine": {
+          "flex": 1,
+          "height": "1px",
+          "background": "{colors.neutral.gray.200}"
+        },
+        "dividerText": {
+          "fontSize": "{typography.fontSize.sm}",
+          "color": "{colors.neutral.gray.500}",
+          "padding": "0 {spacing.md}"
+        },
+        "links": {
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "{spacing.md}",
+          "alignItems": "center"
+        },
+        "link": {
+          "fontSize": "{typography.fontSize.sm}",
+          "color": "{colors.primary.600}",
+          "textDecoration": "none",
+          "fontWeight": "{typography.fontWeight.medium}",
+          "transition": "color 0.2s ease-in-out"
+        },
+        "helpText": {
+          "fontSize": "{typography.fontSize.sm}",
+          "color": "{colors.neutral.gray.600}",
+          "marginTop": "{spacing.lg}"
+        }
+      },
+      "states": {
+        "linkHover": {
+          "link": {
+            "color": "{colors.primary.700}",
+            "textDecoration": "underline"
+          }
+        }
+      }
+    },
+    "featurePrompt": {
+      "name": "Feature Prompt",
+      "description": "Promotional callout highlighting key features",
+      "props": {
+        "variant": ["default", "highlight"],
+        "dismissible": "boolean"
+      },
+      "structure": {
+        "container": {
+          "marginTop": "{spacing.xl}",
+          "padding": "{spacing.lg}",
+          "background": "{colors.primary.50}",
+          "border": "1px solid {colors.primary.200}",
+          "borderRadius": "{borderRadius.lg}",
+          "position": "relative"
+        },
+        "icon": {
+          "width": "24px",
+          "height": "24px",
+          "color": "{colors.primary.600}",
+          "marginBottom": "{spacing.sm}"
+        },
+        "title": {
+          "fontSize": "{typography.fontSize.sm}",
+          "fontWeight": "{typography.fontWeight.semibold}",
+          "color": "{colors.primary.800}",
+          "marginBottom": "{spacing.xs}"
+        },
+        "description": {
+          "fontSize": "{typography.fontSize.xs}",
+          "color": "{colors.primary.700}",
+          "lineHeight": "{typography.lineHeight.relaxed}"
+        },
+        "features": {
+          "marginTop": "{spacing.sm}",
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "2px"
+        },
+        "feature": {
+          "fontSize": "{typography.fontSize.xs}",
+          "color": "{colors.primary.700}",
+          "display": "flex",
+          "alignItems": "center",
+          "gap": "{spacing.xs}"
+        },
+        "featureIcon": {
+          "width": "12px",
+          "height": "12px",
+          "color": "{colors.primary.600}"
+        }
+      }
+    },
+    "socialAuth": {
+      "name": "Social Authentication",
+      "description": "Social login buttons (Google, GitHub, etc.)",
+      "props": {
+        "providers": "array",
+        "layout": ["vertical", "horizontal"]
+      },
+      "structure": {
+        "container": {
+          "display": "flex",
+          "flexDirection": "column",
+          "gap": "{spacing.sm}",
+          "marginBottom": "{spacing.lg}"
+        },
+        "socialButton": {
+          "extends": {
+            "$ref": "GLOBAL_DESIGN.json#/components/button"
+          },
+          "variant": "outline",
+          "size": "lg",
+          "fullWidth": true,
+          "display": "flex",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "gap": "{spacing.sm}",
+          "background": "{colors.neutral.white}",
+          "border": "1px solid {colors.neutral.gray.300}",
+          "color": "{colors.neutral.gray.700}"
+        },
+        "socialIcon": {
+          "width": "20px",
+          "height": "20px"
+        },
+        "socialText": {
+          "fontSize": "{typography.fontSize.base}",
+          "fontWeight": "{typography.fontWeight.medium}"
+        }
+      },
+      "states": {
+        "hover": {
+          "socialButton": {
+            "background": "{colors.neutral.gray.50}",
+            "borderColor": "{colors.neutral.gray.400}"
+          }
+        }
       }
     }
   },
   "overrides": {
-    "mobile": {
-      "sidebar": {
-        "display": "none"
+    "input": {
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/components/input"
       },
-      "container": {
-        "padding": "$spacing.4"
-      }
-    }
-  },
-  "interactions": {
-    "form": {
-      "validation": {
-        "email": {
-          "required": true,
-          "pattern": "email"
+      "modifications": {
+        "authField": {
+          "size": "lg",
+          "background": "{colors.neutral.white}",
+          "border": "1px solid {colors.neutral.gray.300}"
         }
+      }
+    },
+    "button": {
+      "extends": {
+        "$ref": "GLOBAL_DESIGN.json#/components/button"
       },
-      "submit": {
-        "action": "/api/auth/login",
-        "method": "POST"
-      }
-    },
-    "oauth": {
-      "google": {
-        "endpoint": "/api/auth/google",
-        "scope": ["email", "profile"]
-      }
-    }
-  },
-  "states": {
-    "loading": {
-      "button": {
-        "disabled": true,
-        "text": "Loading..."
-      }
-    },
-    "error": {
-      "message": {
-        "style": {
-          "color": "$colors.semantic.error",
-          "fontSize": "$typography.fontSizes.sm",
-          "marginTop": "$spacing.2"
+      "modifications": {
+        "authPrimary": {
+          "size": "lg",
+          "variant": "primary",
+          "fontWeight": "{typography.fontWeight.semibold}"
         }
       }
     }
+  },
+  "pageStructure": {
+    "layout": "fullscreen",
+    "background": "gradient",
+    "centered": true
+  },
+  "references": [
+    {
+      "component": "card",
+      "source": "GLOBAL_DESIGN.json#/components/card"
+    },
+    {
+      "component": "input",
+      "source": "GLOBAL_DESIGN.json#/components/input"
+    },
+    {
+      "component": "button",
+      "source": "GLOBAL_DESIGN.json#/components/button"
+    },
+    {
+      "component": "form",
+      "source": "GLOBAL_DESIGN.json#/patterns/form"
+    }
+  ],
+  "content": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to access your persistent AI memory",
+      "submitText": "Sign In",
+      "helpText": "Forgot your password? Contact support for assistance.",
+      "alternateAction": {
+        "text": "Create one",
+        "label": "Don't have an account?"
+      }
+    },
+    "signup": {
+      "title": "Get Started",
+      "subtitle": "Create your account to begin using Clauvin Memory",
+      "submitText": "Create Account",
+      "helpText": "By creating an account, you agree to our Terms of Service and Privacy Policy.",
+      "alternateAction": {
+        "text": "Sign in here",
+        "label": "Already have an account?"
+      }
+    },
+    "reset": {
+      "title": "Reset Password",
+      "subtitle": "Enter your email to receive reset instructions",
+      "submitText": "Send Reset Link",
+      "helpText": "Check your spam folder if you don't receive the email within a few minutes.",
+      "alternateAction": {
+        "text": "Back to login",
+        "label": "Remember your password?"
+      }
+    },
+    "features": [
+      "Persistent memory across sessions",
+      "Compatible with all MCP clients",
+      "Secure isolated user data"
+    ]
   }
 }
