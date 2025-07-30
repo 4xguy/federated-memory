@@ -37,6 +37,8 @@
     "db:verify": "tsx scripts/verify-db.ts",
     "cmi:populate": "tsx scripts/populate-cmi-index.ts",
     "db:seed": "tsx prisma/seed.ts",
+    "reset-password": "tsx scripts/reset-password.ts",
+    "reset-password:prod": "tsx scripts/reset-password-prod.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "generate:module": "tsx scripts/generate-module.ts",

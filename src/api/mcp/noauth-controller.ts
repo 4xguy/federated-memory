@@ -8,12 +8,17 @@ import { ModuleRegistry } from '@/core/modules/registry.service';
 import { OptimizedQueries } from './query-optimizations';
 import { createAuthenticatedMcpServer } from './authenticated-server';
 import { getToolsList } from './tools-list';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 
 const router = Router();
 const authService = AuthService.getInstance();
 
 // Store MCP server instances per user
 const mcpServers = new Map<string, any>();
+
+// Store HTTP transports for session management
+const httpTransports = new Map<string, StreamableHTTPServerTransport>();
 
 // Helper to get or create MCP server for user
 function getMcpServerForUser(userId: string, email: string, name?: string) {
@@ -60,10 +65,12 @@ router.get('/:token', async (req: Request, res: Response) => {
     token: token,
     endpoints: {
       config: `${baseUrl}/${token}/config`,
-      sse: `${baseUrl}/${token}/sse`,
-      messages: `${baseUrl}/${token}/messages/:sessionId`,
+      mcp: `${baseUrl}/${token}/mcp`, // New Streamable HTTP endpoint
+      sse: `${baseUrl}/${token}/sse`, // Legacy SSE endpoint (deprecated)
+      messages: `${baseUrl}/${token}/messages/:sessionId`, // Legacy messages endpoint (deprecated)
     },
     usage: 'Use this URL in Claude Desktop or any MCP-compatible client',
+    note: 'SSE endpoints are deprecated. Please use the /mcp endpoint with Streamable HTTP transport.',
   });
 });
 
@@ -77,7 +84,11 @@ router.get('/:token/config', async (req: Request, res: Response) => {
     return res.status(404).json({ error: 'Invalid token' });
   }
   
-  // Return MCP config for direct SSE connection
+  // Check if client wants SSE transport (for backwards compatibility)
+  const userAgent = req.headers['user-agent'] || '';
+  const prefersSse = req.query.transport === 'sse' || 
+                     req.headers['x-mcp-transport'] === 'sse';
+  
   // Use BASE_URL if set (for Railway deployments) or construct from request
   const baseUrl = process.env.BASE_URL || 
     `${req.get('x-forwarded-proto') || req.protocol}://${req.get('host')}`;
@@ -96,9 +107,12 @@ router.get('/:token/config', async (req: Request, res: Response) => {
         prompts: true,
         sampling: false,
       },
-      transport: {
+      transport: prefersSse ? {
         type: 'sse',
         endpoint: `${baseUrl}/${token}/sse`,
+      } : {
+        type: 'streamable-http',
+        endpoint: `${baseUrl}/${token}/mcp`,
       },
       // No auth section - authentication is via token in URL
     },
@@ -1268,23 +1282,264 @@ router.options('/:token/messages/:sessionId', (_req: Request, res: Response) => 
   res.sendStatus(200);
 });
 
+/**
+ * Streamable HTTP endpoint with token in URL
+ * POST /:token/mcp
+ * Handles all MCP requests via Streamable HTTP transport
+ */
+router.post('/:token/mcp', async (req: Request, res: Response) => {
+  const token = req.params.token;
+  const sessionId = req.headers['mcp-session-id'] as string;
+  
+  try {
+    // Validate token
+    const authResult = await authService.validateToken(token);
+    if (!authResult) {
+      return res.status(404).end(); // Don't leak token validity
+    }
+    
+    const userId = authResult.userId;
+    let transport: StreamableHTTPServerTransport;
+    let mcpServer: any;
+    
+    // Check for existing session
+    if (sessionId && httpTransports.has(sessionId)) {
+      transport = httpTransports.get(sessionId)!;
+      logger.debug('Reusing existing HTTP transport', { sessionId, token: token.substring(0, 8) + '...' });
+    } else if (!sessionId && isInitializeRequest(req.body)) {
+      // Create new session
+      const newSessionId = randomUUID();
+      logger.info('Creating new HTTP session', { 
+        sessionId: newSessionId,
+        token: token.substring(0, 8) + '...',
+        method: req.body?.method 
+      });
+      
+      transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => newSessionId,
+        onsessioninitialized: (id: string) => {
+          logger.info('HTTP session initialized', { sessionId: id });
+          httpTransports.set(id, transport);
+        },
+        enableDnsRebindingProtection: false, // Disable for compatibility
+        allowedHosts: [
+          '127.0.0.1',
+          'localhost',
+          'claude.ai',
+          '*.claude.ai',
+          '*.anthropic.com',
+          process.env.BASE_URL?.replace(/^https?:\/\//, '') || '',
+        ].filter(Boolean),
+      });
+      
+      transport.onclose = () => {
+        logger.info('HTTP session closed', { sessionId: transport.sessionId });
+        if (transport.sessionId) {
+          httpTransports.delete(transport.sessionId);
+        }
+      };
+      
+      // Get user details for MCP server
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true, name: true }
+      });
+      
+      // Create MCP server with user context
+      mcpServer = getMcpServerForUser(
+        userId,
+        user?.email || 'unknown@example.com',
+        user?.name || undefined
+      );
+      
+      await mcpServer.connect(transport);
+      logger.info('MCP server connected via HTTP', { 
+        sessionId: newSessionId,
+        userId 
+      });
+    } else {
+      // Session required but not provided
+      logger.warn('HTTP request without session ID', { 
+        hasSessionId: !!sessionId,
+        isInitialize: isInitializeRequest(req.body),
+        method: req.body?.method 
+      });
+      
+      res.status(400).json({
+        error: {
+          code: -32000,
+          message: 'Session ID required for non-initialize requests',
+        },
+      });
+      return;
+    }
+    
+    // Handle the request
+    await transport.handleRequest(req, res, req.body);
+    
+  } catch (error) {
+    logger.error('Error handling HTTP MCP request', { 
+      error, 
+      token: token.substring(0, 8) + '...',
+      sessionId 
+    });
+    
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: {
+          code: -32603,
+          message: 'Internal server error',
+        },
+      });
+    }
+  }
+});
 
-// Simple info endpoint
-router.get('/:token', async (req: Request, res: Response) => {
+/**
+ * Streamable HTTP GET endpoint for server-sent events
+ * GET /:token/mcp
+ */
+router.get('/:token/mcp', async (req: Request, res: Response) => {
+  const token = req.params.token;
+  const sessionId = req.headers['mcp-session-id'] as string;
+  
+  try {
+    // Validate token
+    const authResult = await authService.validateToken(token);
+    if (!authResult) {
+      return res.status(404).end();
+    }
+    
+    if (!sessionId || !httpTransports.has(sessionId)) {
+      res.status(400).json({
+        error: {
+          code: -32000,
+          message: 'Invalid or missing session ID',
+        },
+      });
+      return;
+    }
+    
+    const transport = httpTransports.get(sessionId)!;
+    await transport.handleRequest(req, res);
+    
+  } catch (error) {
+    logger.error('Error handling HTTP GET request', { 
+      error, 
+      token: token.substring(0, 8) + '...',
+      sessionId 
+    });
+    
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: {
+          code: -32603,
+          message: 'Internal server error',
+        },
+      });
+    }
+  }
+});
+
+/**
+ * Streamable HTTP DELETE endpoint for session termination
+ * DELETE /:token/mcp
+ */
+router.delete('/:token/mcp', async (req: Request, res: Response) => {
+  const token = req.params.token;
+  const sessionId = req.headers['mcp-session-id'] as string;
+  
+  try {
+    // Validate token
+    const authResult = await authService.validateToken(token);
+    if (!authResult) {
+      return res.status(404).end();
+    }
+    
+    if (!sessionId || !httpTransports.has(sessionId)) {
+      res.status(404).json({
+        error: {
+          code: -32000,
+          message: 'Session not found',
+        },
+      });
+      return;
+    }
+    
+    const transport = httpTransports.get(sessionId)!;
+    await transport.close();
+    httpTransports.delete(sessionId);
+    
+    res.status(204).send();
+    
+  } catch (error) {
+    logger.error('Error handling HTTP DELETE request', { 
+      error, 
+      token: token.substring(0, 8) + '...',
+      sessionId 
+    });
+    
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: {
+          code: -32603,
+          message: 'Internal server error',
+        },
+      });
+    }
+  }
+});
+
+// CORS preflight handler for HTTP endpoint
+router.options('/:token/mcp', (_req: Request, res: Response) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Mcp-Session-Id, Last-Event-ID');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Expose-Headers', 'Mcp-Session-Id');
+  res.sendStatus(200);
+});
+
+// Health check endpoint for HTTP transport
+router.get('/:token/mcp/health', async (req: Request, res: Response) => {
   const token = req.params.token;
   
-  // Validate token
-  const authResult = await authService.validateToken(token);
-  if (!authResult) {
-    return res.status(404).end();
+  try {
+    // Validate token
+    const authResult = await authService.validateToken(token);
+    if (!authResult) {
+      return res.status(404).end();
+    }
+    
+    // Set CORS headers for MCP Inspector
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    res.json({
+      status: 'healthy',
+      transport: 'streamable-http',
+      protocol: '2025-03-26',
+      authenticated: true,
+      userId: authResult.userId,
+      capabilities: {
+        tools: true,
+        resources: false,
+        prompts: true,
+        sampling: false,
+      },
+      activeSessions: httpTransports.size,
+    });
+  } catch (error) {
+    logger.error('Health check failed', { error, token: token.substring(0, 8) + '...' });
+    res.status(503).json({
+      status: 'unhealthy',
+      error: 'Service error',
+    });
   }
-  
-  res.json({
-    message: 'Federated Memory MCP Server',
-    sseEndpoint: `/${token}/sse`,
-    status: 'ready'
-  });
 });
+
+// Simple info endpoint is already defined above
 
 // Helper function to ensure registry memories exist
 async function ensureRegistries(cmiService: any, userId: string) {
