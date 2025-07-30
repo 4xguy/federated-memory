@@ -92,9 +92,19 @@ class FederatedMemoryAPI {
     // Add request interceptor to include auth token
     this.axiosInstance.interceptors.request.use(async (config) => {
       const session = await getSession();
-      if (session?.accessToken) {
-        config.headers.Authorization = `Bearer ${session.accessToken}`;
+      
+      // For now, create a temporary JWT token based on session
+      // In production, this should be a real JWT from the backend
+      if (session?.user) {
+        // Create a basic auth token from the session
+        const tempToken = btoa(JSON.stringify({
+          userId: session.user.id || session.user.email,
+          email: session.user.email,
+          name: session.user.name,
+        }));
+        config.headers.Authorization = `Bearer temp-${tempToken}`;
       }
+      
       return config;
     });
 

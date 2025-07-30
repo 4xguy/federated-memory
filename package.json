@@ -39,6 +39,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "reset-password": "tsx scripts/reset-password.ts",
     "reset-password:prod": "tsx scripts/reset-password-prod.ts",
+    "get-token": "tsx scripts/get-user-token.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "generate:module": "tsx scripts/generate-module.ts",

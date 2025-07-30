@@ -1,17 +1,11 @@
 'use client'
 
-import { useSession, signOut } from 'next-auth/react'
-import { useEffect } from 'react'
+import { useCustomAuth } from '@/lib/use-custom-auth'
 
 export default function Home() {
-  const { data: session, status } = useSession()
+  const { user, isLoading, logout } = useCustomAuth()
 
-  useEffect(() => {
-    console.log('Session status:', status)
-    console.log('Session data:', session)
-  }, [session, status])
-
-  if (status === 'loading') {
+  if (isLoading) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-24">
         <div className="text-center">
@@ -21,7 +15,7 @@ export default function Home() {
     )
   }
 
-  if (session) {
+  if (user) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-24">
         <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
@@ -31,10 +25,10 @@ export default function Home() {
             </h1>
             <div className="flex items-center gap-4">
               <span className="text-sm">
-                Welcome, {session.user?.name || session.user?.email}!
+                Welcome, {user.name || user.email}!
               </span>
               <button
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={logout}
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
               >
                 Sign Out
@@ -112,7 +106,7 @@ export default function Home() {
                 </span>
               </h2>
               <p className="m-0 max-w-[30ch] text-sm opacity-50">
-                Sign in with Google or GitHub
+                Sign in with your email and password
               </p>
             </a>
           </div>

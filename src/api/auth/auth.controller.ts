@@ -247,4 +247,46 @@ router.post('/validate', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /api/auth/me - Get current user information
+ */
+router.get('/me', async (req: Request, res: Response) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        code: 'AUTH_REQUIRED'
+      });
+    }
+    
+    const user = await prisma.user.findUnique({
+      where: { token },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+    
+    if (!user) {
+      return res.status(401).json({
+        error: 'Invalid token',
+        code: 'INVALID_TOKEN'
+      });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    logger.error('Get user error', { error });
+    res.status(500).json({
+      error: 'Failed to get user information',
+      code: 'GET_USER_ERROR'
+    });
+  }
+});
+
 export default router; 

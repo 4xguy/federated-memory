@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { authMiddleware } from '@/api/middleware/auth';
+import { authMiddleware as authMiddlewareDev } from '@/api/middleware/auth-dev';
 import { getChurchService, initializeServices } from './service-init';
 import { ChurchQueries } from '@/api/mcp/church-queries';
 import { MembershipStatus } from '@/modules/church/types';
@@ -9,13 +10,15 @@ import { logger } from '@/utils/logger';
 const router = Router();
 
 // Apply auth middleware to all routes
-router.use(authMiddleware);
+// Use development auth in development mode
+const selectedAuthMiddleware = process.env.NODE_ENV === 'development' ? authMiddlewareDev : authMiddleware;
+router.use(selectedAuthMiddleware);
 
 // Initialize services on first request
 let servicesInitialized = false;
 const ensureServicesInitialized = async () => {
   if (!servicesInitialized) {
-    await ensureServicesInitialized();
+    await initializeServices();
     servicesInitialized = true;
   }
 };
