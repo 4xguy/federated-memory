@@ -1,13 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { getDatabaseUrl } from './get-database-url';
 
 // Singleton pattern to prevent multiple connections
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+// Get appropriate database URL
+const databaseUrl = getDatabaseUrl();
+
 // Configure connection pool via URL parameters
-const databaseUrl = process.env.DATABASE_URL || '';
 const pooledUrl = databaseUrl.includes('?') 
   ? `${databaseUrl}&connection_limit=20&pool_timeout=30`
   : `${databaseUrl}?connection_limit=20&pool_timeout=30`;
