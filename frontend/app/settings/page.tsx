@@ -9,39 +9,18 @@ export default function SettingsPage() {
   const { user, isLoading: authLoading, isAuthenticated } = useCustomAuth()
   const router = useRouter()
   const [userToken, setUserToken] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!authLoading) {
       if (!isAuthenticated) {
         router.push('/login')
       } else {
-        fetchUserToken()
+        // In BigMemory pattern, the auth token IS the MCP token
+        const token = localStorage.getItem('federated_memory_token')
+        setUserToken(token)
       }
     }
   }, [authLoading, isAuthenticated, router])
-
-  const fetchUserToken = async () => {
-    const token = localStorage.getItem('federated_memory_token')
-    if (!token) return
-
-    try {
-      const response = await fetch(`${getApiUrl()}/api/auth/token`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setUserToken(data.token)
-      }
-    } catch (error) {
-      console.error('Failed to fetch user token:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -49,7 +28,7 @@ export default function SettingsPage() {
       .catch(() => alert('Failed to copy'))
   }
 
-  if (authLoading || loading) {
+  if (authLoading) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-24">
         <div className="text-center">
