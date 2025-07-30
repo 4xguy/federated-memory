@@ -4,8 +4,12 @@ import { prisma } from '@/utils/database';
 import { logger } from '@/utils/logger';
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcrypt';
+import { authCorsMiddleware } from '@/api/middleware/cors';
 
 const router = Router();
+
+// Apply CORS middleware to all auth routes
+router.use(authCorsMiddleware);
 
 // Validation schemas
 const loginSchema = z.object({

@@ -3,8 +3,12 @@ import { z } from 'zod';
 import { emailAuthService } from '@/services/auth/email-auth.service';
 import { authMiddleware } from '@/api/middleware/auth';
 import { logger } from '@/utils/logger';
+import { authCorsMiddleware } from '@/api/middleware/cors';
 
 const router = Router();
+
+// Apply CORS middleware to all auth routes
+router.use(authCorsMiddleware);
 
 // Validation schemas
 const loginSchema = z.object({
