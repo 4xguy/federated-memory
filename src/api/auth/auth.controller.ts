@@ -289,4 +289,43 @@ router.get('/me', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /api/auth/token - Get user's MCP token
+ */
+router.get('/token', async (req: Request, res: Response) => {
+  try {
+    const authToken = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!authToken) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        code: 'AUTH_REQUIRED'
+      });
+    }
+    
+    // The auth token IS the user's MCP token in the BigMemory pattern
+    const user = await prisma.user.findUnique({
+      where: { token: authToken },
+      select: {
+        token: true
+      }
+    });
+    
+    if (!user) {
+      return res.status(401).json({
+        error: 'Invalid token',
+        code: 'INVALID_TOKEN'
+      });
+    }
+    
+    res.json({ token: user.token });
+  } catch (error) {
+    logger.error('Get token error', { error });
+    res.status(500).json({
+      error: 'Failed to get token',
+      code: 'GET_TOKEN_ERROR'
+    });
+  }
+});
+
 export default router; 

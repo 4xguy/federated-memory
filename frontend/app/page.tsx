@@ -39,7 +39,7 @@ export default function Home() {
             <p className="mb-4">
               You are successfully signed in! Your MCP server is ready for use.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
               <div className="p-6 border rounded-lg">
                 <h2 className="text-xl font-semibold mb-2">Dashboard</h2>
                 <p className="text-sm opacity-75 mb-4">
@@ -74,6 +74,18 @@ export default function Home() {
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
                   Manage API Keys
+                </button>
+              </div>
+              <div className="p-6 border rounded-lg">
+                <h2 className="text-xl font-semibold mb-2">Settings</h2>
+                <p className="text-sm opacity-75 mb-4">
+                  View your MCP server token and URLs
+                </p>
+                <button 
+                  onClick={() => window.location.href = '/settings'}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                >
+                  View Settings
                 </button>
               </div>
             </div>
