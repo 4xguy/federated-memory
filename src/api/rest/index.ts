@@ -61,4 +61,8 @@ router.use('/projects', projectRoutes); // Project routes have their own auth mi
 // V1 API routes for frontend (mounted at /api/v1)
 router.use('/v1', v1Routes);
 
+// API Keys management routes
+import keysRoutes from './keys.routes';
+router.use('/keys', keysRoutes);
+
 export default router;

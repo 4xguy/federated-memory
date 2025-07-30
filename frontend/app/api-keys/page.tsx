@@ -1,23 +1,21 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/auth-context'
+import { useCustomAuth } from '@/lib/use-custom-auth'
 import { getApiUrl } from '@/lib/config'
 
 interface ApiKey {
   id: string
   name: string
-  prefix: string  // Changed from 'key' to 'prefix'
+  keyPrefix: string
   createdAt: string
-  lastUsed?: string  // Changed from 'lastUsedAt'
+  lastUsed?: string
   expiresAt?: string
 }
 
 export default function ApiKeysPage() {
-  const { data: session, status } = useSession()
-  const { token, isLoading: authLoading } = useAuth()
+  const { user, isLoading: authLoading, isAuthenticated } = useCustomAuth()
   const router = useRouter()
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
   const [loading, setLoading] = useState(true)
@@ -26,16 +24,18 @@ export default function ApiKeysPage() {
   const [keyName, setKeyName] = useState('')
   const [creating, setCreating] = useState(false)
 
-
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-    } else if (status === 'authenticated' && token && !authLoading) {
-      fetchApiKeys()
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.push('/login')
+      } else {
+        fetchApiKeys()
+      }
     }
-  }, [status, router, token, authLoading])
+  }, [authLoading, isAuthenticated, router])
 
   const fetchApiKeys = async () => {
+    const token = localStorage.getItem('federated_memory_token')
     if (!token) return;
     
     try {
@@ -64,6 +64,7 @@ export default function ApiKeysPage() {
       return
     }
 
+    const token = localStorage.getItem('federated_memory_token')
     if (!token) {
       setError('Authentication required')
       return
@@ -102,6 +103,7 @@ export default function ApiKeysPage() {
       return
     }
 
+    const token = localStorage.getItem('federated_memory_token')
     if (!token) {
       setError('Authentication required')
       return
@@ -131,7 +133,7 @@ export default function ApiKeysPage() {
       .catch(() => alert('Failed to copy'))
   }
 
-  if (status === 'loading' || loading || authLoading) {
+  if (authLoading || loading) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center p-24">
         <div className="text-center">
@@ -221,7 +223,7 @@ export default function ApiKeysPage() {
                       {apiKey.lastUsed && ` • Last used: ${new Date(apiKey.lastUsed).toLocaleDateString()}`}
                     </p>
                     <p className="text-sm font-mono text-gray-400">
-                      {apiKey.prefix}...
+                      {apiKey.keyPrefix}...
                     </p>
                   </div>
                   <button
