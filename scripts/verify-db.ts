@@ -1,11 +1,15 @@
-import { PrismaClient } from '@prisma/client';
-import { getEmbeddingService } from '../src/core/embeddings/generator.service';
-
-const prisma = new PrismaClient();
-const embeddingService = getEmbeddingService();
+import { prisma } from '../src/utils/database';
+import { getDatabaseUrl } from '../src/utils/get-database-url';
 
 async function verifyDatabase() {
-  console.log('Verifying database setup...\n');
+  console.log('🔍 Verifying database setup...\n');
+  
+  const dbUrl = getDatabaseUrl();
+  const isProduction = dbUrl.includes('railway');
+  const isLocal = dbUrl.includes('localhost') || dbUrl.includes('127.0.0.1');
+  
+  console.log(`📊 Database Type: ${isProduction ? 'PRODUCTION (Railway)' : isLocal ? 'LOCAL' : 'REMOTE'}`);
+  console.log(`🔗 Connection String: ${dbUrl.replace(/:[^:@]+@/, ':****@')}\n`);
   
   try {
     // 1. Check database connection
@@ -60,16 +64,42 @@ async function verifyDatabase() {
       console.log(`  - ${c.table_name}.${c.column_name}`);
     });
     
-    // 5. Test embedding generation
-    console.log('\nTesting embedding generation...');
+    // 5. Count records in main tables
+    console.log('\nDatabase statistics:');
+    
     try {
-      const testEmbedding = await embeddingService.generateEmbedding('Test content');
-      console.log(`✓ Full embedding generated (${testEmbedding.length} dimensions)`);
-      
-      const compressedEmbedding = await embeddingService.generateCompressedEmbedding('Test content');
-      console.log(`✓ Compressed embedding generated (${compressedEmbedding.length} dimensions)`);
-    } catch (error) {
-      console.log('✗ Embedding generation failed:', error);
+      const userCount = await prisma.user.count();
+      console.log(`  - Users: ${userCount}`);
+    } catch (e) {
+      console.log(`  - Users: Table not found`);
+    }
+    
+    try {
+      const memoryIndexCount = await prisma.memoryIndex.count();
+      console.log(`  - Memory Indices: ${memoryIndexCount}`);
+    } catch (e) {
+      console.log(`  - Memory Indices: Table not found`);
+    }
+    
+    try {
+      const categoryCount = await prisma.category.count();
+      console.log(`  - Categories: ${categoryCount}`);
+    } catch (e) {
+      console.log(`  - Categories: Table not found`);
+    }
+    
+    try {
+      const projectCount = await prisma.project.count();
+      console.log(`  - Projects: ${projectCount}`);
+    } catch (e) {
+      console.log(`  - Projects: Table not found`);
+    }
+    
+    try {
+      const taskCount = await prisma.task.count();
+      console.log(`  - Tasks: ${taskCount}`);
+    } catch (e) {
+      console.log(`  - Tasks: Table not found`);
     }
     
     // 6. Test simple insert/select

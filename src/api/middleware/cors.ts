@@ -12,6 +12,8 @@ export function authCorsMiddleware(req: Request, res: Response, next: NextFuncti
   const allowedOrigins = [
     'https://charming-mercy-production.up.railway.app',
     'https://federated-memory-production.up.railway.app',
+    'https://fm.clauvin.com',
+    'https://fmbe.clauvin.com',
     'http://localhost:3000',
     'http://localhost:3001',
     'https://claude.ai',

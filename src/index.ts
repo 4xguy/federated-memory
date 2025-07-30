@@ -23,7 +23,7 @@ import { prisma } from './utils/database';
 
 // Prevent multiple instances when using tsx watch
 const lockFile = path.join(process.cwd(), '.server.lock');
-if (fs.existsSync(lockFile)) {
+if (!process.env.SKIP_LOCK_CHECK && fs.existsSync(lockFile)) {
   const pid = fs.readFileSync(lockFile, 'utf-8');
   try {
     // Check if process is still running
@@ -37,7 +37,9 @@ if (fs.existsSync(lockFile)) {
 }
 
 // Create lock file with current PID
-fs.writeFileSync(lockFile, process.pid.toString());
+if (!process.env.SKIP_LOCK_CHECK) {
+  fs.writeFileSync(lockFile, process.pid.toString());
+}
 
 // Ensure lock file is removed on exit
 const cleanupLockFile = () => {
@@ -217,6 +219,8 @@ async function main() {
           const allowedOrigins = [
             'https://claude.ai',
             'https://*.claude.ai',
+            'https://fm.clauvin.com', // Production frontend custom domain
+            'https://fmbe.clauvin.com', // Production backend custom domain
             'http://localhost:3001', // Local frontend
             'http://localhost:3000', // Local dev
             'http://localhost:3002', // Local dev alternate port
