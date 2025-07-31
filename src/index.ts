@@ -12,7 +12,7 @@ import { getCMIService } from './core/cmi/index.service';
 import { Redis } from './utils/redis';
 import restApiRoutes from './api/rest';
 import { createMcpApp } from './api/mcp';
-import mcpNoAuthRoutes from './api/mcp/noauth-controller';
+import mcpStreamableRoutes from './api/mcp/streamable-http-controller';
 import { createRedisSessionMiddleware, upgradeToRedisSession } from './api/middleware/session-redis';
 import { initializePassport } from './services/oauth-strategies/passport.config';
 import { handleSSE } from './api/sse';
@@ -266,12 +266,32 @@ async function main() {
     app.use(express.static('public'));
 
     // Session middleware (must be before passport) - Using Redis-aware version
-    app.use(createRedisSessionMiddleware());
+    // Skip session middleware for MCP routes (they use token auth)
+    app.use((req, res, next) => {
+      // Skip session for MCP routes that use token authentication
+      if (req.path.includes('/mcp') && req.path.match(/^\/[a-f0-9-]{36}\/mcp/)) {
+        return next();
+      }
+      createRedisSessionMiddleware()(req, res, next);
+    });
 
     // Initialize Passport for OAuth
+    // Skip passport for MCP routes
     const passport = initializePassport();
-    app.use(passport.initialize());
-    app.use(passport.session());
+    app.use((req, res, next) => {
+      // Skip passport for MCP routes that use token authentication
+      if (req.path.includes('/mcp') && req.path.match(/^\/[a-f0-9-]{36}\/mcp/)) {
+        return next();
+      }
+      passport.initialize()(req, res, next);
+    });
+    app.use((req, res, next) => {
+      // Skip passport session for MCP routes
+      if (req.path.includes('/mcp') && req.path.match(/^\/[a-f0-9-]{36}\/mcp/)) {
+        return next();
+      }
+      passport.session()(req, res, next);
+    });
 
     // Handle OPTIONS preflight requests for all routes
     app.options('*', (req, res) => {
@@ -464,9 +484,9 @@ async function main() {
       });
     }
     
-    // MCP no-auth routes (BigMemory pattern) - MUST come before API routes
-    // These handle /:token/sse and /:token/messages/:sessionId
-    app.use('/', mcpNoAuthRoutes);
+    // MCP Streamable HTTP routes (Modern pattern) - MUST come before API routes
+    // These handle /:token/mcp with proper session management
+    app.use('/', mcpStreamableRoutes);
     
     // REST API routes
     app.use('/api', restApiRoutes);

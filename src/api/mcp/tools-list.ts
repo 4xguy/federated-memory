@@ -843,3 +843,12 @@ export function getToolsList() {
     }
   ];
 }
+
+/**
+ * Get tools list for a specific user
+ * For now, all users get the same tools, but this allows for future customization
+ */
+export async function getToolsListForUser(userId: string) {
+  // In the future, we could filter tools based on user permissions
+  return getToolsList();
+}

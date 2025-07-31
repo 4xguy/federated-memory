@@ -60,7 +60,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.15.1",
+    "@modelcontextprotocol/sdk": "^1.17.0",
     "@prisma/client": "^5.7.1",
     "@types/express-session": "^1.18.2",
     "@types/nodemailer": "^6.4.17",
