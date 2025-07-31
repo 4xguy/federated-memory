@@ -150,7 +150,7 @@ export class ProjectManagementModule extends BaseModule {
         "createdAt",
         "updatedAt",
         1 - (embedding <=> $1::vector) as score
-      FROM work_memories
+      FROM project_management_memories
       WHERE "userId" = $2
         AND 1 - (embedding <=> $1::vector) >= $3
         ${options?.filters ? 'AND metadata @> $4::jsonb' : ''}
@@ -184,7 +184,7 @@ export class ProjectManagementModule extends BaseModule {
     metadata: Record<string, any>,
   ): Promise<Memory> {
     // Use vectorDb helper instead of raw SQL to ensure consistency
-    const memory = await vectorDb.storeWithEmbedding('work_memories', {
+    const memory = await vectorDb.storeWithEmbedding('project_management_memories', {
       userId,
       content,
       embedding,
@@ -196,7 +196,7 @@ export class ProjectManagementModule extends BaseModule {
 
   protected async getFromModule(userId: string, memoryId: string): Promise<Memory | null> {
     const result = await prisma.$queryRaw<any[]>`
-      SELECT * FROM work_memories
+      SELECT * FROM project_management_memories
       WHERE id = ${memoryId} AND "userId" = ${userId}
     `;
 
@@ -245,7 +245,7 @@ export class ProjectManagementModule extends BaseModule {
     setClauses.push(`"updatedAt" = CURRENT_TIMESTAMP`);
 
     const query = `
-      UPDATE work_memories
+      UPDATE project_management_memories
       SET ${setClauses.join(', ')}
       WHERE id = $1 AND "userId" = $2
     `;
@@ -256,7 +256,7 @@ export class ProjectManagementModule extends BaseModule {
 
   protected async deleteFromModule(userId: string, memoryId: string): Promise<boolean> {
     const result = await prisma.$executeRaw`
-      DELETE FROM work_memories
+      DELETE FROM project_management_memories
       WHERE id = ${memoryId} AND "userId" = ${userId}
     `;
     return result > 0;
@@ -269,7 +269,7 @@ export class ProjectManagementModule extends BaseModule {
         COALESCE(SUM(LENGTH(content)), 0)::bigint as "totalSize",
         MAX("lastAccessed") as "lastAccessed",
         AVG("accessCount")::float as "averageAccessCount"
-      FROM work_memories
+      FROM project_management_memories
       WHERE "userId" = ${userId}
     `;
 
@@ -277,7 +277,7 @@ export class ProjectManagementModule extends BaseModule {
       SELECT 
         jsonb_array_elements_text(metadata->'categories') as category,
         COUNT(*)::int as count
-      FROM work_memories
+      FROM project_management_memories
       WHERE "userId" = ${userId}
         AND metadata ? 'categories'
       GROUP BY category
@@ -361,7 +361,7 @@ export class ProjectManagementModule extends BaseModule {
         "lastAccessed",
         "createdAt",
         "updatedAt"
-      FROM work_memories
+      FROM project_management_memories
       WHERE "userId" = $1
         AND metadata @> $2::jsonb
       ORDER BY "createdAt" DESC
@@ -387,7 +387,7 @@ export class ProjectManagementModule extends BaseModule {
     if (memoryIds.length === 0) return;
 
     await prisma.$executeRaw`
-      UPDATE work_memories
+      UPDATE project_management_memories
       SET "accessCount" = "accessCount" + 1,
           "lastAccessed" = CURRENT_TIMESTAMP
       WHERE id = ANY(${memoryIds}::text[])

@@ -273,7 +273,7 @@ export class ChurchModule extends BaseModule {
 
       const query = `
         SELECT id, "userId", content, metadata, "accessCount", "lastAccessed", "createdAt", "updatedAt"
-        FROM work_memories
+        FROM church_memories
         WHERE ${whereConditions.join(' AND ')}
         ORDER BY "updatedAt" DESC
       `;
@@ -340,7 +340,7 @@ export class ChurchModule extends BaseModule {
           id, "userId", content, metadata, embedding,
           "accessCount", "lastAccessed", "createdAt", "updatedAt",
           1 - (embedding <=> $2::vector) as similarity
-        FROM work_memories
+        FROM church_memories
         WHERE "userId" = $1
           AND embedding IS NOT NULL
         ORDER BY embedding <=> $2::vector
@@ -372,12 +372,12 @@ export class ChurchModule extends BaseModule {
     
     // Store using raw SQL to handle vector type
     await this.prisma.$executeRaw`
-      INSERT INTO work_memories (id, "userId", content, embedding, metadata, "accessCount", "lastAccessed", "createdAt", "updatedAt")
+      INSERT INTO church_memories (id, "userId", content, embedding, metadata, "accessCount", "lastAccessed", "createdAt", "updatedAt")
       VALUES (${id}, ${userId}, ${content}, ${JSON.stringify(embedding)}::vector, ${metadata}, 0, NOW(), NOW(), NOW())
     `;
 
     // Fetch the created memory
-    const memory = await this.prisma.workMemory.findUnique({
+    const memory = await this.prisma.churchMemory.findUnique({
       where: { id }
     });
 
@@ -392,7 +392,7 @@ export class ChurchModule extends BaseModule {
   }
 
   protected async getFromModule(userId: string, memoryId: string): Promise<Memory | null> {
-    const memory = await this.prisma.workMemory.findFirst({
+    const memory = await this.prisma.churchMemory.findFirst({
       where: {
         id: memoryId,
         userId
@@ -413,7 +413,7 @@ export class ChurchModule extends BaseModule {
     updates: Partial<Memory>
   ): Promise<boolean> {
     try {
-      await this.prisma.workMemory.update({
+      await this.prisma.churchMemory.update({
         where: {
           id: memoryId,
           userId
@@ -431,7 +431,7 @@ export class ChurchModule extends BaseModule {
 
   protected async deleteFromModule(userId: string, memoryId: string): Promise<boolean> {
     try {
-      await this.prisma.workMemory.delete({
+      await this.prisma.churchMemory.delete({
         where: {
           id: memoryId,
           userId
@@ -444,18 +444,18 @@ export class ChurchModule extends BaseModule {
   }
 
   protected async calculateStats(userId: string): Promise<ModuleStats> {
-    const totalCount = await this.prisma.workMemory.count({
+    const totalCount = await this.prisma.churchMemory.count({
       where: { userId }
     });
 
-    const avgAccessCount = await this.prisma.workMemory.aggregate({
+    const avgAccessCount = await this.prisma.churchMemory.aggregate({
       where: { userId },
       _avg: { accessCount: true }
     });
 
     const typeBreakdown = await this.prisma.$queryRaw<Array<{type: string, count: bigint}>>`
       SELECT metadata->>'type' as type, COUNT(*) as count
-      FROM work_memories
+      FROM church_memories
       WHERE "userId" = ${userId}
       GROUP BY metadata->>'type'
     `;

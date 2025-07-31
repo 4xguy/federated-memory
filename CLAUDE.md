@@ -29,12 +29,16 @@ This creates a **semantic/graph/SQL hybrid database** where:
 
 **Benefits**: No schema migrations, semantic search across all types, flexible metadata
 
+### Pure UMC Implementation (as of 2025-01-31)
+
+**NO SEPARATE ENTITY TABLES** - All domain entities (projects, tasks, categories, people, etc.) exist ONLY as memories with structured metadata. This creates a true semantic/graph/SQL hybrid database.
+
 ### Other Core Concepts
 
 1. **Central Memory Index (CMI)**: Routes queries to appropriate modules using 512-dimensional embeddings
 2. **Memory Modules**: Domain-specific storage with 1536-dimensional embeddings for semantic search
 3. **Dual Embedding Strategy**: Compressed embeddings for routing, full embeddings for search
-4. **Module Isolation**: Each module uses existing memory tables, no separate schemas needed
+4. **Module Isolation**: Each module uses its own memory table (technical_memories, church_memories, etc.)
 
 ## Development Commands
 
