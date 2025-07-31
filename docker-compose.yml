@@ -47,6 +47,7 @@ services:
       # Server configuration
       PORT: ${PORT:-3000}
       BASE_URL: ${BASE_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
       # Authentication
       JWT_SECRET: ${JWT_SECRET}
       SESSION_SECRET: ${SESSION_SECRET}

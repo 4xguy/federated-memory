@@ -59,17 +59,30 @@ router.get(
       }
       
       // Redirect to frontend with UUID token
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      const frontendUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:3001';
+      
+      logger.info('Google OAuth redirect configuration', { 
+        FRONTEND_URL: process.env.FRONTEND_URL,
+        BASE_URL: process.env.BASE_URL,
+        frontendUrl,
+        userId: user.id 
+      });
+      
       const redirectUrl = new URL(`${frontendUrl}/auth/success`);
       redirectUrl.searchParams.append('token', userRecord.token);
       redirectUrl.searchParams.append('provider', 'google');
       
-      logger.info('Google OAuth success', { userId: user.id, email: user.email });
+      logger.info('Google OAuth success', { 
+        userId: user.id, 
+        email: user.email,
+        redirectTo: redirectUrl.toString() 
+      });
       
       res.redirect(redirectUrl.toString());
     } catch (error) {
       logger.error('Google OAuth callback error', { error });
-      res.redirect('/auth/failed');
+      const frontendUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:3001';
+      res.redirect(`${frontendUrl}/auth/failed`);
     }
   },
 );
@@ -126,7 +139,14 @@ router.get(
       }
       
       // Redirect to frontend with UUID token
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      const frontendUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:3001';
+      
+      logger.info('GitHub OAuth redirect configuration', { 
+        FRONTEND_URL: process.env.FRONTEND_URL,
+        BASE_URL: process.env.BASE_URL,
+        frontendUrl,
+        userId: user.id 
+      });
       const redirectUrl = new URL(`${frontendUrl}/auth/success`);
       redirectUrl.searchParams.append('token', userRecord.token);
       redirectUrl.searchParams.append('provider', 'github');
@@ -136,7 +156,8 @@ router.get(
       res.redirect(redirectUrl.toString());
     } catch (error) {
       logger.error('GitHub OAuth callback error', { error });
-      res.redirect('/auth/failed');
+      const frontendUrl = process.env.FRONTEND_URL || process.env.BASE_URL || 'http://localhost:3001';
+      res.redirect(`${frontendUrl}/auth/failed`);
     }
   },
 );
