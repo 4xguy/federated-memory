@@ -29,6 +29,13 @@ Thumbs.db
 logs/
 *.log
 
+# Temporary files
+diagnosis-report.md
+start-server.sh
+*.pid
+.server.lock
+server.log
+
 # Testing
 coverage/
 .nyc_output/
