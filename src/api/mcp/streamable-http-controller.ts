@@ -50,8 +50,19 @@ router.post('/:token/mcp', async (req: Request, res: Response) => {
         // Enable JSON response mode for simpler handling
         enableJsonResponse: false, // Keep SSE support for notifications
         // Security settings
-        enableDnsRebindingProtection: true,
-        allowedHosts: ['127.0.0.1', 'localhost', 'localhost:3003', 'claude.ai', '*.claude.ai'],
+        enableDnsRebindingProtection: false, // Disable for production compatibility
+        allowedHosts: [
+          '127.0.0.1',
+          'localhost',
+          'localhost:3000',
+          'localhost:3001',
+          'localhost:3003',
+          'claude.ai',
+          '*.claude.ai',
+          'fmbe.clauvin.com',
+          'fm.clauvin.com',
+          process.env.BASE_URL?.replace(/^https?:\/\//, '') || '',
+        ].filter(Boolean),
       });
       
       // Clean up transport when closed
