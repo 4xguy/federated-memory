@@ -1,7 +1,7 @@
 import { Request, Response, Router } from 'express';
 import { AuthService } from '@/services/auth.service';
 import { logger } from '@/utils/logger';
-import { getInitializedCMIService } from '../../core/cmi/index.service';
+import { getInitializedCMIService } from '../../index';
 import { getToolsListForUser } from './tools-list';
 import { executeToolForUser } from './tool-executor';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
@@ -201,17 +201,16 @@ async function createMcpServerForUser(userId: string): Promise<McpServer> {
     mcpServer.registerTool(
       tool.name,
       {
-        title: tool.title || tool.name,
         description: tool.description,
-        inputSchema: tool.inputSchema,
+        inputSchema: tool.inputSchema as any,
       },
-      async (args) => {
+      async (extra: any) => {
         try {
-          const result = await executeToolForUser(tool.name, args, userId);
+          const result = await executeToolForUser(tool.name, extra.request.params.arguments || {}, userId);
           return {
             content: [
               {
-                type: 'text',
+                type: 'text' as const,
                 text: JSON.stringify(result, null, 2),
               },
             ],
