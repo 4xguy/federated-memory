@@ -15,12 +15,26 @@ export function initializeGitHubStrategy() {
     return false;
   }
 
+  // Construct callback URL - prefer explicit env var, then construct from BASE_URL, then fallback
+  let callbackURL = process.env.GITHUB_CALLBACK_URL;
+  
+  if (!callbackURL) {
+    const baseUrl = process.env.BASE_URL;
+    if (baseUrl) {
+      callbackURL = `${baseUrl}/api/auth/github/callback`;
+    } else {
+      callbackURL = '/api/auth/github/callback'; // This should only be used in development
+    }
+  }
+
+  logger.info('GitHub OAuth callback URL configured', { callbackURL });
+
   passport.use(
     new GitHubStrategy(
       {
         clientID,
         clientSecret,
-        callbackURL: process.env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
+        callbackURL,
         scope: ['user:email'],
       },
       async (_accessToken: string, _refreshToken: string, profile: any, done: any) => {

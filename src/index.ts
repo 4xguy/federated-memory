@@ -99,6 +99,9 @@ async function main() {
       OPENAI_API_KEY: process.env.OPENAI_API_KEY ? 'set' : 'not set',
       JWT_SECRET: process.env.JWT_SECRET ? 'set' : 'not set',
       SESSION_SECRET: process.env.SESSION_SECRET ? 'set' : 'not set',
+      BASE_URL: process.env.BASE_URL || 'not set',
+      GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL || 'not set',
+      GITHUB_CALLBACK_URL: process.env.GITHUB_CALLBACK_URL || 'not set',
     });
 
     // Connect to database

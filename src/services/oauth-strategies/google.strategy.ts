@@ -15,12 +15,26 @@ export function initializeGoogleStrategy() {
     return false;
   }
 
+  // Construct callback URL - prefer explicit env var, then construct from BASE_URL, then fallback
+  let callbackURL = process.env.GOOGLE_CALLBACK_URL;
+  
+  if (!callbackURL) {
+    const baseUrl = process.env.BASE_URL;
+    if (baseUrl) {
+      callbackURL = `${baseUrl}/api/auth/google/callback`;
+    } else {
+      callbackURL = '/api/auth/google/callback'; // This should only be used in development
+    }
+  }
+
+  logger.info('Google OAuth callback URL configured', { callbackURL });
+
   passport.use(
     new GoogleStrategy(
       {
         clientID,
         clientSecret,
-        callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback',
+        callbackURL,
         scope: ['profile', 'email'],
       },
       async (_accessToken, _refreshToken, profile, done) => {
