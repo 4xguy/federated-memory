@@ -329,6 +329,48 @@ async function main() {
             serverInfo: {
               name: 'federated-memory',
               version: '1.0.0',
+              description: 'Distributed memory system for LLMs with intelligent routing. Use token-based endpoints: {baseUrl}/{token}/mcp',
+            },
+            capabilities: {
+              tools: true,
+              resources: false,
+              prompts: true,
+              sampling: false,
+            },
+            // No auth section - MCP uses token-based authentication in URL
+            // Users should use: https://fmbe.clauvin.com/{token}/mcp
+          },
+        });
+      } catch (error) {
+        logger.error('Error serving config endpoint', error);
+        // Send CORS headers even on error
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    });
+    
+    // Token-specific config endpoint
+    app.get('/:token/config', async (req, res) => {
+      try {
+        const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
+        const token = req.params.token;
+        
+        // Set CORS headers for all origins
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-mcp-proxy-auth, X-MCP-Proxy-Auth');
+        
+        // Validate token format
+        if (!token.match(/^[a-f0-9-]{36}$/)) {
+          return res.status(404).json({ error: 'Not found' });
+        }
+        
+        res.json({
+          mcp: {
+            version: '1.0.0',
+            serverInfo: {
+              name: 'federated-memory',
+              version: '1.0.0',
               description: 'Distributed memory system for LLMs with intelligent routing',
             },
             capabilities: {
@@ -339,21 +381,13 @@ async function main() {
             },
             transport: {
               type: 'streamable-http',
-              endpoint: `${baseUrl}/mcp`,
+              endpoint: `${baseUrl}/${token}/mcp`,
             },
-            auth: {
-              type: 'oauth2',
-              authorization_endpoint: `${baseUrl}/api/oauth/authorize`,
-              token_endpoint: `${baseUrl}/api/oauth/token`,
-              scopes_supported: ['read', 'write', 'profile'],
-              code_challenge_methods_supported: ['S256'],
-              client_id: 'mcp-client',
-            },
+            // No auth section for token-based endpoints - the token IS the auth
           },
         });
       } catch (error) {
-        logger.error('Error serving config endpoint', error);
-        // Send CORS headers even on error
+        logger.error('Error serving token config endpoint', error);
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.status(500).json({ error: 'Internal server error' });
       }
@@ -411,16 +445,29 @@ async function main() {
     // Well-known endpoints (OAuth discovery) - must be at root level
     app.get('/.well-known/oauth-authorization-server', (req, res) => {
       try {
-        const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
-        
         // Set CORS headers explicitly for well-known endpoints
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type, mcp-protocol-version, MCP-Protocol-Version');
         
+        // For MCP endpoints, we don't use OAuth - return 404
+        // This endpoint is only for web frontend OAuth
+        const userAgent = req.headers['user-agent'] || '';
+        const isMcpClient = userAgent.includes('Claude') || userAgent.includes('MCP');
+        
+        if (isMcpClient) {
+          return res.status(404).json({ 
+            error: 'Not found',
+            message: 'MCP endpoints use token authentication, not OAuth'
+          });
+        }
+        
+        const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
+        
+        // Only return OAuth info for web frontend clients
         res.json({
           issuer: baseUrl,
-          authorization_endpoint: `${baseUrl}/api/oauth/authorize`,
+          authorization_endpoint: `${baseUrl}/api/auth/google`,
           token_endpoint: `${baseUrl}/api/oauth/token`,
           token_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
           token_endpoint_auth_signing_alg_values_supported: ['RS256'],
@@ -487,6 +534,28 @@ async function main() {
         res.sendFile('realtime-test.html', { root: process.cwd() });
       });
     }
+    
+    // Token-specific well-known endpoints - MUST come before general routes
+    app.get('/:token/.well-known/oauth-authorization-server', (req, res) => {
+      const token = req.params.token;
+      
+      // Set CORS headers
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, mcp-protocol-version, MCP-Protocol-Version');
+      
+      // Validate token format
+      if (!token.match(/^[a-f0-9-]{36}$/)) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+      
+      // For token-based endpoints, return 404 to indicate no OAuth discovery
+      // This tells Claude.ai that OAuth is not required for this endpoint
+      res.status(404).json({ 
+        error: 'Not found',
+        message: 'OAuth discovery not available for token-authenticated endpoints'
+      });
+    });
     
     // MCP Streamable HTTP routes (Modern pattern) - MUST come before API routes
     // These handle /:token/mcp with proper session management

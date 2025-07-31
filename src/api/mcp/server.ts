@@ -310,7 +310,7 @@ export function createMcpApp() {
         serverInfo: {
           name: 'federated-memory',
           version: '1.0.0',
-          description: 'Distributed memory system for LLMs with intelligent routing',
+          description: 'Distributed memory system for LLMs with intelligent routing. Use token-based endpoints: {baseUrl}/{token}/mcp',
         },
         capabilities: {
           tools: true,
@@ -323,14 +323,8 @@ export function createMcpApp() {
         type: 'streamable-http',
         endpoint: `${baseUrl}/mcp`,
       },
-      auth: {
-        type: 'oauth2',
-        authorization_endpoint: `${baseUrl}/api/oauth/authorize`,
-        token_endpoint: `${baseUrl}/api/oauth/token`,
-        scopes_supported: ['read', 'write', 'profile'],
-        code_challenge_methods_supported: ['S256'],
-        client_id: 'claude-ai',
-      },
+      // No auth section - MCP uses token-based authentication
+      // Users should configure with: https://fmbe.clauvin.com/{token}/mcp
     });
   });
 
