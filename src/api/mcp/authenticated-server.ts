@@ -66,20 +66,17 @@ export function createAuthenticatedMcpServer(userContext?: UserContext) {
 }
 
 /**
- * Throws an OAuth authentication error for unauthenticated access
+ * Throws a simple authentication error for unauthenticated access
+ * No OAuth information is returned to keep MCP authentication simple
  */
 function throwAuthRequired(): never {
-  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
   throw new McpError(
     -32001,
     'Authentication required',
     {
-      type: 'oauth_required',
+      type: 'auth_required',
       error: 'unauthorized',
-      error_description: 'This operation requires authentication. Please authenticate via OAuth.',
-      resource_server: baseUrl,
-      resource_metadata: `${baseUrl}/.well-known/oauth-protected-resource`,
-      www_authenticate: `Bearer realm="${baseUrl}", resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`,
+      error_description: 'This operation requires authentication. Please use a valid token in the URL.',
     }
   );
 }

@@ -6,7 +6,9 @@ import { getToolsListForUser } from './tools-list';
 import { executeToolForUser } from './tool-executor';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { createAuthenticatedMcpServer } from './authenticated-server';
 import { randomUUID } from 'crypto';
+import { prisma } from '@/utils/database';
 
 const router = Router();
 const authService = AuthService.getInstance();
@@ -188,41 +190,25 @@ function isInitializeRequest(body: any): boolean {
  * Create an MCP server instance for a specific user
  */
 async function createMcpServerForUser(userId: string): Promise<McpServer> {
-  const mcpServer = new McpServer({
-    name: 'federated-memory',
-    version: '1.0.0',
+  // Get user details for context
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, name: true }
   });
   
-  // Get tools for this user
-  const tools = await getToolsListForUser(userId);
-  
-  // Register each tool
-  for (const tool of tools) {
-    mcpServer.registerTool(
-      tool.name,
-      {
-        description: tool.description,
-        inputSchema: tool.inputSchema as any,
-      },
-      async (extra: any) => {
-        try {
-          const result = await executeToolForUser(tool.name, extra.request.params.arguments || {}, userId);
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: JSON.stringify(result, null, 2),
-              },
-            ],
-          };
-        } catch (error) {
-          throw error; // Let MCP SDK handle error formatting
-        }
-      }
-    );
+  if (!user) {
+    throw new Error('User not found');
   }
   
-  return mcpServer;
+  const userContext = {
+    userId: user.id,
+    email: user.email || 'no-email@example.com',
+    name: user.name || undefined
+  };
+  
+  // Use the authenticated MCP server which already has all tools registered
+  // and handles authentication properly
+  return createAuthenticatedMcpServer(userContext);
 }
 
 export default router;

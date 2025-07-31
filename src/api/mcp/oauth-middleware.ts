@@ -4,8 +4,14 @@ import { logger } from '@/utils/logger';
 /**
  * Middleware to handle OAuth responses for MCP requests
  * This intercepts JSON-RPC errors and adds proper HTTP headers for OAuth
+ * NOTE: This is only used for non-token endpoints. Token endpoints handle auth differently.
  */
 export function mcpOAuthMiddleware(req: Request, res: Response, next: NextFunction) {
+  // Skip this middleware for token-based endpoints
+  if (req.path.match(/^\/[a-f0-9-]{36}\/mcp/)) {
+    return next();
+  }
+  
   // Store the original json method
   const originalJson = res.json.bind(res);
 
