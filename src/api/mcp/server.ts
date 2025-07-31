@@ -116,6 +116,8 @@ export function createMcpApp() {
           '*.anthropic.com',
           process.env.BASE_URL?.replace(/^https?:\/\//, '') || '',
         ].filter(Boolean),
+        // Keep SSE enabled for Claude.ai compatibility
+        // enableJsonResponse: true,
       });
 
       transport.onclose = () => {
@@ -186,6 +188,10 @@ export function createMcpApp() {
       return;
     }
 
+    // Set headers to prevent buffering
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable Nginx buffering
+    
     const transport = transports.get(sessionId)!;
     await transport.handleRequest(req, res);
   });
