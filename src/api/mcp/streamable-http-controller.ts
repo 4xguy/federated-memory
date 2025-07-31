@@ -15,6 +15,8 @@ const authService = AuthService.getInstance();
 
 // Map to store transports by session ID
 const transports: Record<string, StreamableHTTPServerTransport> = {};
+// Map to store servers by session ID
+const servers: Record<string, McpServer> = {};
 
 /**
  * Modern MCP endpoint using Streamable HTTP transport
@@ -69,6 +71,7 @@ router.post('/:token/mcp', async (req: Request, res: Response) => {
       transport.onclose = () => {
         if (transport.sessionId) {
           delete transports[transport.sessionId];
+          delete servers[transport.sessionId];
           logger.info('MCP session closed', { sessionId: transport.sessionId });
         }
       };
@@ -78,6 +81,17 @@ router.post('/:token/mcp', async (req: Request, res: Response) => {
       
       // Connect server to transport
       await mcpServer.connect(transport);
+      
+      // Store server after connection
+      if (transport.sessionId) {
+        servers[transport.sessionId] = mcpServer;
+      }
+      
+      logger.info('MCP server connected', { 
+        userId,
+        sessionId: transport.sessionId,
+        method: req.body?.method
+      });
     } else {
       // Invalid request - no session ID for non-initialize request
       return res.status(400).json({
@@ -125,8 +139,29 @@ router.get('/:token/mcp', async (req: Request, res: Response) => {
       return res.status(404).end();
     }
     
-    if (!sessionId || !transports[sessionId]) {
-      return res.status(400).send('Invalid or missing session ID');
+    // If no session ID, this might be initial SSE connection
+    if (!sessionId) {
+      // Set SSE headers
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no');
+      
+      // Keep connection alive
+      const keepAlive = setInterval(() => {
+        res.write(':keep-alive\n\n');
+      }, 30000);
+      
+      req.on('close', () => {
+        clearInterval(keepAlive);
+        logger.info('SSE connection closed without session', { token });
+      });
+      
+      return;
+    }
+    
+    if (!transports[sessionId]) {
+      return res.status(400).send('Invalid session ID');
     }
     
     const transport = transports[sessionId];
@@ -179,12 +214,41 @@ router.get('/:token/mcp/health', async (req: Request, res: Response) => {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       transport: 'streamable-http',
-      protocolVersion: '2025-03-26',
+      protocolVersion: '2024-11-01',
       activeSessions: Object.keys(transports).length,
     });
   } catch (error) {
     res.status(500).json({
       status: 'unhealthy',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Debug endpoint to test connectivity
+router.get('/:token/mcp/debug', async (req: Request, res: Response) => {
+  const token = req.params.token;
+  
+  try {
+    const authResult = await authService.validateToken(token);
+    if (!authResult) {
+      return res.status(404).json({ error: 'Invalid token' });
+    }
+    
+    res.json({
+      status: 'ok',
+      token: token,
+      userId: authResult.userId,
+      headers: {
+        'user-agent': req.headers['user-agent'],
+        'mcp-session-id': req.headers['mcp-session-id'],
+        'accept': req.headers['accept'],
+      },
+      activeSessions: Object.keys(transports),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(500).json({
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
