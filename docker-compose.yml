@@ -43,7 +43,31 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/federated_memory
       REDIS_URL: redis://redis:6379
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-development}
+      # Server configuration
+      PORT: ${PORT:-3000}
+      BASE_URL: ${BASE_URL}
+      # Authentication
+      JWT_SECRET: ${JWT_SECRET}
+      SESSION_SECRET: ${SESSION_SECRET}
+      # OpenAI
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      # OAuth - Google
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL}
+      # OAuth - GitHub  
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      GITHUB_CALLBACK_URL: ${GITHUB_CALLBACK_URL}
+      # Production database (optional)
+      PRODUCTION_DATABASE_URL: ${PRODUCTION_DATABASE_URL}
+      # Email configuration (optional)
+      EMAIL_FROM: ${EMAIL_FROM}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_PORT: ${EMAIL_PORT}
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASS: ${EMAIL_PASS}
     depends_on:
       postgres:
         condition: service_healthy
